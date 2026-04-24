@@ -1,13 +1,20 @@
 "use client";
 
 import type { Config } from "wagmi";
-import type { CreateAppKit } from "@reown/appkit/react";
+import type { PrivyClientConfig } from "@privy-io/react-auth";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
 import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
-import { AppKitProvider } from "@reown/appkit/react";
+import { PrivyProvider } from "@privy-io/react-auth";
+import { WagmiProvider as PrivyWagmiProvider } from "@privy-io/wagmi";
 import "@rainbow-me/rainbowkit/styles.css";
 import { useEffect, useState } from "react";
+
+type PrivyModule = {
+  hasConfiguredPrivy: boolean;
+  privyAppId: string;
+  privyClientId: string;
+  privyConfig: PrivyClientConfig;
+};
 
 function installStoragePolyfill() {
   if (typeof window === "undefined") return;
@@ -47,18 +54,20 @@ function installStoragePolyfill() {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
+  const [configReady, setConfigReady] = useState(false);
   const [wagmiConfig, setWagmiConfig] = useState<Config | null>(null);
-  const [appKitConfig, setAppKitConfig] = useState<CreateAppKit | null>(null);
+  const [privyModule, setPrivyModule] = useState<PrivyModule | null>(null);
 
   useEffect(() => {
     installStoragePolyfill();
-    Promise.all([import("@/config/wagmi"), import("@/lib/reown")]).then(([wagmiModule, reownModule]) => {
+    Promise.all([import("@/config/wagmi"), import("@/lib/privy")]).then(([wagmiModule, privy]) => {
       setWagmiConfig(wagmiModule.config);
-      setAppKitConfig(reownModule.reownConfig);
+      setPrivyModule(privy as PrivyModule);
+      setConfigReady(true);
     });
   }, []);
 
-  if (!wagmiConfig || !appKitConfig) {
+  if (!configReady || !wagmiConfig || !privyModule) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-indigo-500" />
@@ -66,22 +75,32 @@ export function Providers({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return (
-    <WagmiProvider config={wagmiConfig}>
+  const { hasConfiguredPrivy, privyAppId, privyClientId, privyConfig } = privyModule;
+
+  const app = (
+    <PrivyWagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <AppKitProvider {...appKitConfig}>
-          <RainbowKitProvider
-            theme={darkTheme({
-              accentColor: "#6366f1",
-              accentColorForeground: "white",
-              borderRadius: "large",
-              fontStack: "system",
-            })}
-          >
-            {children}
-          </RainbowKitProvider>
-        </AppKitProvider>
+        <RainbowKitProvider
+          theme={darkTheme({
+            accentColor: "#6366f1",
+            accentColorForeground: "white",
+            borderRadius: "large",
+            fontStack: "system",
+          })}
+        >
+          {children}
+        </RainbowKitProvider>
       </QueryClientProvider>
-    </WagmiProvider>
+    </PrivyWagmiProvider>
+  );
+
+  if (!hasConfiguredPrivy) {
+    return app;
+  }
+
+  return (
+    <PrivyProvider appId={privyAppId} clientId={privyClientId} config={privyConfig}>
+      {app}
+    </PrivyProvider>
   );
 }

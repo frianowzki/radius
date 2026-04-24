@@ -1,12 +1,13 @@
 "use client";
 
 import { useAccount, useBalance, useReadContract } from "wagmi";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
 import { AppShell } from "@/components/AppShell";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
 import { arcTestnet } from "@/config/wagmi";
 import { formatAmount, getIdentityProfile } from "@/lib/utils";
-import { hasConfiguredProjectId } from "@/lib/reown";
+import { hasConfiguredPrivy } from "@/lib/privy";
 import Link from "next/link";
 import { IdentityCard } from "@/components/IdentityCard";
 
@@ -22,14 +23,14 @@ function BalanceCard({
   isLoading: boolean;
 }) {
   return (
-    <div className="glass-panel rounded-[28px] p-6">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="mobile-panel rounded-[28px] p-5 sm:p-6">
+      <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-medium text-zinc-400">{symbol}</p>
         <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-zinc-500">
           Wallet
         </span>
       </div>
-      <p className="text-3xl font-semibold tracking-tight text-glow">
+      <p className="text-3xl font-semibold tracking-tight text-white sm:text-[2rem]">
         {isLoading ? (
           <span className="inline-block h-8 w-32 animate-pulse rounded-lg bg-white/8" />
         ) : balance !== undefined ? (
@@ -43,20 +44,23 @@ function BalanceCard({
 }
 
 const QUICK_ACTIONS = [
-  { href: "/send", label: "Send", icon: "↗", color: "from-indigo-500 to-violet-600", blurb: "Move stablecoins in a few taps." },
-  { href: "/request", label: "Request", icon: "⬇", color: "from-emerald-500 to-teal-600", blurb: "Share a payment link or QR instantly." },
-  { href: "/contacts", label: "Contacts", icon: "◎", color: "from-amber-500 to-orange-600", blurb: "Keep trusted people one tap away." },
-  { href: "/history", label: "History", icon: "☰", color: "from-sky-500 to-blue-600", blurb: "Track every payment moment cleanly." },
+  { href: "/send", label: "Send", icon: "↗", blurb: "Move stablecoins fast." },
+  { href: "/request", label: "Request", icon: "⬇", blurb: "Share a payment ask." },
+  { href: "/contacts", label: "Contacts", icon: "◎", blurb: "Keep people nearby." },
+  { href: "/history", label: "History", icon: "☰", blurb: "See every receipt." },
 ];
 
-const HERO_PILLS = ["Crosschain-ready", "Stablecoin-native", "Receipt-first"];
-
 export default function DashboardPage() {
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const { authenticated } = usePrivy();
+  const { wallets } = useWallets();
+  const address = wagmiAddress ?? (wallets[0]?.address as `0x${string}` | undefined);
+  const isConnected = wagmiConnected || authenticated;
   const identity = getIdentityProfile();
 
   const { data: nativeBalance, isLoading: nativeLoading } = useBalance({
     address,
+    query: { enabled: !!address },
   });
 
   const { data: eurcBalance, isLoading: eurcLoading } = useReadContract({
@@ -70,86 +74,65 @@ export default function DashboardPage() {
   if (!isConnected) {
     return (
       <AppShell>
-        <div className="mx-auto flex min-h-[72vh] max-w-5xl items-center justify-center">
-          <div className="glass-panel-strong w-full rounded-[32px] p-8 lg:p-12">
-            <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-              <div>
-                <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-[28px] bg-gradient-to-br from-indigo-500/25 via-violet-500/20 to-emerald-400/20 text-4xl shadow-2xl shadow-indigo-500/20 lg:mx-0">
-                  ◈
-                </div>
-                <p className="mb-3 text-[11px] uppercase tracking-[0.34em] text-zinc-500">Arc P2P</p>
-                <h2 className="mb-4 text-4xl font-semibold tracking-tight text-glow lg:text-5xl">
-                  Stablecoin payments with a sharper interface.
-                </h2>
-                <p className="max-w-2xl text-base leading-7 text-zinc-400 lg:text-lg">
-                  Send, request, and track USDC or EURC on Arc Testnet with a cleaner wallet flow and faster payment links.
-                </p>
-                <div className="mt-8 grid gap-3 text-left sm:grid-cols-3">
-                  <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                    <p className="text-sm font-medium text-white">Pay fast</p>
-                    <p className="mt-2 text-sm text-zinc-500">Quick send flow for wallet-to-wallet transfers.</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                    <p className="text-sm font-medium text-white">Request cleanly</p>
-                    <p className="mt-2 text-sm text-zinc-500">Share links and QR codes in one step.</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                    <p className="text-sm font-medium text-white">Stay visible</p>
-                    <p className="mt-2 text-sm text-zinc-500">Keep balances, contacts, and history in one place.</p>
-                  </div>
-                </div>
-              </div>
+        <div className="space-y-4 sm:space-y-5">
+          <section className="mobile-panel rounded-[32px] px-5 py-6 sm:px-7 sm:py-8">
+            <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-[22px] bg-white text-2xl font-semibold text-zinc-950 shadow-lg shadow-black/20">
+              R
+            </div>
+            <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">Radius</p>
+            <h1 className="mt-3 max-w-xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              Simple stablecoin payments on Arc.
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
+              Clean send, request, contacts, receipts, and a mobile-friendly auth path without the noisy wallet-app feel.
+            </p>
 
-              <div className="rounded-[28px] border border-white/8 bg-white/[0.04] p-6">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">Onboarding status</p>
-                <h3 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-100">
-                  Browser wallet login is live.
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-zinc-400">
-                  {hasConfiguredProjectId
-                    ? "This build now exposes a real social or email auth entry for mobile-friendly onboarding alongside browser wallets."
-                    : "This build is wallet-first right now. Social or email auth UI is wired, but it still needs a real NEXT_PUBLIC_REOWN_PROJECT_ID before it can actually work."}
-                </p>
-                <div className="mt-6 rounded-[24px] border border-white/8 bg-black/20 p-4">
-                  <p className="text-sm font-medium text-zinc-100">Best way to start</p>
-                  <p className="mt-2 text-sm leading-6 text-zinc-400">
-                    On mobile, social or email auth is the cleaner path once Reown config is active. Otherwise use an injected wallet like MetaMask, Rabby, or a wallet in-app browser.
-                  </p>
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <SocialLoginButton className="rounded-2xl border border-indigo-500/25 bg-indigo-500/12 px-4 py-3 text-sm font-medium text-indigo-100 transition-colors hover:bg-indigo-500/18 disabled:border-white/10 disabled:bg-white/[0.05] disabled:text-zinc-400" />
-                  </div>
-                </div>
-                <div className="mt-6 space-y-3 text-sm">
-                  <div className="flex items-start justify-between gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
-                    <span className="text-zinc-200">Injected/browser wallet</span>
-                    <span className="font-medium text-emerald-300">Live</span>
-                  </div>
-                  <div className={`flex items-start justify-between gap-4 rounded-2xl px-4 py-3 ${hasConfiguredProjectId ? "border border-indigo-500/20 bg-indigo-500/10" : "border border-white/8 bg-white/[0.03]"}`}>
-                    <span className={hasConfiguredProjectId ? "text-zinc-200" : "text-zinc-400"}>Social or email auth entry</span>
-                    <span className={`font-medium ${hasConfiguredProjectId ? "text-indigo-300" : "text-zinc-500"}`}>{hasConfiguredProjectId ? "Enabled" : "Needs config"}</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-4 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                    <span className="text-zinc-400">Embedded wallet production-ready flow</span>
-                    <span className="font-medium text-zinc-500">Not finalized</span>
-                  </div>
-                </div>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                    <p className="text-sm font-medium text-zinc-200">On mobile</p>
-                    <p className="mt-2 text-sm leading-6 text-zinc-500">
-                      Use social or email auth once configured, or use an in-app browser from a wallet that injects Ethereum support. Standard mobile browsers may show no injected wallet at all.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                    <p className="text-sm font-medium text-zinc-200">If nothing appears</p>
-                    <p className="mt-2 text-sm leading-6 text-zinc-500">
-                      That usually means no injected wallet is present yet. {hasConfiguredProjectId ? "Use the social or email button instead." : "Set NEXT_PUBLIC_REOWN_PROJECT_ID to a real Reown project id to enable the social or email route."}
-                    </p>
-                  </div>
-                </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
+                <p className="text-sm font-medium text-white">Send</p>
+                <p className="mt-2 text-sm text-zinc-500">Fast stablecoin transfers.</p>
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
+                <p className="text-sm font-medium text-white">Request</p>
+                <p className="mt-2 text-sm text-zinc-500">QR and payment links.</p>
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
+                <p className="text-sm font-medium text-white">Track</p>
+                <p className="mt-2 text-sm text-zinc-500">Receipt-first history.</p>
               </div>
             </div>
-          </div>
+          </section>
+
+          <section className="mobile-panel rounded-[32px] px-5 py-6 sm:px-7 sm:py-7">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">Get started</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white">Better on mobile now.</h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-400">
+              {hasConfiguredPrivy
+                ? "Privy social or email auth is available for cleaner mobile onboarding. You can still use an injected wallet or wallet in-app browser if you want."
+                : "Use an injected wallet or wallet in-app browser now. Social or email auth becomes available once Privy is configured."}
+            </p>
+
+            {hasConfiguredPrivy && (
+              <div className="mt-5">
+                <SocialLoginButton className="mobile-button mobile-button-primary w-full" />
+              </div>
+            )}
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                <p className="text-sm font-medium text-zinc-200">Social or email</p>
+                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                  Better for plain mobile browsers when you do not want wallet-app friction first.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                <p className="text-sm font-medium text-zinc-200">Wallet browser</p>
+                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                  Still works if you open Radius inside a wallet browser that injects Ethereum support.
+                </p>
+              </div>
+            </div>
+          </section>
         </div>
       </AppShell>
     );
@@ -157,84 +140,56 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <section className="glass-panel-strong overflow-hidden rounded-[32px] p-8 lg:p-10">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+      <div className="space-y-4 sm:space-y-5">
+        <section className="mobile-panel rounded-[32px] px-5 py-6 sm:px-7 sm:py-7">
+          <div className="flex flex-col gap-5 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <div className="mb-4 flex flex-wrap gap-2">
-                {HERO_PILLS.map((pill) => (
-                  <span
-                    key={pill}
-                    className="rounded-full border border-white/8 bg-white/[0.05] px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-zinc-400"
-                  >
-                    {pill}
-                  </span>
-                ))}
-              </div>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.34em] text-zinc-500">Arc Flow</p>
-              <h2 className="text-4xl font-semibold tracking-tight text-glow lg:text-5xl">
-                Crosschain social payments, designed like a product, not a wallet.
-              </h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-400 lg:text-lg">
-                Send money fast, request with identity, and turn every transfer into a clean receipt that feels native to Arc’s stablecoin rail.
+              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">Radius</p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                Payments that feel instant and calm.
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
+                Send money fast, request with identity, and keep receipts readable without turning the app into a cluttered wallet dashboard.
               </p>
             </div>
-            <div className="grid gap-3 sm:min-w-[340px] sm:grid-cols-2">
+
+            <div className="grid grid-cols-2 gap-3 sm:min-w-[280px]">
               <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Headline</p>
-                <p className="mt-2 text-sm font-medium text-zinc-100">USDC payments that feel immediate.</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Network</p>
+                <p className="mt-2 text-sm font-medium text-zinc-100">Arc Testnet</p>
               </div>
               <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Next layer</p>
-                <p className="mt-2 text-sm font-medium text-zinc-100">Crosschain routing and social receipts.</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Mode</p>
+                <p className="mt-2 text-sm font-medium text-zinc-100">Social payments</p>
               </div>
             </div>
           </div>
         </section>
 
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-zinc-200">Balances</h3>
-            <p className="text-sm text-zinc-500">Live wallet state</p>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <BalanceCard
-              symbol="USDC"
-              balance={nativeBalance?.value}
-              decimals={18}
-              isLoading={nativeLoading}
-            />
-            <BalanceCard
-              symbol="EURC"
-              balance={eurcBalance as bigint | undefined}
-              decimals={TOKENS.EURC.decimals}
-              isLoading={eurcLoading}
-            />
-          </div>
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <BalanceCard symbol="USDC" balance={nativeBalance?.value} decimals={18} isLoading={nativeLoading} />
+          <BalanceCard symbol="EURC" balance={eurcBalance as bigint | undefined} decimals={TOKENS.EURC.decimals} isLoading={eurcLoading} />
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-zinc-200">Quick actions</h3>
-              <p className="text-sm text-zinc-500">The stuff you actually do</p>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-zinc-200">Quick actions</h3>
+              <p className="text-xs text-zinc-500">What you actually use</p>
             </div>
+
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {QUICK_ACTIONS.map((action) => (
                 <Link
                   key={action.href}
                   href={action.href}
-                  className="glass-panel group flex min-h-[170px] flex-col justify-between rounded-[28px] p-5 transition-all hover:-translate-y-1 hover:border-white/14 hover:bg-white/[0.05]"
+                  className="mobile-panel group flex min-h-[148px] flex-col justify-between rounded-[28px] p-4 transition-all hover:border-white/14 hover:bg-white/[0.06]"
                 >
-                  <div
-                    className={`flex h-13 w-13 items-center justify-center rounded-2xl bg-gradient-to-br ${action.color} text-xl shadow-lg shadow-black/20 transition-transform group-hover:scale-110`}
-                  >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-lg text-zinc-950 shadow-lg shadow-black/20 transition-transform group-hover:scale-105">
                     {action.icon}
                   </div>
                   <div>
-                    <span className="text-base font-semibold text-zinc-100">
-                      {action.label}
-                    </span>
+                    <span className="text-base font-semibold text-zinc-100">{action.label}</span>
                     <p className="mt-2 text-sm leading-6 text-zinc-500">{action.blurb}</p>
                   </div>
                 </Link>
@@ -242,33 +197,33 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             <IdentityCard profile={identity} />
-            <div className="glass-panel rounded-[28px] p-6">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500 mb-4">
-                Why this feels different
-              </h3>
-              <div className="space-y-4 text-sm">
+
+            <div className="mobile-panel rounded-[28px] p-5 sm:p-6">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Why it feels cleaner</h3>
+              <div className="mt-4 space-y-4 text-sm">
                 <div className="border-b border-white/8 pb-4">
-                  <p className="text-zinc-100 font-medium">Immediate flow</p>
-                  <p className="mt-2 leading-6 text-zinc-500">The UI should feel sub-second and decisive, not like waiting in a bloated wallet app.</p>
+                  <p className="font-medium text-zinc-100">Less dashboard noise</p>
+                  <p className="mt-2 leading-6 text-zinc-500">Portrait mode now focuses on the few things you actually need instead of cramming desktop layout into mobile.</p>
                 </div>
                 <div className="border-b border-white/8 pb-4">
-                  <p className="text-zinc-100 font-medium">Request-first payments</p>
-                  <p className="mt-2 leading-6 text-zinc-500">Requests, notes, and QR should feel like product surfaces, not hidden utility tools.</p>
+                  <p className="font-medium text-zinc-100">Privy-first onboarding</p>
+                  <p className="mt-2 leading-6 text-zinc-500">Social or email onboarding is now the intended mobile-browser path instead of being bolted on beside another auth system.</p>
                 </div>
                 <div>
-                  <p className="text-zinc-100 font-medium">Crosschain-ready identity</p>
-                  <p className="mt-2 leading-6 text-zinc-500">Today: stablecoin sends on Arc. Next: routed transfers, social receipts, and identity-rich payment moments.</p>
+                  <p className="font-medium text-zinc-100">Simple visual system</p>
+                  <p className="mt-2 leading-6 text-zinc-500">Dark base, restrained panels, soft dynamic background, no extra chrome.</p>
                 </div>
               </div>
+
               <div className="mt-5 flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm">
                 <span className="text-zinc-500">Explorer</span>
                 <a
                   href={arcTestnet.blockExplorers.default.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium text-indigo-400 hover:text-indigo-300"
+                  className="font-medium text-white/90 hover:text-white"
                 >
                   ArcScan
                 </a>

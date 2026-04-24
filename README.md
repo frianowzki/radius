@@ -16,10 +16,11 @@ cp .env.example .env.local
 Then set:
 
 ```bash
-NEXT_PUBLIC_REOWN_PROJECT_ID=your_reown_project_id
+NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id
+NEXT_PUBLIC_PRIVY_CLIENT_ID=your_privy_client_id
 ```
 
-Without that env, the app still works in wallet-first mode, but the social or email auth entry stays disabled on purpose.
+Without those env values, the app still works in wallet-first mode, but the social or email auth entry stays disabled on purpose.
 
 Run the development server:
 
@@ -32,7 +33,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ## Mobile browser note
 
 For the cleanest mobile onboarding:
-- use the social or email auth entry once `NEXT_PUBLIC_REOWN_PROJECT_ID` is configured
+- use the Privy social or email auth entry once `NEXT_PUBLIC_PRIVY_APP_ID` and `NEXT_PUBLIC_PRIVY_CLIENT_ID` are configured
 - or open the app inside a wallet in-app browser that injects Ethereum support
 - plain mobile browsers may not expose any injected wallet at all
 
