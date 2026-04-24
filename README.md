@@ -1,8 +1,10 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# radius
+
+Radius is a Next.js app for Arc testnet, focused on fast stablecoin payments, request flows, receipts, contacts, and mobile-friendly onboarding.
 
 ## Getting Started
 
-First, install dependencies and set the env needed for mobile-friendly social/email auth:
+Install dependencies and set the env needed for mobile-friendly social or email auth:
 
 ```bash
 npm install
@@ -15,7 +17,7 @@ Then set:
 NEXT_PUBLIC_REOWN_PROJECT_ID=your_reown_project_id
 ```
 
-Without that env, the app still works in wallet-first mode, but the social/email auth entry stays disabled on purpose.
+Without that env, the app still works in wallet-first mode, but the social or email auth entry stays disabled on purpose.
 
 Run the development server:
 
@@ -28,13 +30,15 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ## Mobile browser note
 
 For the cleanest mobile onboarding:
-- use the social/email auth entry once `NEXT_PUBLIC_REOWN_PROJECT_ID` is configured
+- use the social or email auth entry once `NEXT_PUBLIC_REOWN_PROJECT_ID` is configured
 - or open the app inside a wallet in-app browser that injects Ethereum support
 - plain mobile browsers may not expose any injected wallet at all
 
-## Learn More
+## Current product direction
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and APIs.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Arc-native stablecoin payments
+- request-first UX with QR and shareable payment links
+- receipt-first transaction surfaces
+- local app identity and directory layer
+- crosschain-ready send flow groundwork
+- mobile-friendly wallet plus auth onboarding
