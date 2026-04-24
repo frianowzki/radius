@@ -99,7 +99,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <PrivyProvider appId={privyAppId} clientId={privyClientId} config={privyConfig}>
+    <PrivyProvider
+      appId={privyAppId}
+      {...(privyClientId ? { clientId: privyClientId } : {})}
+      config={privyConfig}
+    >
       {app}
     </PrivyProvider>
   );

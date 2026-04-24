@@ -5,12 +5,7 @@ import type { PrivyClientConfig } from "@privy-io/react-auth";
 const envAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID?.trim() ?? "";
 const envClientId = process.env.NEXT_PUBLIC_PRIVY_CLIENT_ID?.trim() ?? "";
 
-export const hasConfiguredPrivy = Boolean(
-  envAppId &&
-    envClientId &&
-    envAppId !== "your_privy_app_id" &&
-    envClientId !== "your_privy_client_id"
-);
+export const hasConfiguredPrivy = Boolean(envAppId && envAppId !== "your_privy_app_id");
 
 export const privyAppId = envAppId;
 export const privyClientId = envClientId;
@@ -31,6 +26,4 @@ export const privyConfig: PrivyClientConfig = {
     },
     showWalletUIs: false,
   },
-  defaultChain: undefined,
-  supportedChains: undefined,
 };
