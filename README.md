@@ -1,6 +1,8 @@
 # radius
 
-Radius is a Next.js app for Arc testnet, focused on fast stablecoin payments, request flows, receipts, contacts, and mobile-friendly onboarding.
+I'm building Radius on Arc testnet.
+
+Radius is a Next.js app focused on fast stablecoin payments, request flows, receipts, contacts, and mobile-friendly onboarding.
 
 ## Getting Started
 
