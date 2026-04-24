@@ -1,0 +1,361 @@
+"use client";
+
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { parseUnits, isAddress } from "viem";
+import { AppShell } from "@/components/AppShell";
+import { ReceiptCard } from "@/components/ReceiptCard";
+import { PrivacyBadge } from "@/components/PrivacyBadge";
+import { RequesterIdentityCard } from "@/components/RequesterIdentityCard";
+import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
+import { arcTestnet } from "@/config/wagmi";
+import {
+  formatContactLabel,
+  findContactByAddress,
+  getIdentityLabel,
+  getIdentityProfile,
+  resolveRecipientInput,
+  upsertContactByAddress,
+} from "@/lib/utils";
+
+type PayStatus = "idle" | "sending" | "confirming" | "success" | "error";
+
+function PayContent() {
+  const searchParams = useSearchParams();
+  const { address, isConnected } = useAccount();
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
+
+  const recipient = searchParams.get("to") || "";
+  const amount = searchParams.get("amount") || "";
+  const token = (searchParams.get("token") as TokenKey) || "USDC";
+  const memo = searchParams.get("memo") || "";
+
+  const [status, setStatus] = useState<PayStatus>("idle");
+  const [txHash, setTxHash] = useState("");
+  const [error, setError] = useState("");
+  const [showSaveRecipient, setShowSaveRecipient] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [saveHandle, setSaveHandle] = useState("");
+  const [saveAvatar, setSaveAvatar] = useState("");
+
+  const resolvedRecipient = resolveRecipientInput(recipient);
+  const recipientAddress = resolvedRecipient.address || "";
+  const matchedRecipient = recipientAddress ? findContactByAddress(recipientAddress) : undefined;
+  const identity = getIdentityProfile();
+  const payerLabel = getIdentityLabel(identity);
+
+  const validRequest =
+    isAddress(recipientAddress) &&
+    amount &&
+    Number(amount) > 0 &&
+    token in TOKENS;
+
+  async function handlePay() {
+    if (!walletClient || !publicClient || !address) return;
+
+    setStatus("sending");
+    setError("");
+
+    try {
+      const tokenInfo = TOKENS[token];
+      const parsedAmount = parseUnits(amount, tokenInfo.decimals);
+      const hash = await walletClient.writeContract({
+        address: tokenInfo.address,
+        abi: ERC20_TRANSFER_ABI,
+        functionName: "transfer",
+        args: [recipientAddress as `0x${string}`, parsedAmount],
+      });
+
+      setTxHash(hash);
+      setStatus("confirming");
+
+      await publicClient.waitForTransactionReceipt({ hash });
+      setShowSaveRecipient(!matchedRecipient);
+      setStatus("success");
+    } catch (err: unknown) {
+      setStatus("error");
+      if (err instanceof Error) {
+        setError(
+          err.message.includes("User rejected")
+            ? "Transaction rejected"
+            : err.message.slice(0, 200)
+        );
+      } else {
+        setError("Payment failed");
+      }
+    }
+  }
+
+  function handleSaveRecipient() {
+    if (!recipientAddress || !saveName.trim()) return;
+    upsertContactByAddress(recipientAddress, {
+      name: saveName.trim(),
+      handle: saveHandle,
+      avatar: saveAvatar,
+    });
+    setShowSaveRecipient(false);
+    setSaveName("");
+    setSaveHandle("");
+    setSaveAvatar("");
+  }
+
+  if (!validRequest) {
+    return (
+      <AppShell>
+        <div className="mx-auto max-w-4xl">
+          <div className="glass-panel-strong rounded-[32px] p-12 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[24px] bg-red-500/12 text-2xl text-red-300">
+              !
+            </div>
+            <h3 className="text-2xl font-semibold mb-2">Invalid payment request</h3>
+            <p className="text-sm text-zinc-400">
+              This payment link is missing required information.
+            </p>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  return (
+    <AppShell>
+      <div className="mx-auto max-w-6xl">
+        {status === "success" ? (
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="glass-panel-strong rounded-[32px] p-8">
+              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Payment complete</p>
+              <h2 className="text-4xl font-semibold tracking-tight text-glow">
+                Clean handoff, clean receipt.
+              </h2>
+              <p className="mt-4 text-base leading-7 text-zinc-400">
+                You paid {amount} {token} to {formatContactLabel(recipientAddress)} on Arc Testnet.
+              </p>
+
+              <div className="mt-8 rounded-[28px] border border-white/8 bg-white/[0.04] p-6">
+                <div className="flex items-center justify-between border-b border-white/8 pb-4">
+                  <div>
+                    <p className="text-sm text-zinc-500">Amount</p>
+                    <p className="mt-1 text-3xl font-semibold text-zinc-100">
+                      {amount} {token}
+                    </p>
+                  </div>
+                  <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
+                    Settled
+                  </div>
+                </div>
+                <div className="space-y-4 pt-4 text-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-zinc-500">Recipient</span>
+                    <span className="text-zinc-300">{formatContactLabel(recipientAddress)}</span>
+                  </div>
+                  {memo && (
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-zinc-500">Memo</span>
+                      <span className="text-zinc-300">{memo}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {showSaveRecipient && (
+                <div className="mt-6 rounded-[28px] border border-white/8 bg-white/[0.04] p-5 space-y-3">
+                  <p className="text-sm font-medium text-zinc-200">Save this recipient</p>
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    value={saveName}
+                    onChange={(e) => setSaveName(e.target.value)}
+                    className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                  />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <input
+                      type="text"
+                      placeholder="@username"
+                      value={saveHandle}
+                      onChange={(e) => setSaveHandle(e.target.value)}
+                      className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Avatar"
+                      value={saveAvatar}
+                      onChange={(e) => setSaveAvatar(e.target.value)}
+                      maxLength={4}
+                      className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSaveRecipient}
+                    className="w-full rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/14"
+                  >
+                    Save recipient
+                  </button>
+                </div>
+              )}
+
+              {txHash && (
+                <a
+                  href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 inline-flex rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20"
+                >
+                  View on ArcScan
+                </a>
+              )}
+            </div>
+
+            <div className="glass-panel rounded-[32px] p-8">
+              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Receipt preview</p>
+              {matchedRecipient && (
+                <div className="mb-4">
+                  <RequesterIdentityCard
+                    title="Recipient"
+                    contact={matchedRecipient}
+                    address={recipientAddress}
+                    tone="compact"
+                  />
+                </div>
+              )}
+              <ReceiptCard
+                title="Arc Flow"
+                amount={amount}
+                token={token}
+                status="Paid"
+                fromLabel={payerLabel}
+                toLabel={formatContactLabel(recipientAddress)}
+                note={memo || "Arc Testnet"}
+                metaLabel="Paid by"
+                metaValue={payerLabel}
+                shareText={`Paid ${amount} ${token} on Arc as ${payerLabel} to ${formatContactLabel(recipientAddress)}${memo ? ` for ${memo}` : ""}`}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="space-y-5">
+              <div className="glass-panel-strong rounded-[32px] p-8">
+                <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Pay request</p>
+                <h2 className="text-4xl font-semibold tracking-tight text-glow">
+                  Pay a request with confidence, not clutter.
+                </h2>
+                <p className="mt-4 text-base leading-7 text-zinc-400">
+                  This should feel like accepting a payment moment, not parsing a blockchain form.
+                </p>
+              </div>
+
+              <div className="glass-panel rounded-[28px] p-6">
+                <div className="text-center mb-6">
+                  <p className="text-sm text-zinc-400 mb-1">Amount requested</p>
+                  <p className="text-4xl font-bold text-zinc-100">
+                    {amount} <span className="text-zinc-500 text-2xl">{token}</span>
+                  </p>
+                </div>
+
+                <div className="space-y-4 text-sm">
+                  <div className="flex justify-between py-3 border-t border-white/8">
+                    <span className="text-zinc-500">To</span>
+                    <span className="font-mono text-zinc-300">
+                      {formatContactLabel(recipientAddress)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-3 border-t border-white/8">
+                    <span className="text-zinc-500">Token</span>
+                    <span className="text-zinc-200">{TOKENS[token].name}</span>
+                  </div>
+                  {memo && (
+                    <div className="flex justify-between py-3 border-t border-white/8">
+                      <span className="text-zinc-500">Memo</span>
+                      <span className="text-zinc-300">{memo}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-3 border-t border-white/8">
+                    <span className="text-zinc-500">Network</span>
+                    <span className="text-zinc-200">Arc Testnet</span>
+                  </div>
+                </div>
+              </div>
+
+              {!isConnected ? (
+                <div className="glass-panel rounded-[28px] p-5 text-center text-sm text-amber-300">
+                  Connect your wallet to pay this request.
+                </div>
+              ) : (
+                <button
+                  onClick={handlePay}
+                  disabled={status === "sending" || status === "confirming"}
+                  className="w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-4 font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all hover:shadow-indigo-500/30 disabled:opacity-60"
+                >
+                  {status === "sending" || status === "confirming" ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      {status === "sending" ? "Sending..." : "Confirming..."}
+                    </span>
+                  ) : (
+                    `Pay ${amount} ${token}`
+                  )}
+                </button>
+              )}
+
+              {status === "error" && error && (
+                <p className="text-center text-sm text-red-400">{error}</p>
+              )}
+            </div>
+
+            <div className="space-y-5">
+              <PrivacyBadge />
+
+              <RequesterIdentityCard
+                title="Request context"
+                contact={matchedRecipient}
+                address={recipientAddress}
+              />
+
+              <div className="glass-panel rounded-[32px] p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-sm font-medium text-zinc-400">Live receipt</p>
+                  <span className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-zinc-500">
+                    Ready to settle
+                  </span>
+                </div>
+                <ReceiptCard
+                  title="Request"
+                  amount={amount}
+                  token={token}
+                  status="Ready to settle"
+                  fromLabel={payerLabel}
+                  toLabel={formatContactLabel(recipientAddress)}
+                  note={memo || "Arc Testnet"}
+                  metaLabel="Paying as"
+                  metaValue={payerLabel}
+                  shareText={`Payment request to settle as ${payerLabel}: ${amount} ${token} to ${formatContactLabel(recipientAddress)}${memo ? ` for ${memo}` : ""}`}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </AppShell>
+  );
+}
+
+export default function PayPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppShell>
+          <div className="flex items-center justify-center py-32">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-indigo-500" />
+          </div>
+        </AppShell>
+      }
+    >
+      <PayContent />
+    </Suspense>
+  );
+}

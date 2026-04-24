@@ -1,8 +1,12 @@
 @import "tailwindcss";
+@import "@rainbow-me/rainbowkit/styles.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --panel: rgba(24, 24, 27, 0.56);
+  --panel-strong: rgba(24, 24, 27, 0.8);
+  --panel-border: rgba(255, 255, 255, 0.08);
 }
 
 @theme inline {
@@ -12,15 +16,67 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at top, rgba(99, 102, 241, 0.12), transparent 28%),
+    linear-gradient(180deg, #09090b 0%, #09090b 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+* {
+  border-color: var(--panel-border);
+}
+
+::selection {
+  background: rgba(99, 102, 241, 0.35);
+  color: #fff;
+}
+
+@utility glass-panel {
+  background: linear-gradient(180deg, rgba(24, 24, 27, 0.72), rgba(24, 24, 27, 0.5));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+}
+
+@utility glass-panel-strong {
+  background: linear-gradient(180deg, rgba(39, 39, 42, 0.84), rgba(24, 24, 27, 0.7));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.34);
+}
+
+@utility text-glow {
+  text-shadow: 0 0 24px rgba(129, 140, 248, 0.22);
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -24px, 0) scale(1.06); }
+}
+
+@keyframes float-slower {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-18px, 22px, 0) scale(1.04); }
+}
+
+@keyframes float-slowest {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(22px, -18px, 0) scale(1.08); }
+}
+
+.animate-float-slow {
+  animation: float-slow 16s ease-in-out infinite;
+}
+
+.animate-float-slower {
+  animation: float-slower 20s ease-in-out infinite;
+}
+
+.animate-float-slowest {
+  animation: float-slowest 24s ease-in-out infinite;
 }
