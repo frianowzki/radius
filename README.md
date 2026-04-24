@@ -1,2 +1,2 @@
 # radius
-I'm building Radius on Arc testnet. s
+I'm building Radius on Arc testnet.
