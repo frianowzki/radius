@@ -1,5 +1,12 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { injectedWallet, safeWallet } from "@rainbow-me/rainbowkit/wallets";
+import {
+  injectedWallet,
+  metaMaskWallet,
+  rabbyWallet,
+  coinbaseWallet,
+  walletConnectWallet,
+  safeWallet,
+} from "@rainbow-me/rainbowkit/wallets";
 import { createStorage, http } from "wagmi";
 import { defineChain } from "viem";
 import { arbitrumSepolia, baseSepolia, sepolia } from "viem/chains";
@@ -27,8 +34,8 @@ export const arcTestnet = defineChain({
   testnet: true,
 });
 
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
 const chains = [arcTestnet, sepolia, baseSepolia, arbitrumSepolia] as const;
-const projectId = "arc-p2p-demo";
 
 const memoryStorage = (() => {
   const store = new Map<string, string>();
@@ -51,14 +58,21 @@ const browserStorage =
     : memoryStorage;
 
 export const config = getDefaultConfig({
-  appName: "Arc P2P",
+  appName: "Radius",
   projectId,
   chains,
   ssr: false,
-  wallets: [
+    wallets: [
     {
       groupName: "Wallets",
-      wallets: [injectedWallet, safeWallet],
+      wallets: [
+        injectedWallet,
+        metaMaskWallet,
+        rabbyWallet,
+        coinbaseWallet,
+        walletConnectWallet,
+        safeWallet,
+      ],
     },
   ],
   storage: createStorage({

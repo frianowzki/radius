@@ -5,7 +5,7 @@ import type { PrivyClientConfig } from "@privy-io/react-auth";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import { PrivyProvider } from "@privy-io/react-auth";
-import { WagmiProvider as PrivyWagmiProvider } from "@privy-io/wagmi";
+import { WagmiProvider } from "wagmi";
 import "@rainbow-me/rainbowkit/styles.css";
 import { useEffect, useState } from "react";
 
@@ -77,34 +77,45 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   const { hasConfiguredPrivy, privyAppId, privyClientId, privyConfig } = privyModule;
 
-  const app = (
-    <PrivyWagmiProvider config={wagmiConfig}>
+    if (!hasConfiguredPrivy) {
+    return (
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider
-          theme={darkTheme({
-            accentColor: "#6366f1",
-            accentColorForeground: "white",
-            borderRadius: "large",
-            fontStack: "system",
-          })}
-        >
-          {children}
-        </RainbowKitProvider>
+        <WagmiProvider config={wagmiConfig}>
+          <RainbowKitProvider
+            theme={darkTheme({
+              accentColor: "#6366f1",
+              accentColorForeground: "white",
+              borderRadius: "large",
+              fontStack: "system",
+            })}
+          >
+            {children}
+          </RainbowKitProvider>
+        </WagmiProvider>
       </QueryClientProvider>
-    </PrivyWagmiProvider>
-  );
-
-  if (!hasConfiguredPrivy) {
-    return app;
+    );
   }
 
   return (
-    <PrivyProvider
-      appId={privyAppId}
-      {...(privyClientId ? { clientId: privyClientId } : {})}
-      config={privyConfig}
-    >
-      {app}
-    </PrivyProvider>
+    <QueryClientProvider client={queryClient}>
+      <PrivyProvider
+        appId={privyAppId}
+        {...(privyClientId ? { clientId: privyClientId } : {})}
+        config={privyConfig}
+      >
+        <WagmiProvider config={wagmiConfig}>
+          <RainbowKitProvider
+            theme={darkTheme({
+              accentColor: "#6366f1",
+              accentColorForeground: "white",
+              borderRadius: "large",
+              fontStack: "system",
+            })}
+          >
+            {children}
+          </RainbowKitProvider>
+        </WagmiProvider>
+      </PrivyProvider>
+    </QueryClientProvider>
   );
 }
