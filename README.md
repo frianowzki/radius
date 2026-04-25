@@ -19,6 +19,7 @@ Then set:
 NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id
 # Optional depending on your Privy setup
 NEXT_PUBLIC_PRIVY_CLIENT_ID=your_privy_client_id
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_reown_project_id
 ```
 
 Without a real `NEXT_PUBLIC_PRIVY_APP_ID`, the app still works in wallet-first mode, but the social or email auth entry stays disabled on purpose.
