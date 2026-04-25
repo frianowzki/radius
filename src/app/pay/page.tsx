@@ -3,7 +3,8 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
-import { parseUnits, isAddress } from "viem";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { createWalletClient, custom, parseUnits, isAddress } from "viem";
 import { AppShell } from "@/components/AppShell";
 import { ReceiptCard } from "@/components/ReceiptCard";
 import { PrivacyBadge } from "@/components/PrivacyBadge";
@@ -16,6 +17,7 @@ import {
   getIdentityLabel,
   getIdentityProfile,
   resolveRecipientInput,
+  saveLocalTransfer,
   upsertContactByAddress,
 } from "@/lib/utils";
 
@@ -23,7 +25,12 @@ type PayStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
 function PayContent() {
   const searchParams = useSearchParams();
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const { authenticated } = usePrivy();
+  const { wallets } = useWallets();
+  const privyWallet = wallets[0];
+  const address = wagmiAddress ?? (privyWallet?.address as `0x${string}` | undefined);
+  const isConnected = wagmiConnected || authenticated;
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
 
@@ -52,8 +59,25 @@ function PayContent() {
     Number(amount) > 0 &&
     token in TOKENS;
 
+  async function getActiveWalletClient() {
+    if (walletClient) return walletClient;
+    if (!privyWallet || !address) return null;
+    const provider = await privyWallet.getEthereumProvider();
+    return createWalletClient({
+      account: address,
+      chain: arcTestnet,
+      transport: custom(provider),
+    });
+  }
+
   async function handlePay() {
-    if (!walletClient || !publicClient || !address) return;
+    if (!publicClient || !address) return;
+    const activeWalletClient = await getActiveWalletClient();
+    if (!activeWalletClient) {
+      setStatus("error");
+      setError("Wallet signer unavailable. Reconnect your social wallet and try again.");
+      return;
+    }
 
     setStatus("sending");
     setError("");
@@ -61,7 +85,7 @@ function PayContent() {
     try {
       const tokenInfo = TOKENS[token];
       const parsedAmount = parseUnits(amount, tokenInfo.decimals);
-      const hash = await walletClient.writeContract({
+      const hash = await activeWalletClient.writeContract({
         address: tokenInfo.address,
         abi: ERC20_TRANSFER_ABI,
         functionName: "transfer",
@@ -72,6 +96,15 @@ function PayContent() {
       setStatus("confirming");
 
       await publicClient.waitForTransactionReceipt({ hash });
+      saveLocalTransfer({
+        from: address,
+        to: recipientAddress,
+        value: parsedAmount.toString(),
+        token,
+        txHash: hash,
+        direction: "sent",
+        routeLabel: "Payment request",
+      });
       setShowSaveRecipient(!matchedRecipient);
       setStatus("success");
     } catch (err: unknown) {

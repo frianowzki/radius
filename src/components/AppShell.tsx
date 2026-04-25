@@ -1,10 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount } from "wagmi";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useAccount, useDisconnect } from "wagmi";
+import { useLogout, usePrivy, useWallets } from "@privy-io/react-auth";
 import { DynamicBackground } from "@/components/DynamicBackground";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
 import { hasConfiguredPrivy } from "@/lib/privy";
@@ -13,9 +14,10 @@ const NAV_ITEMS = [
   { href: "/", label: "Home", icon: "◆" },
   { href: "/send", label: "Send", icon: "↗" },
   { href: "/request", label: "Request", icon: "⬇" },
-  { href: "/history", label: "History", icon: "☰" },
-  { href: "/contacts", label: "Contacts", icon: "◎" },
+  { href: "/contacts", label: "Contact", icon: "◎" },
   { href: "/profile", label: "Profile", icon: "◌" },
+  { href: "/history", label: "History", icon: "☰" },
+  { href: "/faucet", label: "Faucet", icon: "滴" },
 ];
 
 function formatAddress(address?: string | null) {
@@ -25,7 +27,14 @@ function formatAddress(address?: string | null) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "light";
+    const saved = window.localStorage.getItem("radius-theme");
+    return saved === "light" || saved === "dark" ? saved : "light";
+  });
   const { isConnected: wagmiConnected, address: wagmiAddress } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { logout } = useLogout();
   const { authenticated, user, ready } = usePrivy();
   const { wallets } = useWallets();
 
@@ -33,8 +42,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const connectedAddress = wagmiAddress ?? privyWalletAddress ?? null;
   const isConnected = wagmiConnected || authenticated;
   const authLabel = authenticated
-    ? user?.email?.address || user?.google?.email || user?.github?.email || formatAddress(connectedAddress)
+    ? user?.email?.address || user?.google?.email || user?.github?.email || user?.twitter?.username || user?.apple?.email || formatAddress(connectedAddress)
     : null;
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
+  function toggleTheme() {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("radius-theme", nextTheme);
+    document.documentElement.dataset.theme = nextTheme;
+  }
+
+  async function handleDisconnect() {
+    if (wagmiConnected) disconnect();
+    if (authenticated) await logout();
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -83,7 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <p className="font-semibold text-zinc-100">Mobile auth</p>
               <p className="mt-2">
                 {hasConfiguredPrivy
-                  ? "Privy social or email login is ready for cleaner mobile onboarding."
+                  ? "Privy email and enabled social login are ready for cleaner mobile onboarding."
                   : "Add real Privy app and client ids to enable social or email login."}
               </p>
             </div>
@@ -93,9 +118,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex min-h-screen flex-1 flex-col gap-3 sm:gap-4 lg:gap-6">
           <header className="mobile-panel rounded-[26px] px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">Arc Network</p>
-                <p className="mt-1 text-sm text-zinc-300">Fast stablecoin payments, cleaner in portrait mode</p>
+              <div className="flex min-w-0 items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">Radius</p>
+                  <p className="mt-1 text-sm text-zinc-300">Fast stablecoin payments, cleaner in portrait mode</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="shrink-0 rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-zinc-100 shadow-sm transition-colors"
+                >
+                  {theme === "dark" ? "Light" : "Dark"}
+                </button>
               </div>
 
               <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
@@ -110,8 +144,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     accountStatus={isConnected ? "full" : "address"}
                   />
                   {authenticated && authLabel && (
-                    <div className="mt-2 rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-zinc-200">
-                      {authLabel}
+                    <div className="mt-2 flex flex-col gap-2 rounded-2xl border border-white/8 bg-white/[0.04] p-3 text-sm text-zinc-200">
+                      <span className="truncate">{authLabel}</span>
+                      <button
+                        type="button"
+                        onClick={handleDisconnect}
+                        className="rounded-xl border border-white/8 bg-white/[0.05] px-3 py-2 text-xs font-semibold text-zinc-100 transition-colors hover:bg-white/[0.1]"
+                      >
+                        Disconnect
+                      </button>
                     </div>
                   )}
                 </div>
@@ -126,21 +167,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <nav className="mobile-tabbar lg:hidden">
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-colors ${
-                isActive ? "bg-white text-zinc-950" : "text-zinc-400"
-              }`}
-            >
-              <span className="text-sm">{item.icon}</span>
-              <span className="truncate">{item.label}</span>
-            </Link>
-          );
-        })}
+        <div className="mobile-tabbar-scroll">
+          {NAV_ITEMS.map((item) => {
+            const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex min-w-[4.25rem] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-colors ${
+                  isActive ? "bg-white text-zinc-950" : "text-zinc-400"
+                }`}
+              >
+                <span className="text-sm">{item.icon}</span>
+                <span className="max-w-full truncate">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );

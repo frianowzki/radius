@@ -8,6 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import {
   getContacts,
   addContact,
+  updateContact,
   removeContact,
   formatAddress,
   searchDirectoryEntries,
@@ -41,6 +42,12 @@ export default function ContactsPage() {
   const [note, setNote] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editHandle, setEditHandle] = useState("");
+  const [editAvatar, setEditAvatar] = useState("");
+  const [editNote, setEditNote] = useState("");
 
   const directoryEntries = useMemo(
     () => searchDirectoryEntries(directoryQuery, walletAddress),
@@ -64,6 +71,50 @@ export default function ContactsPage() {
     removeContact(id);
     setContacts(getContacts());
     setDeleteId(null);
+  }
+
+  function startEdit(contact: Contact) {
+    setEditingId(contact.id);
+    setEditName(contact.name);
+    setEditAddress(contact.address);
+    setEditHandle(contact.handle || "");
+    setEditAvatar(contact.avatar || "");
+    setEditNote(contact.note || "");
+    setDeleteId(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditName("");
+    setEditAddress("");
+    setEditHandle("");
+    setEditAvatar("");
+    setEditNote("");
+  }
+
+  function addDirectoryEntry(entry: { name: string; address?: string; handle?: string; avatar?: string; note?: string; bio?: string }) {
+    if (!entry.address || contacts.some((contact) => contact.address.toLowerCase() === entry.address!.toLowerCase())) return;
+    addContact(entry.name, entry.address, {
+      handle: entry.handle,
+      avatar: entry.avatar,
+      note: entry.note || entry.bio,
+    });
+    setContacts(getContacts());
+  }
+
+  function handleEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingId || !editName.trim() || !isAddress(editAddress)) return;
+
+    updateContact(editingId, {
+      name: editName.trim(),
+      address: editAddress,
+      handle: editHandle,
+      avatar: editAvatar,
+      note: editNote,
+    });
+    setContacts(getContacts());
+    cancelEdit();
   }
 
   return (
@@ -210,6 +261,12 @@ export default function ContactsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => startEdit(contact)}
+                          className="rounded-2xl bg-white/8 px-3 py-2.5 text-sm font-medium text-zinc-200 transition-colors hover:bg-white/12"
+                        >
+                          Edit
+                        </button>
                         <Link
                           href={`/send?to=${contact.address}`}
                           className="rounded-2xl bg-indigo-500/12 px-4 py-2.5 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-500/20"
@@ -247,6 +304,72 @@ export default function ContactsPage() {
                         )}
                       </div>
                     </div>
+                    {editingId === contact.id && (
+                      <form
+                        onSubmit={handleEdit}
+                        className="mt-5 grid gap-4 border-t border-white/8 pt-5"
+                      >
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <input
+                            type="text"
+                            placeholder="Name"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                          />
+                          <input
+                            type="text"
+                            placeholder="0x wallet address"
+                            value={editAddress}
+                            onChange={(e) => setEditAddress(e.target.value)}
+                            className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 font-mono text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                          />
+                        </div>
+                        {editAddress && !isAddress(editAddress) && (
+                          <p className="text-xs text-red-400">Invalid address</p>
+                        )}
+                        <div className="grid gap-4 sm:grid-cols-3">
+                          <input
+                            type="text"
+                            placeholder="@handle"
+                            value={editHandle}
+                            onChange={(e) => setEditHandle(e.target.value)}
+                            className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Avatar"
+                            value={editAvatar}
+                            onChange={(e) => setEditAvatar(e.target.value)}
+                            maxLength={4}
+                            className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Note"
+                            value={editNote}
+                            onChange={(e) => setEditNote(e.target.value)}
+                            className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="submit"
+                            disabled={!editName.trim() || !isAddress(editAddress)}
+                            className="rounded-2xl bg-indigo-500/15 px-4 py-2.5 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-500/25 disabled:opacity-40"
+                          >
+                            Save changes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEdit}
+                            className="rounded-2xl bg-white/8 px-4 py-2.5 text-sm text-zinc-300 hover:bg-white/12"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
                   </div>
                 ))}
               </div>
@@ -290,13 +413,24 @@ export default function ContactsPage() {
                           <p className="mt-2 text-sm text-zinc-400">{entry.note || entry.bio}</p>
                         )}
                       </div>
-                      {entry.address && entry.kind === "contact" && (
-                        <Link
-                          href={`/send?to=${entry.handle ? `@${entry.handle}` : entry.address}`}
-                          className="rounded-2xl bg-indigo-500/12 px-3 py-2 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-500/20"
-                        >
-                          Send
-                        </Link>
+                      {entry.address && (
+                        <div className="flex gap-2">
+                          {entry.kind !== "contact" && (
+                            <button
+                              type="button"
+                              onClick={() => addDirectoryEntry(entry)}
+                              className="rounded-2xl bg-[var(--accent)]/30 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent)]/45"
+                            >
+                              Add
+                            </button>
+                          )}
+                          <Link
+                            href={`/send?to=${entry.handle ? `@${entry.handle}` : entry.address}`}
+                            className="rounded-2xl bg-[var(--accent)]/25 px-3 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-[var(--accent)]/35"
+                          >
+                            Send
+                          </Link>
+                        </div>
                       )}
                     </div>
                   </div>

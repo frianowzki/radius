@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useAccount } from "wagmi";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { QRCodeSVG } from "qrcode.react";
 import { AppShell } from "@/components/AppShell";
 import { ReceiptCard } from "@/components/ReceiptCard";
@@ -18,13 +19,18 @@ import {
 } from "@/lib/utils";
 
 export default function RequestPage() {
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const { authenticated } = usePrivy();
+  const { wallets } = useWallets();
+  const address = wagmiAddress ?? wallets[0]?.address;
+  const isConnected = wagmiConnected || authenticated;
 
   const [amount, setAmount] = useState("");
   const [token, setToken] = useState<TokenKey>("USDC");
   const [memo, setMemo] = useState("");
   const [paymentUrl, setPaymentUrl] = useState("");
   const [copied, setCopied] = useState(false);
+  const [addressCopied, setAddressCopied] = useState(false);
   const [shared, setShared] = useState(false);
 
   const matchedRequester = address ? findContactByAddress(address) : undefined;
@@ -55,6 +61,13 @@ export default function RequestPage() {
     await navigator.clipboard.writeText(paymentUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleCopyAddress() {
+    if (!address) return;
+    await navigator.clipboard.writeText(address);
+    setAddressCopied(true);
+    setTimeout(() => setAddressCopied(false), 2000);
   }
 
   async function handleShare() {
@@ -99,7 +112,7 @@ export default function RequestPage() {
               Turn a wallet address into a payment moment.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-zinc-400 lg:text-lg">
-              Connect your wallet to generate a sharable Arc request link with a QR code, clean summary, and receipt-style presentation.
+              Connect your wallet or social account to generate a sharable Arc request link with a QR code, clean summary, and receipt-style presentation.
             </p>
           </div>
         ) : paymentUrl && requestSummary ? (
@@ -306,6 +319,20 @@ export default function RequestPage() {
                 profile={identity}
                 address={address}
               />
+
+              {address && (
+                <div className="glass-panel rounded-[28px] p-5">
+                  <p className="text-sm text-zinc-500">Your receive address</p>
+                  <p className="mt-2 break-all font-mono text-xs text-zinc-300">{address}</p>
+                  <button
+                    type="button"
+                    onClick={handleCopyAddress}
+                    className="mt-3 w-full rounded-2xl bg-white/8 px-4 py-3 text-center text-sm font-semibold text-zinc-100 hover:bg-white/12"
+                  >
+                    {addressCopied ? "Copied" : "Copy address"}
+                  </button>
+                </div>
+              )}
 
               <div className="glass-panel rounded-[32px] p-6">
                 <h3 className="mb-4 text-lg font-semibold">Preview</h3>

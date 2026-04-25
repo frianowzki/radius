@@ -19,6 +19,20 @@ export interface UserIdentityProfile {
 
 const CONTACTS_KEY = "arc-p2p-contacts";
 const IDENTITY_KEY = "arc-p2p-identity";
+const LOCAL_TRANSFERS_KEY = "arc-p2p-local-transfers";
+
+export interface LocalTransferRecord {
+  id: string;
+  from: string;
+  to: string;
+  value: string;
+  token: TokenKey;
+  txHash: string;
+  direction: "sent" | "received";
+  routeLabel?: string;
+  createdAt: number;
+}
+
 
 export function getContacts(): Contact[] {
   if (typeof window === "undefined") return [];
@@ -85,6 +99,28 @@ export function addContact(
 export function removeContact(id: string) {
   const contacts = getContacts().filter((c) => c.id !== id);
   saveContacts(contacts);
+}
+
+export function updateContact(
+  id: string,
+  data: { name: string; address: string; handle?: string; avatar?: string; note?: string }
+): Contact | undefined {
+  const contacts = getContacts();
+  const index = contacts.findIndex((contact) => contact.id === id);
+  if (index < 0) return undefined;
+
+  const updated: Contact = {
+    id,
+    name: data.name.trim(),
+    address: data.address,
+    handle: data.handle?.trim() || undefined,
+    avatar: data.avatar?.trim() || undefined,
+    note: data.note?.trim() || undefined,
+  };
+
+  contacts[index] = updated;
+  saveContacts(contacts);
+  return updated;
 }
 
 export function formatAddress(addr: string): string {
@@ -237,6 +273,49 @@ export function searchDirectoryEntries(query: string, currentAddress?: string): 
       normalized,
     ].some((value) => value?.includes(raw));
   });
+}
+
+export function getLocalTransfers(currentAddress?: string): LocalTransferRecord[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = localStorage.getItem(LOCAL_TRANSFERS_KEY);
+    const transfers = raw ? (JSON.parse(raw) as LocalTransferRecord[]) : [];
+    if (!currentAddress) return transfers;
+
+    const normalized = currentAddress.toLowerCase();
+    return transfers.filter(
+      (transfer) =>
+        transfer.from.toLowerCase() === normalized ||
+        transfer.to.toLowerCase() === normalized
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function saveLocalTransfer(
+  transfer: Omit<LocalTransferRecord, "id" | "createdAt">
+): LocalTransferRecord {
+  const transfers = getLocalTransfers();
+  const existing = transfers.find(
+    (item) =>
+      item.txHash &&
+      transfer.txHash &&
+      item.txHash.toLowerCase() === transfer.txHash.toLowerCase() &&
+      item.direction === transfer.direction
+  );
+
+  if (existing) return existing;
+
+  const record: LocalTransferRecord = {
+    ...transfer,
+    id: crypto.randomUUID(),
+    createdAt: Date.now(),
+  };
+
+  localStorage.setItem(LOCAL_TRANSFERS_KEY, JSON.stringify([record, ...transfers]));
+  return record;
 }
 
 export function formatAmount(raw: bigint, decimals: number): string {

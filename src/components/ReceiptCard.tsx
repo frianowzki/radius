@@ -1,3 +1,8 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { QRCodeCanvas } from "qrcode.react";
+
 interface ReceiptCardProps {
   title: string;
   amount: string;
@@ -9,6 +14,8 @@ interface ReceiptCardProps {
   metaLabel?: string;
   metaValue?: string;
   shareText?: string;
+  txHash?: string;
+  explorerUrl?: string;
 }
 
 export function ReceiptCard({
@@ -22,22 +29,61 @@ export function ReceiptCard({
   metaLabel,
   metaValue,
   shareText,
+  txHash,
+  explorerUrl,
 }: ReceiptCardProps) {
-  async function handleShare() {
-    if (!shareText) return;
+  const [feedback, setFeedback] = useState("");
+  const receiptText = useMemo(() => {
+    const parts = [
+      shareText || `${title}: ${amount} ${token}`,
+      fromLabel ? `From: ${fromLabel}` : undefined,
+      toLabel ? `To: ${toLabel}` : undefined,
+      note ? `Note: ${note}` : undefined,
+      txHash ? `Tx: ${txHash}` : undefined,
+      explorerUrl,
+    ].filter(Boolean);
 
+    return parts.join("\n");
+  }, [amount, explorerUrl, fromLabel, note, shareText, title, toLabel, token, txHash]);
+
+  async function copyReceipt() {
+    try {
+      await navigator.clipboard.writeText(receiptText);
+      setFeedback("Receipt copied");
+    } catch {
+      setFeedback("Copy unavailable");
+    }
+  }
+
+  async function handleShare() {
     try {
       if (navigator.share) {
         await navigator.share({
           title: `${title} receipt`,
-          text: shareText,
+          text: receiptText,
+          url: explorerUrl,
         });
-      } else {
-        await navigator.clipboard.writeText(shareText);
+        setFeedback("Receipt shared");
+        return;
       }
+
+      await copyReceipt();
     } catch {
-      // ignore canceled shares
+      // ignore canceled native shares
     }
+  }
+
+  function downloadReceipt() {
+    const blob = new Blob([receiptText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `arc-receipt-${txHash ? txHash.slice(0, 10) : Date.now()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setFeedback("Receipt downloaded");
   }
 
   return (
@@ -79,16 +125,51 @@ export function ReceiptCard({
             <span className="text-right text-zinc-200">{metaValue}</span>
           </div>
         )}
+        {txHash && (
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-zinc-500">Tx</span>
+            <span className="font-mono text-xs text-zinc-200">
+              {txHash.slice(0, 10)}...{txHash.slice(-6)}
+            </span>
+          </div>
+        )}
       </div>
 
-      {shareText && (
+      {(txHash || explorerUrl) && (
+        <div className="mt-6 flex items-center gap-4 rounded-[24px] border border-white/8 bg-white/[0.04] p-4">
+          <div className="rounded-2xl bg-white p-2">
+            <QRCodeCanvas value={explorerUrl || receiptText} size={88} marginSize={1} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-zinc-200">Receipt QR</p>
+            <p className="mt-1 text-xs leading-5 text-zinc-500">
+              Scan to open the transaction receipt.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 grid gap-2 sm:grid-cols-3">
         <button
           onClick={handleShare}
-          className="mt-6 rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/14"
+          className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/14"
         >
-          Share receipt
+          Share
         </button>
-      )}
+        <button
+          onClick={copyReceipt}
+          className="rounded-2xl bg-white/8 px-4 py-3 text-sm font-medium text-zinc-200 transition-colors hover:bg-white/12"
+        >
+          Copy
+        </button>
+        <button
+          onClick={downloadReceipt}
+          className="rounded-2xl bg-white/8 px-4 py-3 text-sm font-medium text-zinc-200 transition-colors hover:bg-white/12"
+        >
+          Download
+        </button>
+      </div>
+      {feedback && <p className="mt-3 text-xs text-zinc-500">{feedback}</p>}
     </div>
   );
 }

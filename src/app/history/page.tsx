@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useAccount, usePublicClient } from "wagmi";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { AppShell } from "@/components/AppShell";
 import { ProfileChip } from "@/components/ProfileChip";
-import { TOKENS } from "@/config/tokens";
+import { TOKENS, type TokenKey } from "@/config/tokens";
 import { arcTestnet } from "@/config/wagmi";
 import {
   formatAmount,
   formatContactLabel,
   findContactByAddress,
+  getLocalTransfers,
 } from "@/lib/utils";
 
 interface TransferLogArgs {
@@ -24,24 +26,46 @@ interface TransferEvent {
   value: bigint;
   token: string;
   txHash: string;
-  blockNumber: bigint;
+  blockNumber?: bigint;
+  createdAt?: number;
   direction: "sent" | "received";
+  source: "chain" | "local";
 }
 
 export default function HistoryPage() {
-  const { address, isConnected } = useAccount();
-  const publicClient = usePublicClient();
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const { authenticated } = usePrivy();
+  const { wallets } = useWallets();
+  const address = wagmiAddress ?? wallets[0]?.address;
+  const isConnected = wagmiConnected || authenticated;
+  const publicClient = usePublicClient({ chainId: arcTestnet.id });
 
   const [transfers, setTransfers] = useState<TransferEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | "sent" | "received">("all");
 
   useEffect(() => {
-    if (!address || !publicClient) return;
+    if (!address) return;
+
+    const localEvents: TransferEvent[] = getLocalTransfers(address).map((transfer) => ({
+      from: transfer.from,
+      to: transfer.to,
+      value: BigInt(transfer.value),
+      token: transfer.token,
+      txHash: transfer.txHash,
+      direction: transfer.direction,
+      createdAt: transfer.createdAt,
+      source: "local",
+    }));
+
+    if (!publicClient) {
+      queueMicrotask(() => setTransfers(localEvents));
+      return;
+    }
 
     async function fetchTransfers() {
       const client = publicClient;
-      const currentAddress = address;
+      const currentAddress = address as `0x${string}` | undefined;
       if (!client || !currentAddress) return;
 
       setLoading(true);
@@ -93,6 +117,7 @@ export default function HistoryPage() {
               txHash: log.transactionHash!,
               blockNumber: log.blockNumber!,
               direction: "sent",
+              source: "chain",
             });
           }
 
@@ -108,14 +133,32 @@ export default function HistoryPage() {
               txHash: log.transactionHash!,
               blockNumber: log.blockNumber!,
               direction: "received",
+              source: "chain",
             });
           }
         }
 
-        events.sort((a, b) => Number(b.blockNumber - a.blockNumber));
-        setTransfers(events);
+        const merged = [...events, ...localEvents].filter((event, index, all) => {
+          if (!event.txHash) return true;
+          return (
+            all.findIndex(
+              (item) =>
+                item.txHash?.toLowerCase() === event.txHash.toLowerCase() &&
+                item.direction === event.direction
+            ) === index
+          );
+        });
+
+        merged.sort((a, b) => {
+          if (a.blockNumber !== undefined && b.blockNumber !== undefined) {
+            return Number(b.blockNumber - a.blockNumber);
+          }
+          return (b.createdAt || 0) - (a.createdAt || 0);
+        });
+        setTransfers(merged);
       } catch {
-        // RPC may not support wide block ranges on testnet
+        // Keep local transaction history visible when the RPC rejects wide log ranges.
+        setTransfers(localEvents);
       } finally {
         setLoading(false);
       }
@@ -163,7 +206,7 @@ export default function HistoryPage() {
               <div className="glass-panel rounded-[28px] p-12 text-center text-zinc-500">
                 Connect your wallet to view transaction history.
               </div>
-            ) : loading ? (
+            ) : loading && filtered.length === 0 ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="glass-panel rounded-[28px] p-5 animate-pulse">
@@ -181,7 +224,7 @@ export default function HistoryPage() {
             ) : (
               <div className="space-y-3">
                 {filtered.map((tx) => {
-                  const tokenInfo = TOKENS[tx.token as keyof typeof TOKENS];
+                  const tokenInfo = TOKENS[tx.token as TokenKey];
                   const isSent = tx.direction === "sent";
                   const counterparty = isSent ? tx.to : tx.from;
                   const matchedContact = findContactByAddress(counterparty);
@@ -203,9 +246,16 @@ export default function HistoryPage() {
                           </div>
                           <div className="space-y-3">
                             <div>
-                              <p className="text-base font-semibold text-zinc-100">
-                                {isSent ? "Sent" : "Received"} <span className="text-zinc-500">{tx.token}</span>
-                              </p>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-base font-semibold text-zinc-100">
+                                  {isSent ? "Sent" : "Received"} <span className="text-zinc-500">{tx.token}</span>
+                                </p>
+                                {tx.source === "local" && (
+                                  <span className="rounded-full border border-indigo-400/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-indigo-300">
+                                    Saved
+                                  </span>
+                                )}
+                              </div>
                               <p className="mt-1 font-mono text-xs text-zinc-500">
                                 {isSent ? "To " : "From "}
                                 {formatContactLabel(counterparty)}
@@ -246,31 +296,31 @@ export default function HistoryPage() {
 
           <div className="space-y-5">
             <div className="glass-panel rounded-[32px] p-6">
-              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Receipt feed</p>
+              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Receipts</p>
               <h3 className="text-2xl font-semibold tracking-tight text-zinc-100">
-                History should feel alive, not administrative.
+                Contacts turn history into memory.
               </h3>
               <p className="mt-3 text-sm leading-7 text-zinc-500">
-                On Arc, fast finality should show up as fast visual confidence. A strong history page is a stream of clean receipts, not a ledger spreadsheet.
+                Successful sends are saved locally right away, then merged with onchain logs when the RPC can serve them.
               </p>
             </div>
 
             <div className="glass-panel rounded-[32px] p-6">
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">
-                Current framing
+                Feed logic
               </h3>
               <div className="space-y-4 text-sm">
                 <div className="border-b border-white/8 pb-4">
-                  <p className="font-medium text-zinc-100">Sent and received</p>
-                  <p className="mt-2 leading-6 text-zinc-500">Split by direction, then let the receipt do the talking.</p>
+                  <p className="font-medium text-zinc-100">Sent</p>
+                  <p className="mt-2 leading-6 text-zinc-500">Outgoing transfers to contacts or addresses appear immediately after success.</p>
                 </div>
                 <div className="border-b border-white/8 pb-4">
-                  <p className="font-medium text-zinc-100">Explorer access</p>
-                  <p className="mt-2 leading-6 text-zinc-500">Still one click away when users want chain-level detail.</p>
+                  <p className="font-medium text-zinc-100">Received</p>
+                  <p className="mt-2 leading-6 text-zinc-500">Inbound token transfers are pulled from Arc logs when available.</p>
                 </div>
                 <div>
-                  <p className="font-medium text-zinc-100">Identity-aware receipts</p>
-                  <p className="mt-2 leading-6 text-zinc-500">Known contacts now make this feed feel more like people and less like anonymous addresses.</p>
+                  <p className="font-medium text-zinc-100">Fallback</p>
+                  <p className="mt-2 leading-6 text-zinc-500">Local receipts stay visible even if the testnet RPC refuses a broad history query.</p>
                 </div>
               </div>
             </div>

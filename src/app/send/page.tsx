@@ -9,19 +9,27 @@ import {
   useChainId,
   useSwitchChain,
 } from "wagmi";
-import { parseUnits, isAddress } from "viem";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { createWalletClient, custom, parseUnits, isAddress } from "viem";
 import type { EIP1193Provider } from "viem";
 import { AppShell } from "@/components/AppShell";
 import { ReceiptCard } from "@/components/ReceiptCard";
 import { PrivacyBadge } from "@/components/PrivacyBadge";
 import { ProfileChip } from "@/components/ProfileChip";
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
-import { CROSSCHAIN_ROUTES, type CrosschainRoute } from "@/config/crosschain";
+import {
+  CHAIN_METADATA,
+  CHAIN_USDC_ADDRESSES,
+  CROSSCHAIN_ROUTES,
+  type CrosschainRoute,
+} from "@/config/crosschain";
 import { arcTestnet } from "@/config/wagmi";
 import {
   estimateBridgeTransfer,
   executeBridgeTransfer,
+  getBridgeErrorMessage,
   summarizeBridgeEstimate,
+  type BridgeSpeed,
 } from "@/lib/appkit";
 import {
   formatAddress,
@@ -31,6 +39,7 @@ import {
   getIdentityLabel,
   getIdentityProfile,
   resolveRecipientInput,
+  saveLocalTransfer,
   upsertContactByAddress,
 } from "@/lib/utils";
 import type { DirectoryEntry } from "@/lib/utils";
@@ -38,7 +47,12 @@ import type { DirectoryEntry } from "@/lib/utils";
 type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
 export default function SendPage() {
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const { authenticated } = usePrivy();
+  const { wallets } = useWallets();
+  const privyWallet = wallets[0];
+  const address = wagmiAddress ?? (privyWallet?.address as `0x${string}` | undefined);
+  const isConnected = wagmiConnected || authenticated;
   const chainId = useChainId();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
@@ -63,21 +77,39 @@ export default function SendPage() {
   );
   const [bridgeEstimateText, setBridgeEstimateText] = useState("");
   const [bridgeDetails, setBridgeDetails] = useState<string[]>([]);
+  const [bridgeSpeed, setBridgeSpeed] = useState<BridgeSpeed>("FAST");
+  const [bridgeProgress, setBridgeProgress] = useState("");
+
+  const selectedRouteConfig =
+    CROSSCHAIN_ROUTES.find((route) => route.id === selectedRoute) ?? CROSSCHAIN_ROUTES[0];
+  const isBridgeRoute = selectedRouteConfig.mode === "bridge";
+  const sourceChainMeta = CHAIN_METADATA[selectedRouteConfig.fromChain];
+  const destinationChainMeta = CHAIN_METADATA[selectedRouteConfig.toChain];
+  const expectedSourceChainId = sourceChainMeta.chainId;
+  const expectedSourceChainLabel = sourceChainMeta.label;
+  const destinationChainLabel = destinationChainMeta.label;
+  const sourceUsdcAddress = CHAIN_USDC_ADDRESSES[selectedRouteConfig.fromChain];
+  const destinationUsdcAddress = CHAIN_USDC_ADDRESSES[selectedRouteConfig.toChain];
+  const routeExplorerUrl = sourceChainMeta.explorerUrl;
+  const isOnExpectedSourceChain = chainId === expectedSourceChainId;
+  const canSwitchSourceChain = !isOnExpectedSourceChain && !!switchChainAsync;
 
   const { data: balances } = useReadContracts({
     contracts: address
       ? [
           {
-            address: TOKENS.USDC.address,
+            address: sourceUsdcAddress,
             abi: ERC20_TRANSFER_ABI,
             functionName: "balanceOf",
             args: [address],
+            chainId: expectedSourceChainId,
           },
           {
             address: TOKENS.EURC.address,
             abi: ERC20_TRANSFER_ABI,
             functionName: "balanceOf",
             args: [address],
+            chainId: arcTestnet.id,
           },
         ]
       : [],
@@ -88,21 +120,6 @@ export default function SendPage() {
   const eurcBalance = balances?.[1]?.result as bigint | undefined;
   const currentBalance = token === "USDC" ? usdcBalance : eurcBalance;
   const currentDecimals = TOKENS[token].decimals;
-
-  const selectedRouteConfig =
-    CROSSCHAIN_ROUTES.find((route) => route.id === selectedRoute) ?? CROSSCHAIN_ROUTES[0];
-  const isBridgeRoute = selectedRouteConfig.mode === "bridge";
-  const expectedSourceChainId =
-    selectedRouteConfig.fromChain === "Arc_Testnet"
-      ? arcTestnet.id
-      : selectedRouteConfig.fromChain === "Ethereum_Sepolia"
-        ? 11155111
-        : selectedRouteConfig.fromChain === "Base_Sepolia"
-          ? 84532
-          : 421614;
-  const expectedSourceChainLabel = selectedRouteConfig.fromChain.replaceAll("_", " ");
-  const isOnExpectedSourceChain = chainId === expectedSourceChainId;
-  const canSwitchSourceChain = isBridgeRoute && !isOnExpectedSourceChain && !!switchChainAsync;
 
   const directoryEntries = useMemo(() => {
     const query = directoryQuery.trim().toLowerCase();
@@ -123,20 +140,20 @@ export default function SendPage() {
   const validRecipient = !!resolvedRecipientAddress && isAddress(resolvedRecipientAddress);
   const successEyebrow = isBridgeRoute ? "Bridge completed" : "Payment sent";
   const successHeadline = isBridgeRoute
-    ? "Bridged cleanly into Arc."
+    ? "Bridge route submitted cleanly."
     : "Clean receipt, no messy wallet energy.";
   const successDescription = isBridgeRoute
-    ? `${amount} ${token} is now routing from ${selectedRouteConfig.fromChain.replaceAll("_", " ")} to ${validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : recipient} on Arc.`
+    ? `${amount} ${token} is now routing from ${expectedSourceChainLabel} to ${validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : recipient} on ${destinationChainLabel}.`
     : `${amount} ${token} sent to ${validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : recipient} via ${selectedRouteConfig.label}.`;
   const successStatus = isBridgeRoute ? "Bridged" : "Finalized";
   const receiptTitle = isBridgeRoute ? "Arc Bridge" : "Arc Flow";
   const receiptStatus = isBridgeRoute ? "Bridging settled" : "Settled";
   const receiptNote = isBridgeRoute
-    ? `${selectedRouteConfig.fromChain.replaceAll("_", " ")} → ${selectedRouteConfig.toChain.replaceAll("_", " ")}`
+    ? `${expectedSourceChainLabel} → ${destinationChainLabel}`
     : "Arc Testnet";
   const receiptShareText = validRecipient && resolvedRecipientAddress
     ? isBridgeRoute
-      ? `Bridged ${amount} ${token} from ${selectedRouteConfig.fromChain.replaceAll("_", " ")} to Arc for ${formatContactLabel(resolvedRecipientAddress)}`
+      ? `Bridged ${amount} ${token} from ${expectedSourceChainLabel} to ${destinationChainLabel} for ${formatContactLabel(resolvedRecipientAddress)}`
       : `Sent ${amount} ${token} on Arc to ${formatContactLabel(resolvedRecipientAddress)}`
     : undefined;
   const canSend =
@@ -146,24 +163,50 @@ export default function SendPage() {
     Number(amount) > 0 &&
     status !== "sending" &&
     status !== "confirming" &&
-    (!isBridgeRoute || token === "USDC") &&
-    (!isBridgeRoute || isOnExpectedSourceChain);
+    isOnExpectedSourceChain &&
+    (!isBridgeRoute || token === "USDC");
 
   function resetBridgeFeedback() {
     setBridgeEstimateText("");
     setBridgeDetails([]);
+    setBridgeProgress("");
     setError("");
+  }
+
+  async function getActiveWalletClient() {
+    if (walletClient) return walletClient;
+    if (!privyWallet || !address) return null;
+    const provider = await privyWallet.getEthereumProvider();
+    return createWalletClient({
+      account: address,
+      chain: arcTestnet,
+      transport: custom(provider),
+    });
+  }
+
+  async function getActiveProvider() {
+    if (walletClient?.transport) return walletClient.transport as unknown as EIP1193Provider;
+    if (!privyWallet) return null;
+    return (await privyWallet.getEthereumProvider()) as EIP1193Provider;
   }
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!walletClient || !publicClient || !address) return;
+    if (!publicClient || !address) return;
+
+    const activeWalletClient = await getActiveWalletClient();
+    if (!activeWalletClient) {
+      setStatus("error");
+      setError("Wallet signer unavailable. Reconnect your social wallet and try again.");
+      return;
+    }
 
     setStatus("sending");
     setError("");
     setTxHash("");
     setBridgeEstimateText("");
     setBridgeDetails([]);
+    setBridgeProgress("");
 
     if (isBridgeRoute && !isOnExpectedSourceChain) {
       setStatus("error");
@@ -173,16 +216,16 @@ export default function SendPage() {
 
     try {
       if (isBridgeRoute) {
-        if (!walletClient?.transport || !resolvedRecipientAddress) {
+        const provider = await getActiveProvider();
+        if (!provider || !resolvedRecipientAddress) {
           throw new Error("Wallet provider unavailable for crosschain transfer");
         }
-
-        const provider = walletClient.transport as unknown as EIP1193Provider;
         const estimate = await estimateBridgeTransfer(
           provider,
           selectedRouteConfig,
           resolvedRecipientAddress,
-          amount
+          amount,
+          bridgeSpeed
         );
         const estimateSummary = summarizeBridgeEstimate(estimate);
         setBridgeEstimateText(
@@ -191,13 +234,19 @@ export default function SendPage() {
             : "Estimate ready"
         );
         setBridgeDetails([...estimateSummary.feeLabels, ...estimateSummary.gasLabels]);
+        setBridgeProgress("Waiting for wallet confirmation");
         setStatus("confirming");
 
         const result = await executeBridgeTransfer(
           provider,
           selectedRouteConfig,
           resolvedRecipientAddress,
-          amount
+          amount,
+          bridgeSpeed,
+          (event) => {
+            setBridgeProgress(event.state ? `${event.label} • ${event.state}` : event.label);
+            if (event.txHash) setTxHash(event.txHash);
+          }
         );
 
         const lastStepWithHash = [...(result.steps || [])]
@@ -214,14 +263,24 @@ export default function SendPage() {
         setShowSaveRecipient(!resolvedRecipient.contact && !!resolvedRecipientAddress);
         setStatus(result.state === "error" ? "error" : "success");
         if (result.state === "error") {
-          setError("Crosschain transfer failed");
+          setError(getBridgeErrorMessage(result));
+        } else if (bridgeHash && resolvedRecipientAddress) {
+          saveLocalTransfer({
+            from: address,
+            to: resolvedRecipientAddress,
+            value: parseUnits(amount, TOKENS[token].decimals).toString(),
+            token,
+            txHash: bridgeHash,
+            direction: "sent",
+            routeLabel: selectedRouteConfig.label,
+          });
         }
         return;
       }
 
       const tokenInfo = TOKENS[token];
       const parsedAmount = parseUnits(amount, tokenInfo.decimals);
-      const hash = await walletClient.writeContract({
+      const hash = await activeWalletClient.writeContract({
         address: tokenInfo.address,
         abi: ERC20_TRANSFER_ABI,
         functionName: "transfer",
@@ -232,6 +291,17 @@ export default function SendPage() {
       setStatus("confirming");
 
       await publicClient.waitForTransactionReceipt({ hash });
+      if (resolvedRecipientAddress) {
+        saveLocalTransfer({
+          from: address,
+          to: resolvedRecipientAddress,
+          value: parsedAmount.toString(),
+          token,
+          txHash: hash,
+          direction: "sent",
+          routeLabel: selectedRouteConfig.label,
+        });
+      }
       setShowSaveRecipient(!resolvedRecipient.contact && !!resolvedRecipientAddress);
       setStatus("success");
     } catch (err: unknown) {
@@ -316,7 +386,7 @@ export default function SendPage() {
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-zinc-500">Path</span>
                       <span className="text-right text-zinc-300">
-                        {selectedRouteConfig.fromChain.replaceAll("_", " ")} → {selectedRouteConfig.toChain.replaceAll("_", " ")}
+                        {expectedSourceChainLabel} → {destinationChainLabel}
                       </span>
                     </div>
                   )}
@@ -368,12 +438,12 @@ export default function SendPage() {
                 </button>
                 {txHash && (
                   <a
-                    href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`}
+                    href={`${routeExplorerUrl}/tx/${txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-500/20"
                   >
-                    View receipt on ArcScan
+                    View transaction
                   </a>
                 )}
               </div>
@@ -400,6 +470,8 @@ export default function SendPage() {
                 toLabel={validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : recipient}
                 note={receiptNote}
                 shareText={receiptShareText}
+                txHash={txHash}
+                explorerUrl={txHash ? `${routeExplorerUrl}/tx/${txHash}` : undefined}
               />
               <p className="mt-5 text-sm leading-6 text-zinc-500">
                 This is the direction the product should lean into, payment moments and sharable receipts, not dead dashboard panels.
@@ -474,6 +546,45 @@ export default function SendPage() {
                     </button>
                   ))}
                 </div>
+                {isBridgeRoute && (
+                  <div className="mt-4 space-y-3">
+                    <div>
+                      <p className="mb-2 text-xs font-medium text-zinc-500">Bridge speed</p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {(["FAST", "SLOW"] as BridgeSpeed[]).map((speed) => (
+                          <button
+                            key={speed}
+                            type="button"
+                            onClick={() => {
+                              setBridgeSpeed(speed);
+                              resetBridgeFeedback();
+                            }}
+                            className={`rounded-2xl border px-4 py-3 text-left text-xs transition-all ${
+                              bridgeSpeed === speed
+                                ? "border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
+                                : "border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
+                            }`}
+                          >
+                            <span className="block font-semibold">{speed === "FAST" ? "Fast" : "Standard"}</span>
+                            <span className="mt-1 block text-zinc-500">
+                              {speed === "FAST" ? "Faster relay, may be less wallet-friendly" : "Slower, usually more reliable"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid gap-2 text-xs sm:grid-cols-2">
+                      <div className="rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
+                        <p className="text-zinc-500">Source USDC</p>
+                        <p className="mt-1 break-all font-mono text-zinc-300">{sourceUsdcAddress}</p>
+                      </div>
+                      <div className="rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
+                        <p className="text-zinc-500">Destination USDC</p>
+                        <p className="mt-1 break-all font-mono text-zinc-300">{destinationUsdcAddress}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="mt-4 rounded-[22px] border border-white/8 bg-white/[0.03] p-4 text-xs leading-6">
                   <p className="text-zinc-400">Source wallet network</p>
                   <p className={`mt-1 font-medium ${isOnExpectedSourceChain ? "text-emerald-300" : "text-amber-300"}`}>
@@ -602,12 +713,18 @@ export default function SendPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    {status === "sending" ? "Sending..." : "Confirming..."}
+                    {status === "sending" ? "Sending..." : isBridgeRoute ? "Bridging..." : "Confirming..."}
                   </span>
                 ) : (
                   `Send ${token}`
                 )}
               </button>
+
+              {isBridgeRoute && bridgeProgress && status !== "error" && (
+                <p className="text-center text-sm text-zinc-400">
+                  {bridgeProgress}. CCTP attestation can take a few minutes, especially on testnets.
+                </p>
+              )}
 
               {status === "error" && error && (
                 <p className="text-center text-sm text-red-400">{error}</p>
@@ -628,14 +745,22 @@ export default function SendPage() {
                   </p>
                   <p className="mt-2 text-xs leading-6 text-zinc-500">
                     {isBridgeRoute
-                      ? "This route uses Arc App Kit bridge flow for USDC into Arc."
+                      ? "This route uses Arc App Kit bridge flow for USDC between supported testnets."
                       : "This route uses the direct Arc same-chain send flow."}
                   </p>
                   <p className="mt-2 text-xs leading-6 text-zinc-400">
                     {isBridgeRoute
-                      ? `You are moving value from ${expectedSourceChainLabel} into Arc for the recipient.`
-                      : "You are sending directly on Arc without an inbound bridge step."}
+                      ? `You are moving value from ${expectedSourceChainLabel} to ${destinationChainLabel} for the recipient.`
+                      : "You are sending directly on Arc without a bridge step."}
                   </p>
+                  {isBridgeRoute && (
+                    <p className="mt-2 text-xs leading-6 text-zinc-400">
+                      Speed: {bridgeSpeed === "FAST" ? "Fast" : "Standard"}
+                    </p>
+                  )}
+                  {bridgeProgress && (
+                    <p className="mt-2 text-xs leading-6 text-indigo-300">{bridgeProgress}</p>
+                  )}
                   {bridgeEstimateText && (
                     <p className="mt-2 text-xs leading-6 text-indigo-300">{bridgeEstimateText}</p>
                   )}
@@ -679,8 +804,8 @@ export default function SendPage() {
                   status={isBridgeRoute ? "Bridge preview" : "Preview"}
                   fromLabel={address ? senderLabel : "Connect wallet"}
                   toLabel={validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : "Waiting for address"}
-                  note={isBridgeRoute ? `${expectedSourceChainLabel} → ${selectedRouteConfig.toChain.replaceAll("_", " ")}` : "Arc Testnet"}
-                  shareText={validRecipient && resolvedRecipientAddress ? isBridgeRoute ? `Planned bridge: ${amount && Number(amount) > 0 ? amount : "0.00"} ${token} from ${expectedSourceChainLabel} to Arc for ${formatContactLabel(resolvedRecipientAddress)}` : `Planned payment: ${amount && Number(amount) > 0 ? amount : "0.00"} ${token} to ${formatContactLabel(resolvedRecipientAddress)}` : undefined}
+                  note={isBridgeRoute ? `${expectedSourceChainLabel} → ${destinationChainLabel}` : "Arc Testnet"}
+                  shareText={validRecipient && resolvedRecipientAddress ? isBridgeRoute ? `Planned bridge: ${amount && Number(amount) > 0 ? amount : "0.00"} ${token} from ${expectedSourceChainLabel} to ${destinationChainLabel} for ${formatContactLabel(resolvedRecipientAddress)}` : `Planned payment: ${amount && Number(amount) > 0 ? amount : "0.00"} ${token} to ${formatContactLabel(resolvedRecipientAddress)}` : undefined}
                 />
               </div>
             </div>

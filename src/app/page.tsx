@@ -1,54 +1,48 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useAccount, useBalance, useReadContract } from "wagmi";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
 import { AppShell } from "@/components/AppShell";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
-import { arcTestnet } from "@/config/wagmi";
-import { formatAmount, getIdentityProfile } from "@/lib/utils";
+import { formatAmount, getIdentityProfile, searchDirectoryEntries } from "@/lib/utils";
 import { hasConfiguredPrivy } from "@/lib/privy";
-import Link from "next/link";
-import { IdentityCard } from "@/components/IdentityCard";
 
-function BalanceCard({
-  symbol,
-  balance,
-  decimals,
-  isLoading,
-}: {
-  symbol: string;
-  balance: bigint | undefined;
-  decimals: number;
-  isLoading: boolean;
-}) {
+const ACTIONS = [
+  { href: "/send", label: "Send", icon: "↗" },
+  { href: "/request", label: "Request", icon: "↓" },
+  { href: "/contacts", label: "Scan", icon: "⌗" },
+  { href: "/send", label: "Swap", icon: "⇄" },
+];
+
+const CONTACTS = ["Jamie", "Taylor", "Sam", "Morgan", "Casey"];
+
+function RadiusOrb() {
   return (
-    <div className="mobile-panel rounded-[28px] p-5 sm:p-6">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-zinc-400">{symbol}</p>
-        <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-          Wallet
-        </span>
-      </div>
-      <p className="text-3xl font-semibold tracking-tight text-white sm:text-[2rem]">
-        {isLoading ? (
-          <span className="inline-block h-8 w-32 animate-pulse rounded-lg bg-white/8" />
-        ) : balance !== undefined ? (
-          formatAmount(balance, decimals)
-        ) : (
-          "—"
-        )}
-      </p>
+    <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_20%,_#ffffff,_#a991ff_36%,_#7d6dff_68%,_rgba(125,109,255,0.35))] shadow-[0_24px_70px_rgba(126,109,255,0.45)]">
+      <span className="text-4xl font-bold text-white/80">R</span>
     </div>
   );
 }
 
-const QUICK_ACTIONS = [
-  { href: "/send", label: "Send", icon: "↗", blurb: "Move stablecoins fast." },
-  { href: "/request", label: "Request", icon: "⬇", blurb: "Share a payment ask." },
-  { href: "/contacts", label: "Contacts", icon: "◎", blurb: "Keep people nearby." },
-  { href: "/history", label: "History", icon: "☰", blurb: "See every receipt." },
-];
+function SmallTokenRow({ symbol, name, balance }: { symbol: string; name: string; balance: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-3xl bg-white/70 px-4 py-3 shadow-sm ring-1 ring-black/[0.04] dark:bg-white/[0.07]">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#183B5C] text-sm font-bold text-white">
+          {symbol[0]}
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-[#17151f] dark:text-white">{symbol}</p>
+          <p className="text-xs text-zinc-500">{name}</p>
+        </div>
+      </div>
+      <p className="text-sm font-semibold text-[#17151f] dark:text-white">{balance}</p>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
@@ -57,6 +51,12 @@ export default function DashboardPage() {
   const address = wagmiAddress ?? (wallets[0]?.address as `0x${string}` | undefined);
   const isConnected = wagmiConnected || authenticated;
   const identity = getIdentityProfile();
+  const [quickSearch, setQuickSearch] = useState("");
+
+  const quickMatches = useMemo(
+    () => searchDirectoryEntries(quickSearch, address).filter((entry) => entry.address && entry.kind === "contact").slice(0, 4),
+    [quickSearch, address]
+  );
 
   const { data: nativeBalance, isLoading: nativeLoading } = useBalance({
     address,
@@ -74,162 +74,134 @@ export default function DashboardPage() {
   if (!isConnected) {
     return (
       <AppShell>
-        <div className="space-y-4 sm:space-y-5">
-          <section className="mobile-panel rounded-[32px] px-5 py-6 sm:px-7 sm:py-8">
-            <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-[22px] bg-white text-2xl font-semibold text-zinc-950 shadow-lg shadow-black/20">
-              R
-            </div>
-            <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">Radius</p>
-            <h1 className="mt-3 max-w-xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-              Simple stablecoin payments on Arc.
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
-              Clean send, request, contacts, receipts, and a mobile-friendly auth path without the noisy wallet-app feel.
+        <div className="mx-auto max-w-md px-1 pb-4 pt-4">
+          <section className="rounded-[36px] bg-white/78 px-6 py-8 text-center shadow-[0_28px_90px_rgba(42,32,92,0.12)] ring-1 ring-black/[0.04] backdrop-blur-xl dark:bg-white/[0.06]">
+            <RadiusOrb />
+            <h1 className="mt-8 text-5xl font-semibold tracking-tight text-[#17151f] dark:text-white">Radius</h1>
+            <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-zinc-500">
+              P2P stablecoin payments on Arc Testnet.
             </p>
+            <div className="mx-auto mt-4 inline-flex rounded-full bg-[#f2efff] px-4 py-2 text-xs font-semibold text-[#6f60d5] dark:bg-white/10 dark:text-white">
+              Arc Testnet
+            </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                <p className="text-sm font-medium text-white">Send</p>
-                <p className="mt-2 text-sm text-zinc-500">Fast stablecoin transfers.</p>
-              </div>
-              <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                <p className="text-sm font-medium text-white">Request</p>
-                <p className="mt-2 text-sm text-zinc-500">QR and payment links.</p>
-              </div>
-              <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                <p className="text-sm font-medium text-white">Track</p>
-                <p className="mt-2 text-sm text-zinc-500">Receipt-first history.</p>
+            <div className="mt-10 space-y-3 text-left">
+              {hasConfiguredPrivy && <SocialLoginButton className="radius-auth-button" />}
+              <div className="radius-auth-button opacity-80">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#eef1f5] text-sm">◈</span>
+                <span className="flex-1 text-center">Connect Wallet</span>
+                <span className="text-zinc-400">›</span>
               </div>
             </div>
-          </section>
 
-          <section className="mobile-panel rounded-[32px] px-5 py-6 sm:px-7 sm:py-7">
-            <p className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">Get started</p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white">Better on mobile now.</h2>
-            <p className="mt-3 text-sm leading-7 text-zinc-400">
-              {hasConfiguredPrivy
-                ? "Privy social or email auth is available for cleaner mobile onboarding. You can still use an injected wallet or wallet in-app browser if you want."
-                : "Use an injected wallet or wallet in-app browser now. Social or email auth becomes available once Privy is configured."}
+            <p className="mx-auto mt-8 max-w-xs text-xs leading-5 text-zinc-400">
+              Your keys stay in your control. Radius never accesses your funds.
             </p>
-
-            {hasConfiguredPrivy && (
-              <div className="mt-5">
-                <SocialLoginButton className="mobile-button mobile-button-primary w-full" />
-              </div>
-            )}
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                <p className="text-sm font-medium text-zinc-200">Social or email</p>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  Better for plain mobile browsers when you do not want wallet-app friction first.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                <p className="text-sm font-medium text-zinc-200">Wallet browser</p>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  Still works if you open Radius inside a wallet browser that injects Ethereum support.
-                </p>
-              </div>
-            </div>
           </section>
         </div>
       </AppShell>
     );
   }
 
+  const usdcDisplay = nativeLoading
+    ? "—"
+    : nativeBalance?.value !== undefined
+      ? formatAmount(nativeBalance.value, 18)
+      : "0.00";
+  const eurcDisplay = eurcLoading
+    ? "—"
+    : eurcBalance !== undefined
+      ? formatAmount(eurcBalance as bigint, TOKENS.EURC.decimals)
+      : "0.00";
+
   return (
     <AppShell>
-      <div className="space-y-4 sm:space-y-5">
-        <section className="mobile-panel rounded-[32px] px-5 py-6 sm:px-7 sm:py-7">
-          <div className="flex flex-col gap-5 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-[11px] uppercase tracking-[0.32em] text-zinc-500">Radius</p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                Payments that feel instant and calm.
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
-                Send money fast, request with identity, and keep receipts readable without turning the app into a cluttered wallet dashboard.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:min-w-[280px]">
-              <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Network</p>
-                <p className="mt-2 text-sm font-medium text-zinc-100">Arc Testnet</p>
-              </div>
-              <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Mode</p>
-                <p className="mt-2 text-sm font-medium text-zinc-100">Social payments</p>
-              </div>
-            </div>
+      <div className="mx-auto max-w-md space-y-5 lg:max-w-6xl">
+        <section className="flex items-center justify-between px-1 pt-1">
+          <div>
+            <p className="text-sm text-zinc-500">Good morning,</p>
+            <h1 className="text-2xl font-semibold text-[#17151f] dark:text-white">
+              {identity.displayName || "Radius user"} 👋
+            </h1>
+          </div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/80 text-xl shadow-sm ring-1 ring-black/[0.04] dark:bg-white/10">
+            R
           </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <BalanceCard symbol="USDC" balance={nativeBalance?.value} decimals={18} isLoading={nativeLoading} />
-          <BalanceCard symbol="EURC" balance={eurcBalance as bigint | undefined} decimals={TOKENS.EURC.decimals} isLoading={eurcLoading} />
+        <section className="rounded-[32px] bg-[linear-gradient(135deg,_#8f7cff,_#83cfff)] p-5 text-white shadow-[0_24px_80px_rgba(126,109,255,0.35)]">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-white/75">Total Balance</p>
+            <span className="rounded-full bg-white/18 px-3 py-1 text-xs text-white/80">USD</span>
+          </div>
+          <p className="mt-4 text-4xl font-semibold tracking-tight">${usdcDisplay}</p>
+          <p className="mt-1 text-sm text-white/70">≈ {usdcDisplay} USDC</p>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <Link href="/faucet" className="rounded-2xl bg-white/18 px-4 py-3 text-center text-sm font-semibold backdrop-blur">
+              + Add Funds
+            </Link>
+            <Link href="/request" className="rounded-2xl bg-white/18 px-4 py-3 text-center text-sm font-semibold backdrop-blur">
+              Receive
+            </Link>
+          </div>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-zinc-200">Quick actions</h3>
-              <p className="text-xs text-zinc-500">What you actually use</p>
-            </div>
+        <section className="grid grid-cols-4 gap-3">
+          {ACTIONS.map((action) => (
+            <Link key={action.label} href={action.href} className="flex flex-col items-center gap-2 rounded-3xl bg-white/70 p-3 text-center shadow-sm ring-1 ring-black/[0.04] dark:bg-white/[0.07]">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f1efff] text-lg text-[#7d6dff] dark:bg-white/10 dark:text-white">
+                {action.icon}
+              </span>
+              <span className="text-[11px] font-medium text-zinc-500">{action.label}</span>
+            </Link>
+          ))}
+        </section>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {QUICK_ACTIONS.map((action) => (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="mobile-panel group flex min-h-[148px] flex-col justify-between rounded-[28px] p-4 transition-all hover:border-white/14 hover:bg-white/[0.06]"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-lg text-zinc-950 shadow-lg shadow-black/20 transition-transform group-hover:scale-105">
-                    {action.icon}
-                  </div>
-                  <div>
-                    <span className="text-base font-semibold text-zinc-100">{action.label}</span>
-                    <p className="mt-2 text-sm leading-6 text-zinc-500">{action.blurb}</p>
-                  </div>
+        <section className="rounded-[30px] bg-white/68 p-4 shadow-sm ring-1 ring-black/[0.04] backdrop-blur dark:bg-white/[0.06]">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-[#17151f] dark:text-white">Quick send</h2>
+            <Link href={`/send${quickSearch.trim() ? `?to=${encodeURIComponent(quickSearch.trim())}` : ""}`} className="text-xs font-semibold text-[#7d6dff]">
+              Send
+            </Link>
+          </div>
+          <input
+            value={quickSearch}
+            onChange={(e) => setQuickSearch(e.target.value)}
+            placeholder="@username, name, or 0x address"
+            className="w-full rounded-2xl border border-black/[0.04] bg-white/80 px-4 py-3 text-sm text-[#17151f] outline-none placeholder:text-zinc-400 dark:bg-white/10 dark:text-white"
+          />
+          {quickMatches.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {quickMatches.map((entry) => (
+                <Link key={`${entry.handle}-${entry.address}`} href={`/send?to=${entry.handle ? `@${entry.handle}` : entry.address}`} className="block rounded-2xl bg-white/70 px-4 py-3 text-sm text-[#17151f] dark:bg-white/10 dark:text-white">
+                  {entry.name} {entry.handle ? <span className="text-zinc-500">@{entry.handle}</span> : null}
                 </Link>
               ))}
             </div>
+          )}
+        </section>
+
+        <section className="rounded-[30px] bg-white/68 p-4 shadow-sm ring-1 ring-black/[0.04] backdrop-blur dark:bg-white/[0.06]">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-[#17151f] dark:text-white">Recent Contacts</h2>
+            <Link href="/contacts" className="text-xs font-semibold text-zinc-500">View all</Link>
           </div>
-
-          <div className="space-y-4">
-            <IdentityCard profile={identity} />
-
-            <div className="mobile-panel rounded-[28px] p-5 sm:p-6">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">Why it feels cleaner</h3>
-              <div className="mt-4 space-y-4 text-sm">
-                <div className="border-b border-white/8 pb-4">
-                  <p className="font-medium text-zinc-100">Less dashboard noise</p>
-                  <p className="mt-2 leading-6 text-zinc-500">Portrait mode now focuses on the few things you actually need instead of cramming desktop layout into mobile.</p>
+          <div className="flex gap-4 overflow-x-auto pb-1">
+            {CONTACTS.map((name) => (
+              <div key={name} className="shrink-0 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-soft)] text-sm font-bold text-[#183B5C] dark:text-white">
+                  {name[0]}
                 </div>
-                <div className="border-b border-white/8 pb-4">
-                  <p className="font-medium text-zinc-100">Privy-first onboarding</p>
-                  <p className="mt-2 leading-6 text-zinc-500">Social or email onboarding is now the intended mobile-browser path instead of being bolted on beside another auth system.</p>
-                </div>
-                <div>
-                  <p className="font-medium text-zinc-100">Simple visual system</p>
-                  <p className="mt-2 leading-6 text-zinc-500">Dark base, restrained panels, soft dynamic background, no extra chrome.</p>
-                </div>
+                <p className="mt-2 text-xs text-zinc-500">{name}</p>
               </div>
-
-              <div className="mt-5 flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm">
-                <span className="text-zinc-500">Explorer</span>
-                <a
-                  href={arcTestnet.blockExplorers.default.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-white/90 hover:text-white"
-                >
-                  ArcScan
-                </a>
-              </div>
-            </div>
+            ))}
           </div>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="px-1 text-base font-semibold text-[#17151f] dark:text-white">My Wallets</h2>
+          <SmallTokenRow symbol="USDC" name="USD Coin" balance={usdcDisplay} />
+          <SmallTokenRow symbol="EURC" name="Euro Coin" balance={eurcDisplay} />
         </section>
       </div>
     </AppShell>
