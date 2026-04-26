@@ -185,15 +185,15 @@ export default function HistoryPage() {
               </p>
             </div>
 
-            <div className="flex gap-1 rounded-2xl bg-white/[0.04] p-1 w-fit">
+            <div className="frosted-segment w-fit">
               {(["all", "sent", "received"] as const).map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
                   className={`rounded-2xl px-4 py-2.5 text-sm font-medium capitalize transition-all ${
                     filter === f
-                      ? "bg-white/10 text-white shadow"
-                      : "text-zinc-400 hover:text-zinc-300"
+                      ? "bg-white/70 text-[#17151f] shadow"
+                      : "text-[#8b8795] hover:text-[#17151f]"
                   }`}
                 >
                   {f}

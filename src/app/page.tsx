@@ -7,15 +7,9 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AppShell } from "@/components/AppShell";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
-import { formatAmount, getIdentityProfile } from "@/lib/utils";
+import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
 
-const contacts = [
-  { name: "Jamie", avatar: "J", color: "#83cfff" },
-  { name: "Taylor", avatar: "T", color: "#f5c06d" },
-  { name: "Sam", avatar: "S", color: "#9b7cff" },
-  { name: "Morgan", avatar: "M", color: "#9bd4be" },
-  { name: "Casey", avatar: "C", color: "#8f7cff" },
-];
+
 
 function WalletConnectButton() {
   return (
@@ -86,8 +80,10 @@ export default function DashboardPage() {
 
   if (!isConnected) return <LoginScreen />;
 
-  const usdcDisplay = nativeBalance?.value !== undefined ? formatAmount(nativeBalance.value, 18) : "2,458.75";
-  const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance as bigint, TOKENS.EURC.decimals) : "320.00";
+  const usdcDisplay = nativeBalance?.value !== undefined ? formatAmount(nativeBalance.value, 18) : "0.00";
+  const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance as bigint, TOKENS.EURC.decimals) : "0.00";
+  const contacts = getContacts().slice(0, 5);
+  const recentTransfers = address ? getLocalTransfers(address).slice(0, 3) : [];
 
   return (
     <AppShell>
@@ -113,7 +109,7 @@ export default function DashboardPage() {
         </section>
 
         <section className="mt-6 grid grid-cols-4 gap-4 text-center">
-          {[['/send','✈','Send'],['/request','⇩','Request'],['/contacts','⌗','Scan'],['/send','⇄','Swap']].map(([href, icon, label]) => (
+          {[['/send','✈','Send'],['/request','⇩','Request'],['/scan','⌗','Scan'],['/bridge','⇄','Bridge']].map(([href, icon, label]) => (
             <Link key={label} href={href} className="text-xs font-semibold text-[#595465]">
               <span className="mx-auto mb-2 grid h-11 w-11 place-items-center rounded-2xl bg-white text-lg text-[#6f60d5] shadow-sm">{icon}</span>{label}
             </Link>
@@ -123,22 +119,36 @@ export default function DashboardPage() {
         <section className="mt-7">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">Active Requests</h2><Link href="/request" className="text-xs text-[#8f7cff]">View all</Link></div>
           <div className="soft-card rounded-2xl p-4">
-            <div className="flex items-center justify-between text-sm"><span>↓ $250.00 USDC from Jamie</span><span className="rounded-full bg-[#fff5da] px-3 py-1 text-[10px] text-[#c49322]">Awaiting</span></div>
-            <p className="mt-2 text-xs text-[#9a94a3]">Requested 2m ago • Expires in 23:47:12</p>
+            {recentTransfers.length === 0 ? (
+              <p className="text-sm text-[#8b8795]">No active requests yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {recentTransfers.map((transfer) => (
+                  <div key={transfer.id} className="flex items-center justify-between text-sm">
+                    <span>{transfer.direction === "sent" ? "↑" : "↓"} {formatAmount(BigInt(transfer.value), TOKENS[transfer.token].decimals)} {transfer.token}</span>
+                    <span className="text-xs text-[#8b8795]">{formatContactLabel(transfer.direction === "sent" ? transfer.to : transfer.from)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
         <section className="mt-7">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">Recent Contacts</h2><Link href="/contacts" className="text-xs text-[#8f7cff]">View all</Link></div>
-          <div className="flex justify-between">
-            {contacts.map((c) => <div key={c.name} className="text-center text-[10px] font-medium text-[#595465]"><div style={{background:c.color}} className="mx-auto mb-2 grid h-11 w-11 place-items-center rounded-full text-white shadow-sm">{c.avatar}</div>{c.name}</div>)}
-          </div>
+          {contacts.length === 0 ? (
+            <div className="soft-card rounded-2xl p-4 text-sm text-[#8b8795]">No contacts saved yet.</div>
+          ) : (
+            <div className="flex justify-between gap-2">
+              {contacts.map((c) => <div key={c.id} className="min-w-0 text-center text-[10px] font-medium text-[#595465]"><div className="mx-auto mb-2 grid h-11 w-11 place-items-center rounded-full bg-[#8f7cff] text-white shadow-sm">{(c.avatar || c.name).slice(0,1).toUpperCase()}</div><span className="block truncate">{c.name}</span></div>)}
+            </div>
+          )}
         </section>
 
         <section className="mt-7">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">My Wallets</h2><span className="text-xs text-[#8f7cff]">Manage</span></div>
           <div className="soft-card overflow-hidden rounded-2xl">
-            {[["USDC","USD Coin",usdcDisplay],["USDT","Tether",eurcDisplay],["DAI","Dai Stablecoin","246.40"]].map(([s,n,b], i) => (
+            {[["USDC","USD Coin",usdcDisplay],["EURC","Euro Coin",eurcDisplay]].map(([s,n,b], i) => (
               <div key={s} className={`flex items-center justify-between px-4 py-3 ${i ? 'border-t' : ''}`}><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-full bg-[#eef1ff] text-[#6f60d5] text-xs font-bold">{s[0]}</span><div><p className="text-sm font-bold">{s}</p><p className="text-xs text-[#9a94a3]">{n}</p></div></div><p className="text-sm font-semibold">{b}</p></div>
             ))}
           </div>
