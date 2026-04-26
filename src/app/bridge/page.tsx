@@ -508,7 +508,7 @@ export default function BridgePage() {
                         setToken(key);
                         resetBridgeFeedback();
                       }}
-                      className={`rounded-2xl px-4 py-4 text-sm font-medium transition-all ${
+                      className={`bridge-choice rounded-2xl px-4 py-4 text-sm font-medium transition-all ${
                         token === key
                           ? "border border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
                           : "border border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
@@ -539,7 +539,7 @@ export default function BridgePage() {
                         setSelectedRoute(route.id);
                         resetBridgeFeedback();
                       }}
-                      className={`rounded-2xl border px-4 py-3 text-left text-sm transition-all ${
+                      className={`bridge-choice rounded-2xl border px-4 py-3 text-left text-sm transition-all ${
                         selectedRoute === route.id
                           ? "border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
                           : "border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
@@ -563,7 +563,7 @@ export default function BridgePage() {
                               setBridgeSpeed(speed);
                               resetBridgeFeedback();
                             }}
-                            className={`rounded-2xl border px-4 py-3 text-left text-xs transition-all ${
+                            className={`bridge-choice rounded-2xl border px-4 py-3 text-left text-xs transition-all ${
                               bridgeSpeed === speed
                                 ? "border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
                                 : "border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
@@ -578,18 +578,18 @@ export default function BridgePage() {
                       </div>
                     </div>
                     <div className="grid gap-2 text-xs sm:grid-cols-2">
-                      <div className="rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
+                      <div className="bridge-info-card rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
                         <p className="text-zinc-500">Source USDC</p>
                         <p className="mt-1 break-all font-mono text-zinc-300">{sourceUsdcAddress}</p>
                       </div>
-                      <div className="rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
+                      <div className="bridge-info-card rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
                         <p className="text-zinc-500">Destination USDC</p>
                         <p className="mt-1 break-all font-mono text-zinc-300">{destinationUsdcAddress}</p>
                       </div>
                     </div>
                   </div>
                 )}
-                <div className="mt-4 rounded-[22px] border border-white/8 bg-white/[0.03] p-4 text-xs leading-6">
+                <div className="bridge-info-card mt-4 rounded-[22px] border border-white/8 bg-white/[0.03] p-4 text-xs leading-6">
                   <p className="text-zinc-400">Source wallet network</p>
                   <p className={`mt-1 font-medium ${isOnExpectedSourceChain ? "text-emerald-300" : "text-amber-300"}`}>
                     {isOnExpectedSourceChain
@@ -619,7 +619,7 @@ export default function BridgePage() {
                   <span className="text-xs text-zinc-500"></span>
                 </div>
 
-                <div className="mb-3 rounded-[24px] border border-white/8 bg-white/[0.03] p-3">
+                <div className="bridge-info-card mb-3 rounded-[24px] border border-white/8 bg-white/[0.03] p-3">
                   <input
                     type="text"
                     placeholder="Search people or @username"
@@ -629,7 +629,7 @@ export default function BridgePage() {
                       setShowDirectory(true);
                       resetBridgeFeedback();
                     }}
-                    className="mb-3 w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                    className="bridge-input mb-3 w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
                   />
 
                   {showDirectory && (
@@ -640,7 +640,7 @@ export default function BridgePage() {
                         type="button"
                         onClick={() => handleSelectDirectoryEntry(entry)}
                         disabled={entry.kind === "self" || !entry.address}
-                        className="flex w-full items-center justify-between rounded-2xl border border-white/6 bg-white/[0.04] px-4 py-3 text-left text-sm transition-colors hover:bg-white/[0.06] disabled:cursor-default disabled:opacity-60"
+                        className="bridge-directory-row flex w-full items-center justify-between rounded-2xl border border-white/6 bg-white/[0.04] px-4 py-3 text-left text-sm transition-colors hover:bg-white/[0.06] disabled:cursor-default disabled:opacity-60"
                       >
                         <div>
                           <div className="flex items-center gap-2">
@@ -659,7 +659,7 @@ export default function BridgePage() {
                       </button>
                     ))}
                       {directoryEntries.length === 0 && (
-                        <div className="rounded-2xl border border-white/6 bg-white/[0.04] px-4 py-4 text-sm text-zinc-500">
+                        <div className="bridge-directory-row rounded-2xl border border-white/6 bg-white/[0.04] px-4 py-4 text-sm text-zinc-500">
                           No matching people yet.
                         </div>
                       )}
@@ -675,7 +675,7 @@ export default function BridgePage() {
                     setRecipient(e.target.value);
                     resetBridgeFeedback();
                   }}
-                  className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 font-mono text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                  className="bridge-input w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 font-mono text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
                 />
                 {recipient && !validRecipient && (
                   <p className="mt-2 text-xs text-red-400">Enter a valid address or a saved @username</p>
@@ -704,7 +704,7 @@ export default function BridgePage() {
                     }}
                     min="0"
                     step="any"
-                    className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-4 pr-16 text-lg font-medium text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                    className="bridge-input w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-4 pr-16 text-lg font-medium text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-zinc-400">
                     {token}
