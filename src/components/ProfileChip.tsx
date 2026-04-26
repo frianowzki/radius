@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { AvatarImage } from "@/components/AvatarImage";
 import { type Contact, formatAddress, type UserIdentityProfile } from "@/lib/utils";
 
 interface ProfileChipProps {
@@ -18,13 +18,12 @@ export function ProfileChip({ contact, profile, address, fallbackLabel }: Profil
     contact?.handle ||
     profile?.handle ||
     (address ? formatAddress(address) : undefined);
-  const avatar = contact?.avatar || profile?.avatar || label.charAt(0).toUpperCase();
-  const avatarIsImage = avatar.startsWith("http") || avatar.startsWith("data:");
+  const avatar = contact?.avatar || profile?.avatar;
 
   return (
     <div className="inline-flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.05] px-3 py-2">
       <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 text-sm font-semibold text-indigo-200">
-        {avatarIsImage ? <Image src={avatar} alt={label} width={36} height={36} className="h-full w-full object-cover" unoptimized={avatar.startsWith("data:")} /> : avatar}
+        <AvatarImage src={avatar} fallback={label} />
       </div>
       <div className="min-w-0 text-left">
         <div className="truncate text-sm font-medium text-zinc-100">{label}</div>

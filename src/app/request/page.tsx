@@ -23,6 +23,7 @@ export default function RequestPage() {
   const [memo, setMemo] = useState("");
   const [paymentUrl, setPaymentUrl] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showTokenPicker, setShowTokenPicker] = useState(false);
 
   const qrValue = useMemo(() => {
     if (paymentUrl) return paymentUrl;
@@ -81,7 +82,9 @@ export default function RequestPage() {
             <div className="orb mx-auto mb-8 h-24 w-24 rounded-full" />
             <h2 className="text-3xl font-semibold tracking-[-0.04em]">Connect to request</h2>
             <p className="mx-auto mt-3 max-w-64 text-sm leading-6 text-[#8b8795]">Connect a wallet to create a beautiful Radius request QR.</p>
-            <div className="wallet-connect-row radius-auth-button mt-8 p-0"><ConnectButton showBalance={false} chainStatus="none" accountStatus="address" /></div>
+            <div className="wallet-connect-row mx-auto mt-8 flex max-w-64 justify-center rounded-2xl">
+              <ConnectButton showBalance={false} chainStatus="none" accountStatus="address" />
+            </div>
           </div>
         ) : (
           <>
@@ -90,7 +93,7 @@ export default function RequestPage() {
               <div className="mt-3 flex items-center justify-center gap-3">
                 <span className="text-4xl font-semibold tracking-[-0.06em]">$</span>
                 <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className="w-40 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none" />
-                <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} /><select value={token} onChange={(e) => setToken(e.target.value as TokenKey)} className="bg-transparent outline-none">{(Object.keys(TOKENS) as TokenKey[]).map((key) => <option key={key}>{key}</option>)}</select></div>
+                <button type="button" onClick={() => setShowTokenPicker(true)} className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} />{token}</button>
               </div>
               <p className="mt-2 text-xs text-[#b2adba]">≈ {amount || "0.00"} {token}</p>
 
@@ -116,6 +119,24 @@ export default function RequestPage() {
                 </div>
               </div>
             </form>
+
+            {showTokenPicker && (
+              <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4" onClick={() => setShowTokenPicker(false)}>
+                <div className="soft-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-lg font-bold">Choose token</h3>
+                    <button type="button" onClick={() => setShowTokenPicker(false)} className="ghost-btn px-3 py-2 text-xs">Close</button>
+                  </div>
+                  <div className="space-y-3">
+                    {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
+                      <button key={key} type="button" onClick={() => { setToken(key); setShowTokenPicker(false); }} className={`frosted-choice w-full ${token === key ? "active" : ""}`}>
+                        <div className="flex items-center gap-3"><TokenLogo symbol={key} size={34} /><div><p className="font-bold">{key}</p><p className="text-xs opacity-70">{TOKENS[key].name}</p></div></div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
           </>
         )}

@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { AvatarImage } from "@/components/AvatarImage";
 import { useRadiusAuth } from "@/lib/web3auth";
 
 function readAsDataUrl(file: File) {
@@ -58,7 +58,7 @@ export function ProfilePfpUpload({ initialUrl, onUploaded }: { initialUrl?: stri
   return (
     <div className="flex items-center gap-4">
       <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-white/60 text-2xl font-black text-[#8f7cff] shadow-sm">
-        {pfpUrl ? <Image src={pfpUrl} alt="Profile" width={80} height={80} className="h-20 w-20 object-cover" unoptimized={pfpUrl.startsWith("data:")} /> : "R"}
+        <AvatarImage src={pfpUrl || undefined} fallback="R" className="h-20 w-20 object-cover" />
       </div>
       <div className="min-w-0 flex-1">
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadPfp(file); }} />

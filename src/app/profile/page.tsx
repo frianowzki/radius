@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useAccount, useDisconnect } from "wagmi";
-import Image from "next/image";
 import { AppShell } from "@/components/AppShell";
+import { AvatarImage } from "@/components/AvatarImage";
 import { ProfilePfpUpload } from "@/components/ProfilePfpUpload";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { clearRadiusLocalSession, formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
@@ -100,7 +100,7 @@ export default function ProfilePage() {
       <div className="screen-pad space-y-5">
         <section className="gradient-card rounded-[30px] p-6 text-center">
           <div className="mx-auto grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-white/20 text-3xl font-black text-white shadow-lg">
-            {profile.avatar ? <Image src={profile.avatar} alt="Profile" width={80} height={80} className="h-full w-full object-cover" unoptimized={profile.avatar.startsWith("data:")} /> : (profile.handle || profile.displayName || user?.name || "R").slice(0, 1).toUpperCase()}
+            <AvatarImage src={profile.avatar} fallback={profile.handle || profile.displayName || user?.name || "R"} />
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-[-0.04em]">{profile.displayName || "Radius user"}</h1>
           <p className="mt-1 text-sm text-white/78">{profile.handle ? `@${profile.handle}` : "Claim a username below"}</p>

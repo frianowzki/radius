@@ -458,3 +458,20 @@ html[data-theme="dark"] .nav-pay {
   background: linear-gradient(135deg, #7b69ff, #24a6da);
   box-shadow: 0 20px 44px rgba(36,166,218,.22), inset 0 1px 0 rgba(255,255,255,.24);
 }
+
+/* Avatar/contact and request polish */
+.wallet-connect-row [data-rk] { display: flex; justify-content: center; width: 100%; }
+.wallet-connect-row button {
+  width: 100% !important;
+  justify-content: center !important;
+  border-radius: 18px !important;
+  background: rgba(255,255,255,.82) !important;
+  color: #6f60d5 !important;
+  box-shadow: 0 14px 32px rgba(55,46,88,.10) !important;
+}
+html[data-theme="dark"] .wallet-connect-row button {
+  background: rgba(255,255,255,.09) !important;
+  color: #d9d3ff !important;
+}
+html[data-theme="dark"] .bg-emerald-500\/12 { background: rgba(16,185,129,.14) !important; }
+html[data-theme="dark"] .text-emerald-700 { color: #7df0bd !important; }

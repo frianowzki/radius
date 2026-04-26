@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAccount, useReadContracts } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -10,6 +10,7 @@ import { SocialLoginButton } from "@/components/SocialLoginButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
+import { AvatarImage } from "@/components/AvatarImage";
 import { arcTestnet } from "@/config/wagmi";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
 
@@ -102,6 +103,11 @@ export default function DashboardPage() {
   const visibleTotal = hideBalance ? "••••••" : totalDisplay;
   const visibleUsdc = hideBalance ? "••••••" : usdcDisplay;
   const visibleEurc = hideBalance ? "••••••" : eurcDisplay;
+  const [activityNotice, setActivityNotice] = useState("");
+  const balanceSnapshot = useMemo(() => {
+    if (!address || usdcBalance === undefined || eurcBalance === undefined) return null;
+    return { USDC: usdcBalance, EURC: eurcBalance };
+  }, [address, usdcBalance, eurcBalance]);
 
   useEffect(() => {
     queueMicrotask(() => setHideBalance(localStorage.getItem("radius-hide-balance") === "true"));
@@ -110,6 +116,30 @@ export default function DashboardPage() {
   useEffect(() => {
     localStorage.setItem("radius-hide-balance", String(hideBalance));
   }, [hideBalance]);
+
+
+  useEffect(() => {
+    if (!address || !balanceSnapshot) return;
+    (["USDC", "EURC"] as const).forEach((symbol) => {
+      const key = `radius-last-balance-${address}-${symbol}`;
+      const previous = localStorage.getItem(key);
+      const current = balanceSnapshot[symbol];
+      if (previous && current > BigInt(previous)) {
+        const tokenInfo = TOKENS[symbol];
+        const delta = current - BigInt(previous);
+        const message = `Received ${formatAmount(delta, tokenInfo.decimals)} ${symbol}`;
+        setActivityNotice(message);
+        window.setTimeout(() => setActivityNotice(""), 4200);
+        if ("Notification" in window) {
+          if (Notification.permission === "granted") new Notification("Radius activity", { body: message });
+          else if (Notification.permission === "default") Notification.requestPermission().then((permission) => {
+            if (permission === "granted") new Notification("Radius activity", { body: message });
+          });
+        }
+      }
+      localStorage.setItem(key, current.toString());
+    });
+  }, [address, balanceSnapshot]);
 
   if (!initialized) {
     return (
@@ -134,6 +164,12 @@ export default function DashboardPage() {
           </div>
           <ThemeToggle />
         </header>
+
+        {activityNotice && (
+          <div className="mb-4 rounded-2xl border border-emerald-300/40 bg-emerald-500/12 px-4 py-3 text-sm font-semibold text-emerald-700">
+            {activityNotice}
+          </div>
+        )}
 
         <section className="gradient-card rounded-[24px] p-5">
           <div className="flex items-center justify-between text-xs text-white/75">
@@ -179,7 +215,7 @@ export default function DashboardPage() {
             <div className="soft-card rounded-2xl p-4 text-sm text-[#8b8795]">No contacts saved yet.</div>
           ) : (
             <div className="flex justify-between gap-2">
-              {contacts.map((c) => <Link href={`/send?to=${encodeURIComponent(c.handle ? c.handle.replace(/^@/, "") : c.address)}`} key={c.id} className="min-w-0 text-center text-[10px] font-medium text-[#595465]"><div className="mx-auto mb-2 grid h-11 w-11 place-items-center rounded-full bg-[#8f7cff] text-white shadow-sm">{(c.avatar || c.name).slice(0,1).toUpperCase()}</div><span className="block truncate">{c.name}</span></Link>)}
+              {contacts.map((c) => <Link href={`/send?to=${encodeURIComponent(c.handle ? c.handle.replace(/^@/, "") : c.address)}`} key={c.id} className="min-w-0 text-center text-[10px] font-medium text-[#595465]"><div className="mx-auto mb-2 grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-[#8f7cff] text-white shadow-sm"><AvatarImage src={c.avatar} fallback={c.name} /></div><span className="block truncate">{c.name}</span></Link>)}
             </div>
           )}
         </section>
