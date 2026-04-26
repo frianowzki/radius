@@ -94,11 +94,12 @@ export default function RequestPage() {
               <p className="mt-2 text-xs text-[#b2adba]">≈ {amount || "0.00"} {token}</p>
 
               <div className="soft-card mx-auto mt-7 rounded-[28px] p-5">
+                {!qrValue && <p className="mb-3 text-xs text-[#9a94a3]">Enter an amount to generate QR.</p>}
                 <div ref={qrWrapRef} className="relative mx-auto w-fit rounded-[24px] bg-white p-4 shadow-[0_14px_38px_rgba(143,124,255,.16)]">
-                  {qrValue ? <QRCodeSVG value={qrValue} size={218} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin /> : <div className="grid h-[218px] w-[218px] place-items-center rounded-2xl bg-[#f7f5fb] text-center text-xs text-[#8b8795]">Enter an amount to generate QR</div>}
-                  <div className="absolute left-1/2 top-1/2 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-2xl bg-white text-2xl font-black text-[#7a70d8] shadow-lg">R</div>
+                  {qrValue ? <QRCodeSVG value={qrValue} size={218} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin /> : <div className="h-[218px] w-[218px] rounded-2xl bg-[#f7f5fb]" />}
+                  {qrValue && <div className="absolute left-1/2 top-1/2 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-2xl bg-white text-2xl font-black text-[#7a70d8] shadow-lg">R</div>}
                 </div>
-                <p className="mt-3 text-xs text-[#9a94a3]">Scan to pay</p>
+                <p className="mt-3 text-xs text-[#9a94a3]">{qrValue ? "Scan to pay" : "QR appears here after amount is set"}</p>
 
                 <label className="mt-5 block text-left text-xs font-semibold text-[#8b8795]">Payment link</label>
                 <div className="mt-2 flex items-center gap-2 rounded-2xl bg-[#f7f5fb] px-3 py-3 text-left text-xs text-[#686272]">

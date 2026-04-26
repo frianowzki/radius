@@ -114,7 +114,11 @@ export function RadiusAuthProvider({ children }: { children: ReactNode }) {
       setProvider(nextProvider ?? null);
       setAddress(await getProviderAddress(nextProvider ?? null));
       setChainId(await getProviderChainId(nextProvider ?? null));
-      setUser(web3auth?.connected ? await web3auth.getUserInfo() : null);
+      try {
+        setUser(web3auth?.connected ? await web3auth.getUserInfo() : null);
+      } catch {
+        setUser(null);
+      }
     },
     [provider, web3auth]
   );

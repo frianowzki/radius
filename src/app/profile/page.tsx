@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useDisconnect } from "wagmi";
 import { isAddress } from "viem";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
@@ -11,7 +11,8 @@ import { addContact, formatAddress, getIdentityProfile, isHandleAvailable, saveI
 
 export default function ProfilePage() {
   const { isConnected: wagmiConnected, address: wagmiAddress } = useAccount();
-  const { authenticated, address: authAddress, user } = useRadiusAuth();
+  const { disconnect } = useDisconnect();
+  const { authenticated, address: authAddress, user, logout } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const [profile, setProfile] = useState(() => getIdentityProfile());
@@ -22,6 +23,7 @@ export default function ProfilePage() {
   const [contactAddress, setContactAddress] = useState("");
   const [saved, setSaved] = useState(false);
   const [contactSaved, setContactSaved] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState(false);
 
   const normalizedHandle = handle.trim().replace(/^@+/, "").toLowerCase();
   const handleAvailable = isHandleAvailable(normalizedHandle, address);
@@ -34,6 +36,18 @@ export default function ProfilePage() {
     setProfile(next);
     setSaved(true);
     setTimeout(() => setSaved(false), 1600);
+  }
+
+  async function copyAddress() {
+    if (!address) return;
+    await navigator.clipboard.writeText(address);
+    setCopiedAddress(true);
+    setTimeout(() => setCopiedAddress(false), 1500);
+  }
+
+  async function disconnectAll() {
+    disconnect();
+    await logout();
   }
 
   function handleQuickContact(e: React.FormEvent) {
@@ -59,6 +73,12 @@ export default function ProfilePage() {
           <div className="mt-4 rounded-2xl bg-white/16 px-3 py-2 font-mono text-[11px] text-white/82">
             {address ? formatAddress(address) : "No wallet connected"}
           </div>
+          {address && (
+            <div className="mt-3 grid grid-cols-2 gap-3 text-xs font-semibold">
+              <button type="button" onClick={copyAddress} className="rounded-2xl bg-white/16 py-3 text-white/90">{copiedAddress ? "Copied" : "Copy address"}</button>
+              <button type="button" onClick={disconnectAll} className="rounded-2xl bg-white/16 py-3 text-white/90">Disconnect</button>
+            </div>
+          )}
         </section>
 
         <section className="soft-card rounded-[28px] p-5">

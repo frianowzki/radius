@@ -1,13 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAccount, useBalance, useReadContract } from "wagmi";
+import { useAccount, useBalance, useDisconnect, useReadContract } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AppShell } from "@/components/AppShell";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
-import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
+import { formatAddress, formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
 
 
 
@@ -39,6 +41,7 @@ function LoginScreen() {
   return (
     <AppShell>
       <div className="screen-pad flex min-h-screen flex-col justify-between pb-8 text-center">
+        <div className="flex justify-end"><ThemeToggle /></div>
         <div className="flex flex-1 flex-col justify-center">
           <div className="orb mx-auto mb-12 h-28 w-28 rounded-full" />
           <h1 className="text-5xl font-semibold tracking-[-0.06em] text-[#181521]">Radius</h1>
@@ -64,10 +67,13 @@ function LoginScreen() {
 
 export default function DashboardPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated, address: authAddress } = useRadiusAuth();
+  const { authenticated, address: authAddress, logout } = useRadiusAuth();
+  const { disconnect } = useDisconnect();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const identity = getIdentityProfile();
+  const [hideBalance, setHideBalance] = useState(() => typeof window !== "undefined" && localStorage.getItem("radius-hide-balance") === "true");
+  const [copiedAddress, setCopiedAddress] = useState(false);
 
   const { data: nativeBalance } = useBalance({ address, query: { enabled: !!address } });
   const { data: eurcBalance } = useReadContract({
@@ -78,12 +84,31 @@ export default function DashboardPage() {
     query: { enabled: !!address },
   });
 
-  if (!isConnected) return <LoginScreen />;
-
   const usdcDisplay = nativeBalance?.value !== undefined ? formatAmount(nativeBalance.value, 18) : "0.00";
   const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance as bigint, TOKENS.EURC.decimals) : "0.00";
   const contacts = getContacts().slice(0, 5);
   const recentTransfers = address ? getLocalTransfers(address).slice(0, 3) : [];
+  const profileName = identity.handle ? `@${identity.handle}` : identity.displayName || "Arc user";
+  const visibleUsdc = hideBalance ? "••••••" : usdcDisplay;
+  const visibleEurc = hideBalance ? "••••••" : eurcDisplay;
+
+  useEffect(() => {
+    localStorage.setItem("radius-hide-balance", String(hideBalance));
+  }, [hideBalance]);
+
+  async function copyAddress() {
+    if (!address) return;
+    await navigator.clipboard.writeText(address);
+    setCopiedAddress(true);
+    setTimeout(() => setCopiedAddress(false), 1500);
+  }
+
+  async function disconnectAll() {
+    disconnect();
+    await logout();
+  }
+
+  if (!isConnected) return <LoginScreen />;
 
   return (
     <AppShell>
@@ -91,21 +116,27 @@ export default function DashboardPage() {
         <header className="mb-5 flex items-center justify-between">
           <div>
             <div className="mb-3 text-2xl font-black text-[#7a70d8]">R</div>
-            <h1 className="text-base font-semibold text-[#17151f]">Good morning, {identity.displayName || "Alex"} 👋</h1>
+            <h1 className="text-base font-semibold text-[#17151f]">Hello, {profileName} 👋</h1>
           </div>
-          <button className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm">♧</button>
+          <ThemeToggle />
         </header>
 
         <section className="gradient-card rounded-[24px] p-5">
           <div className="flex items-center justify-between text-xs text-white/75">
-            <span>Total Balance ◉</span><span>USD ⊙</span>
+            <span>Total Balance ◉</span><button type="button" onClick={() => setHideBalance((v) => !v)} className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white">{hideBalance ? "Show" : "Hide"}</button>
           </div>
-          <p className="mt-3 text-4xl font-semibold tracking-[-0.06em]">${usdcDisplay}</p>
-          <p className="mt-1 text-xs text-white/75">≈ {usdcDisplay} USDC</p>
+          <p className={`mt-3 text-4xl font-semibold tracking-[-0.06em] ${hideBalance ? "balance-hidden" : ""}`}>${visibleUsdc}</p>
+          <p className="mt-1 text-xs text-white/75">≈ {visibleUsdc} USDC</p>
           <div className="mt-5 grid grid-cols-2 gap-3">
             <Link href="/faucet" className="rounded-2xl bg-white/18 py-3 text-center text-sm font-semibold">＋ Add Funds</Link>
             <Link href="/request" className="rounded-2xl bg-white/18 py-3 text-center text-sm font-semibold">⇩ Receive</Link>
           </div>
+          {address && (
+            <div className="mt-3 grid grid-cols-2 gap-3 text-xs font-semibold">
+              <button type="button" onClick={copyAddress} className="rounded-2xl bg-white/14 py-3 text-white/90">{copiedAddress ? "Copied" : `Copy ${formatAddress(address)}`}</button>
+              <button type="button" onClick={disconnectAll} className="rounded-2xl bg-white/14 py-3 text-white/90">Disconnect</button>
+            </div>
+          )}
         </section>
 
         <section className="mt-6 grid grid-cols-4 gap-4 text-center">
@@ -148,7 +179,7 @@ export default function DashboardPage() {
         <section className="mt-7">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">My Wallets</h2><span className="text-xs text-[#8f7cff]">Manage</span></div>
           <div className="soft-card overflow-hidden rounded-2xl">
-            {[["USDC","USD Coin",usdcDisplay],["EURC","Euro Coin",eurcDisplay]].map(([s,n,b], i) => (
+            {[["USDC","USD Coin",visibleUsdc],["EURC","Euro Coin",visibleEurc]].map(([s,n,b], i) => (
               <div key={s} className={`flex items-center justify-between px-4 py-3 ${i ? 'border-t' : ''}`}><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-full bg-[#eef1ff] text-[#6f60d5] text-xs font-bold">{s[0]}</span><div><p className="text-sm font-bold">{s}</p><p className="text-xs text-[#9a94a3]">{n}</p></div></div><p className="text-sm font-semibold">{b}</p></div>
             ))}
           </div>

@@ -304,25 +304,6 @@ export default function HistoryPage() {
               </p>
             </div>
 
-            <div className="glass-panel rounded-[32px] p-6">
-              <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.22em] text-zinc-500">
-                Feed logic
-              </h3>
-              <div className="space-y-4 text-sm">
-                <div className="border-b border-white/8 pb-4">
-                  <p className="font-medium text-zinc-100">Sent</p>
-                  <p className="mt-2 leading-6 text-zinc-500">Outgoing transfers to contacts or addresses appear immediately after success.</p>
-                </div>
-                <div className="border-b border-white/8 pb-4">
-                  <p className="font-medium text-zinc-100">Received</p>
-                  <p className="mt-2 leading-6 text-zinc-500">Inbound token transfers are pulled from Arc logs when available.</p>
-                </div>
-                <div>
-                  <p className="font-medium text-zinc-100">Fallback</p>
-                  <p className="mt-2 leading-6 text-zinc-500">Local receipts stay visible even if the testnet RPC refuses a broad history query.</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
