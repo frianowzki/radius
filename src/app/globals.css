@@ -637,3 +637,35 @@ html[data-theme="dark"] .icon-chip {
 html[data-theme="dark"] .icon-chip svg {
   filter: drop-shadow(0 0 8px rgba(143,124,255,.58));
 }
+
+/* Theme toggle orb */
+.theme-orb-toggle {
+  width: 58px !important;
+  height: 58px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.54)) !important;
+  border: 1px solid rgba(255,255,255,.82) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 18px 38px rgba(72,62,122,.14) !important;
+  color: #6f60d5 !important;
+}
+.theme-orb-toggle .theme-toggle-dot {
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+  color: inherit !important;
+}
+html[data-theme="dark"] .theme-orb-toggle {
+  background:
+    radial-gradient(circle at 30% 15%, rgba(133,207,255,.18), transparent 34%),
+    linear-gradient(180deg, rgba(31,32,56,.78), rgba(16,17,32,.66)) !important;
+  color: #bdafff !important;
+  border-color: rgba(167,139,250,.38) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 0 0 1px rgba(120,93,255,.12),
+    0 16px 38px rgba(0,0,0,.30),
+    0 0 26px rgba(143,124,255,.26) !important;
+}
+.theme-orb-toggle svg { filter: drop-shadow(0 3px 8px rgba(111,96,213,.16)); }
+html[data-theme="dark"] .theme-orb-toggle svg { filter: drop-shadow(0 0 9px rgba(143,124,255,.58)); }

@@ -100,7 +100,7 @@ export default function DashboardPage() {
   const totalDisplay = (Number(usdcDisplay.replace(/,/g, "")) + Number(eurcDisplay.replace(/,/g, ""))).toLocaleString(undefined, { maximumFractionDigits: 2 });
   const contacts = getContacts().slice(0, 5);
   const recentTransfers = address ? getLocalTransfers(address).slice(0, 3) : [];
-  const profileName = identity.handle ? `@${identity.handle}` : identity.displayName || "Arc user";
+  const profileName = identity.displayName || "Arc user";
   const visibleTotal = hideBalance ? "••••••" : totalDisplay;
   const visibleUsdc = hideBalance ? "••••••" : usdcDisplay;
   const visibleEurc = hideBalance ? "••••••" : eurcDisplay;
