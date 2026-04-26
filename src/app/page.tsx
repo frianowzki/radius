@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAccount, useReadContracts } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AppShell } from "@/components/AppShell";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -14,30 +13,6 @@ import { arcTestnet } from "@/config/wagmi";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
 
 
-
-function WalletConnectButton() {
-  return (
-    <ConnectButton.Custom>
-      {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
-        const ready = mounted;
-        const connected = ready && account && chain;
-        return (
-          <button
-            type="button"
-            onClick={connected ? (chain.unsupported ? openChainModal : openAccountModal) : openConnectModal}
-            className="radius-auth-button"
-          >
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#eef1ff] text-lg">👛</span>
-            <span className="flex-1 text-center">
-              {connected ? (chain.unsupported ? "Wrong network" : account.displayName) : "Connect Wallet"}
-            </span>
-            <span className="text-[#b8b3c0]">›</span>
-          </button>
-        );
-      }}
-    </ConnectButton.Custom>
-  );
-}
 
 function LoginScreen() {
   return (
