@@ -160,3 +160,27 @@ button, input, textarea, select { font: inherit; }
 }
 .glass-panel input::placeholder,
 .glass-panel-strong input::placeholder { color: #a9a2b4 !important; }
+.glass-panel .text-white,
+.glass-panel-strong .text-white,
+.glass-panel .text-zinc-50,
+.glass-panel-strong .text-zinc-50,
+.glass-panel .text-zinc-100,
+.glass-panel-strong .text-zinc-100,
+.glass-panel .text-zinc-200,
+.glass-panel-strong .text-zinc-200,
+.glass-panel .text-zinc-300,
+.glass-panel-strong .text-zinc-300 { color: #17151f !important; }
+.glass-panel .text-zinc-400,
+.glass-panel-strong .text-zinc-400,
+.glass-panel .text-zinc-500,
+.glass-panel-strong .text-zinc-500 { color: #8b8795 !important; }
+.glass-panel .bg-white\/\[0\.04\],
+.glass-panel-strong .bg-white\/\[0\.04\],
+.glass-panel .bg-white\/\[0\.05\],
+.glass-panel-strong .bg-white\/\[0\.05\],
+.glass-panel .bg-white\/\[0\.08\],
+.glass-panel-strong .bg-white\/\[0\.08\] { background: rgba(255,255,255,.72) !important; }
+.glass-panel .border-white\/8,
+.glass-panel-strong .border-white\/8,
+.glass-panel .border-white\/6,
+.glass-panel-strong .border-white\/6 { border-color: rgba(27,22,43,.08) !important; }

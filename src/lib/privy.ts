@@ -23,8 +23,8 @@ export const privyClientId = envClientId;
 
 export const privyConfig: PrivyClientConfig = {
   appearance: {
-    theme: "dark",
-    accentColor: "#6366f1",
+    theme: "light",
+    accentColor: "#8f7cff",
     landingHeader: "Radius",
     loginMessage: "Fast stablecoin payments on Arc, cleaner on mobile.",
     showWalletLoginFirst: false,
@@ -35,6 +35,5 @@ export const privyConfig: PrivyClientConfig = {
     ethereum: {
       createOnLogin: "users-without-wallets",
     },
-    showWalletUIs: false,
   },
 };

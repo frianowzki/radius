@@ -5,6 +5,7 @@ import { useAccount, useBalance, useReadContract } from "wagmi";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AppShell } from "@/components/AppShell";
+import { SocialLoginButton } from "@/components/SocialLoginButton";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
 import { formatAmount, getIdentityProfile } from "@/lib/utils";
 
@@ -16,11 +17,34 @@ const contacts = [
   { name: "Casey", avatar: "C", color: "#8f7cff" },
 ];
 
+function WalletConnectButton() {
+  return (
+    <ConnectButton.Custom>
+      {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
+        const ready = mounted;
+        const connected = ready && account && chain;
+        return (
+          <button
+            type="button"
+            onClick={connected ? (chain.unsupported ? openChainModal : openAccountModal) : openConnectModal}
+            className="radius-auth-button"
+          >
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#eef1ff] text-[#6f60d5]">◈</span>
+            <span className="flex-1 text-center">
+              {connected ? (chain.unsupported ? "Wrong network" : account.displayName) : "Connect Wallet"}
+            </span>
+            <span className="text-[#b8b3c0]">›</span>
+          </button>
+        );
+      }}
+    </ConnectButton.Custom>
+  );
+}
+
 function LoginScreen() {
   return (
     <AppShell>
       <div className="screen-pad flex min-h-screen flex-col justify-between pb-8 text-center">
-        <div className="pt-2 text-left text-xs font-bold">9:41</div>
         <div className="flex flex-1 flex-col justify-center">
           <div className="orb mx-auto mb-12 h-28 w-28 rounded-full" />
           <h1 className="text-5xl font-semibold tracking-[-0.06em] text-[#181521]">Radius</h1>
@@ -30,19 +54,9 @@ function LoginScreen() {
           </div>
 
           <div className="mt-10 space-y-3 text-left">
-            <button disabled className="radius-auth-button opacity-70">
-              <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#f2efff] text-[#6f60d5]">✉</span>
-              <span className="flex-1">Continue with Email</span>
-              <span className="text-[#b8b3c0]">›</span>
-            </button>
-            <button disabled className="radius-auth-button opacity-70">
-              <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-lg">G</span>
-              <span className="flex-1">Continue with Google</span>
-              <span className="text-[#b8b3c0]">›</span>
-            </button>
-            <div className="wallet-connect-row radius-auth-button p-0">
-              <ConnectButton showBalance={false} chainStatus="none" accountStatus="address" />
-            </div>
+            <SocialLoginButton method="email" label="Continue with Email" icon={<span className="grid h-8 w-8 place-items-center rounded-xl bg-[#f2efff] text-[#6f60d5]">✉</span>} />
+            <SocialLoginButton method="google" label="Continue with Google" icon={<span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-lg">G</span>} />
+            <WalletConnectButton />
           </div>
         </div>
         <div className="space-y-7 text-[10px] leading-5 text-[#8f8998]">

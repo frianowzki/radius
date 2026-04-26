@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useAccount } from "wagmi";
+import { isAddress } from "viem";
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { IdentityCard } from "@/components/IdentityCard";
 import { ProfilePfpUpload } from "@/components/ProfilePfpUpload";
@@ -9,6 +11,7 @@ import {
   getIdentityProfile,
   saveIdentityProfile,
   isHandleAvailable,
+  addContact,
 } from "@/lib/utils";
 
 export default function ProfilePage() {
@@ -17,9 +20,22 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [handle, setHandle] = useState(profile.handle || "");
   const [bio, setBio] = useState(profile.bio || "");
+  const [contactName, setContactName] = useState("");
+  const [contactAddress, setContactAddress] = useState("");
+  const [contactSaved, setContactSaved] = useState(false);
 
   const normalizedHandle = handle.trim().replace(/^@+/, "").toLowerCase();
   const handleAvailable = isHandleAvailable(normalizedHandle);
+
+  function handleQuickContact(e: React.FormEvent) {
+    e.preventDefault();
+    if (!contactName.trim() || !isAddress(contactAddress)) return;
+    addContact(contactName.trim(), contactAddress);
+    setContactName("");
+    setContactAddress("");
+    setContactSaved(true);
+    setTimeout(() => setContactSaved(false), 1800);
+  }
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -113,6 +129,20 @@ export default function ProfilePage() {
 
         <div className="space-y-5">
           <IdentityCard profile={profile} />
+
+          <div className="glass-panel rounded-[32px] p-6">
+            <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Quick actions</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Link href="/faucet" className="primary-btn text-center text-sm">Open faucet</Link>
+              <Link href="/contacts" className="ghost-btn text-center text-sm">Manage contacts</Link>
+            </div>
+            <form onSubmit={handleQuickContact} className="mt-5 space-y-3">
+              <p className="text-sm font-semibold text-[#17151f]">Save contact</p>
+              <input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Name" className="radius-input text-sm" />
+              <input value={contactAddress} onChange={(e) => setContactAddress(e.target.value)} placeholder="0x wallet address" className="radius-input font-mono text-sm" />
+              <button type="submit" disabled={!contactName.trim() || !isAddress(contactAddress)} className="w-full primary-btn text-sm disabled:opacity-40">{contactSaved ? "Saved" : "Save contact"}</button>
+            </form>
+          </div>
 
           <div className="glass-panel rounded-[32px] p-6">
             <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">
