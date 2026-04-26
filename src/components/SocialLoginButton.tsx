@@ -35,6 +35,7 @@ export function SocialLoginButton({
     setBusy(true);
     try {
       await login(method);
+      window.location.replace("/");
     } catch (error) {
       console.error("Web3Auth login failed", error);
     } finally {
