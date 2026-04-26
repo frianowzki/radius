@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { AvatarImage } from "@/components/AvatarImage";
+import { QuickActionIcon } from "@/components/QuickActionIcon";
 import { arcTestnet } from "@/config/wagmi";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
 
@@ -184,9 +185,15 @@ export default function DashboardPage() {
         </section>
 
         <section className="mt-6 grid grid-cols-5 gap-3 text-center">
-          {[['/send','↗','Send'],['/request','↙','Request'],['/scan','⌗','Scan'],['/contacts','☻','Contacts'],['/bridge','⇄','Bridge']].map(([href, icon, label]) => (
-            <Link key={label} href={href} className="quick-action text-xs font-semibold text-[#595465]">
-              <span className="icon-chip mx-auto mb-2 text-lg">{icon}</span>{label}
+          {[
+            { href: "/send", icon: "send", label: "Send" },
+            { href: "/request", icon: "request", label: "Request" },
+            { href: "/scan", icon: "scan", label: "Scan" },
+            { href: "/contacts", icon: "contacts", label: "Contacts" },
+            { href: "/bridge", icon: "bridge", label: "Bridge" },
+          ].map((item) => (
+            <Link key={item.label} href={item.href} className="quick-action text-xs font-semibold text-[#595465]">
+              <span className="icon-chip mx-auto mb-2"><QuickActionIcon name={item.icon as "send" | "request" | "scan" | "contacts" | "bridge"} /></span>{item.label}
             </Link>
           ))}
         </section>

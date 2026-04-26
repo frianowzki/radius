@@ -1,0 +1,62 @@
+type QuickActionIconName = "send" | "request" | "scan" | "contacts" | "bridge";
+
+export function QuickActionIcon({ name }: { name: QuickActionIconName }) {
+  const common = {
+    className: "h-6 w-6",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  if (name === "send") {
+    return (
+      <svg {...common}>
+        <path d="M4 11.5 20 4l-7.5 16-2.2-6.3L4 11.5Z" />
+        <path d="m10.3 13.7 4.1-4.1" />
+      </svg>
+    );
+  }
+
+  if (name === "request") {
+    return (
+      <svg {...common}>
+        <path d="M19 5 5 19" />
+        <path d="M9 19H5v-4" />
+        <path d="M19 5h-4" />
+      </svg>
+    );
+  }
+
+  if (name === "scan") {
+    return (
+      <svg {...common}>
+        <path d="M8 4H5a1 1 0 0 0-1 1v3" />
+        <path d="M16 4h3a1 1 0 0 1 1 1v3" />
+        <path d="M20 16v3a1 1 0 0 1-1 1h-3" />
+        <path d="M8 20H5a1 1 0 0 1-1-1v-3" />
+      </svg>
+    );
+  }
+
+  if (name === "contacts") {
+    return (
+      <svg {...common}>
+        <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+        <path d="M5 21a7 7 0 0 1 14 0" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <path d="M7 7h12" />
+      <path d="m15 3 4 4-4 4" />
+      <path d="M17 17H5" />
+      <path d="m9 21-4-4 4-4" />
+    </svg>
+  );
+}
