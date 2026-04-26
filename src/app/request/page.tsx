@@ -88,16 +88,16 @@ export default function RequestPage() {
           </div>
         ) : (
           <>
-            <form onSubmit={generate} className="text-center">
+            <form onSubmit={generate} className="request-form text-center">
               
-              <div className="mt-3 flex items-center justify-center gap-3">
-                <span className="text-4xl font-semibold tracking-[-0.06em]">$</span>
+              <div className="request-amount-row mt-3 flex items-center justify-center gap-3">
+                <span className="request-currency-symbol text-4xl font-semibold tracking-[-0.06em]">$</span>
                 <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className="request-amount-input w-40 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none" />
                 <button type="button" onClick={() => setShowTokenPicker(true)} className="request-token-pill flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} />{token}</button>
               </div>
-              <p className="mt-2 text-xs text-[#b2adba]">≈ {amount || "0.00"} {token}</p>
+              <p className="request-estimate mt-2 text-xs text-[#b2adba]">≈ {amount || "0.00"} {token}</p>
 
-              <div className="soft-card mx-auto mt-7 rounded-[28px] p-5">
+              <div className="request-main-card soft-card mx-auto mt-7 rounded-[28px] p-5">
                 {!qrValue && <p className="mb-3 text-xs text-[#9a94a3]">Enter an amount to generate QR.</p>}
                 <div ref={qrWrapRef} className="request-qr-frame relative mx-auto w-fit rounded-[24px] bg-white p-4 shadow-[0_14px_38px_rgba(143,124,255,.16)]">
                   {qrValue ? <QRCodeSVG value={qrValue} size={218} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin /> : <div className="h-[218px] w-[218px] rounded-2xl bg-[#f7f5fb]" />}
@@ -110,9 +110,9 @@ export default function RequestPage() {
                   <span>🔗</span><span className="min-w-0 flex-1 truncate">{qrValue}</span><button type="button" onClick={copyLink} disabled={!qrValue}>›</button>
                 </div>
 
-                <input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="Note" className="radius-input mt-3 text-sm" />
+                <input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="Note" className="request-note-input radius-input mt-3 text-sm" />
 
-                <div className="mt-4 grid grid-cols-3 gap-3">
+                <div className="request-action-grid mt-4 grid grid-cols-3 gap-3">
                   <button type="button" aria-label="Share link" onClick={shareLink} className="ghost-btn text-lg">⇧</button>
                   <button type="button" aria-label="Copy link" onClick={copyLink} className="ghost-btn text-lg">{copied ? "✓" : "⧉"}</button>
                   <button type="button" aria-label="Save QR" onClick={saveQr} disabled={!qrValue} className="ghost-btn text-lg disabled:opacity-40">⇩</button>

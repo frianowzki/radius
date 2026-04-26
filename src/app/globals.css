@@ -728,3 +728,90 @@ html[data-theme="dark"] .bridge-directory-row .text-zinc-500,
 html[data-theme="dark"] .bridge-directory-row .text-zinc-400 { color: #aaa4bc !important; }
 html[data-theme="dark"] .bridge-info-card .text-zinc-300,
 html[data-theme="dark"] .bridge-directory-row .text-zinc-200 { color: #f2eefc !important; }
+
+/* Request creation page full dark polish */
+.request-form {
+  color: #17151f;
+}
+.request-currency-symbol,
+.request-amount-input {
+  color: #17151f !important;
+}
+.request-amount-input {
+  border-radius: 18px;
+  padding: 4px 8px;
+}
+.request-token-pill {
+  min-height: 42px;
+  background: rgba(255,255,255,.82) !important;
+  border: 1px solid rgba(255,255,255,.78);
+  color: #17151f !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.84), 0 12px 28px rgba(55,46,88,.10) !important;
+}
+.request-main-card {
+  background: rgba(255,255,255,.84) !important;
+  border-color: rgba(255,255,255,.76) !important;
+}
+.request-note-input {
+  background: rgba(255,255,255,.72) !important;
+}
+.request-action-grid .ghost-btn {
+  background: rgba(255,255,255,.72) !important;
+  color: #6f60d5 !important;
+}
+html[data-theme="dark"] .request-form {
+  color: #f8f5ff !important;
+}
+html[data-theme="dark"] .request-currency-symbol,
+html[data-theme="dark"] .request-amount-input {
+  color: #f8f5ff !important;
+  text-shadow: 0 0 20px rgba(143,124,255,.18);
+}
+html[data-theme="dark"] .request-amount-row {
+  margin-inline: auto;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,.045);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+html[data-theme="dark"] .request-amount-input {
+  background: transparent !important;
+}
+html[data-theme="dark"] .request-token-pill {
+  background: linear-gradient(180deg, rgba(38,39,65,.86), rgba(24,25,43,.72)) !important;
+  border-color: rgba(167,139,250,.28) !important;
+  color: #f8f5ff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 14px 34px rgba(0,0,0,.25), 0 0 24px rgba(143,124,255,.14) !important;
+}
+html[data-theme="dark"] .request-estimate {
+  color: #aaa4bc !important;
+}
+html[data-theme="dark"] .request-main-card {
+  background: linear-gradient(180deg, rgba(24,25,43,.88), rgba(15,16,30,.78)) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 24px 62px rgba(0,0,0,.36) !important;
+}
+html[data-theme="dark"] .request-main-card label,
+html[data-theme="dark"] .request-main-card .text-\[\#9a94a3\],
+html[data-theme="dark"] .request-main-card .text-\[\#8b8795\] {
+  color: #aaa4bc !important;
+}
+html[data-theme="dark"] .request-note-input {
+  background: rgba(255,255,255,.075) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  color: #f8f5ff !important;
+}
+html[data-theme="dark"] .request-note-input::placeholder {
+  color: #8f889f !important;
+}
+html[data-theme="dark"] .request-action-grid .ghost-btn {
+  background: rgba(255,255,255,.08) !important;
+  border-color: rgba(167,139,250,.18) !important;
+  color: #cfc7ff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 28px rgba(0,0,0,.20) !important;
+}
+html[data-theme="dark"] .request-action-grid .ghost-btn:disabled {
+  opacity: .38;
+}
