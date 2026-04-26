@@ -92,21 +92,21 @@ export default function RequestPage() {
               
               <div className="mt-3 flex items-center justify-center gap-3">
                 <span className="text-4xl font-semibold tracking-[-0.06em]">$</span>
-                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className="w-40 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none" />
-                <button type="button" onClick={() => setShowTokenPicker(true)} className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} />{token}</button>
+                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className="request-amount-input w-40 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none" />
+                <button type="button" onClick={() => setShowTokenPicker(true)} className="request-token-pill flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} />{token}</button>
               </div>
               <p className="mt-2 text-xs text-[#b2adba]">≈ {amount || "0.00"} {token}</p>
 
               <div className="soft-card mx-auto mt-7 rounded-[28px] p-5">
                 {!qrValue && <p className="mb-3 text-xs text-[#9a94a3]">Enter an amount to generate QR.</p>}
-                <div ref={qrWrapRef} className="relative mx-auto w-fit rounded-[24px] bg-white p-4 shadow-[0_14px_38px_rgba(143,124,255,.16)]">
+                <div ref={qrWrapRef} className="request-qr-frame relative mx-auto w-fit rounded-[24px] bg-white p-4 shadow-[0_14px_38px_rgba(143,124,255,.16)]">
                   {qrValue ? <QRCodeSVG value={qrValue} size={218} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin /> : <div className="h-[218px] w-[218px] rounded-2xl bg-[#f7f5fb]" />}
-                  {qrValue && <div className="absolute left-1/2 top-1/2 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-2xl bg-white text-2xl font-black text-[#7a70d8] shadow-lg">R</div>}
+                  {qrValue && <div className="radius-qr-logo absolute left-1/2 top-1/2 z-10 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-2xl bg-white text-2xl font-black text-[#7a70d8] shadow-lg">R</div>}
                 </div>
                 <p className="mt-3 text-xs text-[#9a94a3]">{qrValue ? "Scan to pay" : "QR appears here after amount is set"}</p>
 
                 <label className="mt-5 block text-left text-xs font-semibold text-[#8b8795]">Payment link</label>
-                <div className="mt-2 flex items-center gap-2 rounded-2xl bg-[#f7f5fb] px-3 py-3 text-left text-xs text-[#686272]">
+                <div className="request-link-box mt-2 flex items-center gap-2 rounded-2xl bg-[#f7f5fb] px-3 py-3 text-left text-xs text-[#686272]">
                   <span>🔗</span><span className="min-w-0 flex-1 truncate">{qrValue}</span><button type="button" onClick={copyLink} disabled={!qrValue}>›</button>
                 </div>
 
