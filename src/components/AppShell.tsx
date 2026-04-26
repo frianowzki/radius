@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: "⌂" },
   { href: "/request", label: "Request", icon: "↧" },
-  { href: "/send", label: "Pay", icon: "", special: true },
+  { href: "/send", label: "R", icon: "", special: true },
   { href: "/history", label: "History", icon: "▤" },
   { href: "/profile", label: "Profile", icon: "♙" },
 ];
@@ -29,7 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   active ? "text-[#6f60d5]" : "text-[#a5a0ad]"
                 }`}
               >
-                {item.special ? <span className="nav-pay text-xs">Pay</span> : <span className="text-lg leading-none">{item.icon}</span>}
+                {item.special ? <span className="nav-pay text-lg">R</span> : <span className="text-lg leading-none">{item.icon}</span>}
                 {!item.special && <span>{item.label}</span>}
               </Link>
             );

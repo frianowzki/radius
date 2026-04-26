@@ -30,7 +30,6 @@ export function ProfilePfpUpload({ initialUrl, onUploaded }: { initialUrl?: stri
     const localPreview = await readAsDataUrl(file);
     localStorage.setItem("pfpUrl", localPreview);
     setPfpUrl(localPreview);
-    onUploaded?.(localPreview);
 
     try {
       const formData = new FormData();

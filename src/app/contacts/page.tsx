@@ -95,7 +95,10 @@ export default function ContactsPage() {
                     <p className="mt-1 font-mono text-xs text-[#8b8795]">{formatAddress(contact.address)}</p>
                     {contact.note && <p className="mt-1 truncate text-xs text-[#8b8795]">{contact.note}</p>}
                   </div>
-                  <div className="flex gap-2"><button type="button" onClick={() => startEdit(contact)} className="rounded-2xl bg-white/60 px-3 py-2 text-xs font-bold text-[#8b8795]">Edit</button><button type="button" onClick={() => handleDelete(contact.id)} className="rounded-2xl bg-white/60 px-3 py-2 text-xs font-bold text-[#8b8795]">Remove</button></div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => startEdit(contact)} className="rounded-2xl bg-emerald-500/12 px-3 py-2.5 text-xs font-bold text-emerald-600">Edit</button>
+                  <button type="button" onClick={() => handleDelete(contact.id)} className="rounded-2xl bg-red-500/12 px-3 py-2.5 text-xs font-bold text-red-600">Delete</button>
                 </div>
               </div>
             ))}

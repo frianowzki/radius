@@ -74,7 +74,8 @@ export default function SendPage() {
   const readyToSend = canSend && validRecipient;
 
   useEffect(() => {
-    const handle = recipient.trim().startsWith("@") ? recipient.trim() : "";
+    const trimmed = recipient.trim();
+    const handle = trimmed && !trimmed.startsWith("0x") ? trimmed : "";
     if (!handle || resolvedRecipient.address) {
       queueMicrotask(() => setRegistryRecipient(null));
       return;
@@ -134,7 +135,7 @@ export default function SendPage() {
 
   function handleSelectDirectoryEntry(entry: DirectoryEntry) {
     if (entry.kind !== "contact" || !entry.address) return;
-    setRecipient(entry.handle ? `@${entry.handle.replace(/^@/, "")}` : entry.address);
+    setRecipient(entry.handle ? entry.handle.replace(/^@/, "") : entry.address);
     setShowDirectory(false);
   }
 
@@ -182,7 +183,8 @@ export default function SendPage() {
         ) : (
           <form onSubmit={handleSend} className="space-y-5">
             <div className="glass-panel-strong rounded-[32px] p-6">
-              <h2 className="text-3xl font-black tracking-tight text-glow">SEND ON ARC</h2>
+              <h2 className="text-2xl font-black tracking-tight text-glow">SEND ON ARC</h2>
+              <p className="mt-3 max-w-xs text-sm leading-6 text-zinc-400">Send stablecoins to a wallet, saved contact, or global Radius username in seconds.</p>
             </div>
 
             <div className="glass-panel rounded-[28px] p-5">
@@ -203,15 +205,16 @@ export default function SendPage() {
             </div>
 
             <div className="glass-panel rounded-[28px] p-5">
-              <div className="mb-3 flex items-center justify-between"><label className="text-sm font-medium text-zinc-400">Recipient</label><span className="text-xs text-zinc-500">Address or @username</span></div>
-              <input className="radius-input font-mono text-sm" value={recipient} onChange={(e) => { setRecipient(e.target.value); setDirectoryQuery(e.target.value); setShowDirectory(true); }} placeholder="0x... or @username" />
+              <div className="mb-3 flex items-center justify-between"><label className="text-sm font-medium text-zinc-400">Recipient</label><span className="text-xs text-zinc-500">Address or username</span></div>
+              <input className="radius-input font-mono text-sm" value={recipient} onChange={(e) => { setRecipient(e.target.value); setDirectoryQuery(e.target.value); setShowDirectory(true); }} placeholder="0x... or username" />
+              <button type="button" onClick={() => { setDirectoryQuery(""); setShowDirectory(true); }} className="ghost-btn mt-3 w-full text-xs">Choose from contacts</button>
               {showDirectory && directoryEntries.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {directoryEntries.slice(0, 4).map((entry) => entry.address && <button key={`${entry.kind}-${entry.address}`} type="button" onClick={() => handleSelectDirectoryEntry(entry)} className="w-full rounded-2xl bg-white/60 p-3 text-left text-sm"><ProfileChip contact={entry.kind === "contact" ? { id: entry.address, name: entry.name, address: entry.address, handle: entry.handle, avatar: entry.avatar, note: entry.note } : undefined} address={entry.address} /></button>)}
                 </div>
               )}
               {registryRecipient && !resolvedRecipient.contact && (
-                <button type="button" onClick={() => { setRecipient(`@${registryRecipient.handle}`); setShowDirectory(false); }} className="mt-3 w-full rounded-2xl bg-white/60 p-3 text-left text-sm">
+                <button type="button" onClick={() => { setRecipient(registryRecipient.handle || registryRecipient.address); setShowDirectory(false); }} className="mt-3 w-full rounded-2xl bg-white/60 p-3 text-left text-sm">
                   <ProfileChip contact={{ id: registryRecipient.address, name: registryRecipient.displayName, address: registryRecipient.address, handle: registryRecipient.handle, avatar: registryRecipient.avatar, note: registryRecipient.bio }} address={registryRecipient.address} />
                 </button>
               )}

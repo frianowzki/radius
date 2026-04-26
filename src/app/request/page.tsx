@@ -117,7 +117,6 @@ export default function RequestPage() {
               </div>
             </form>
 
-            <p className="mx-auto mt-8 max-w-72 text-center text-[11px] leading-5 text-[#9a94a3]">♡ Only share this link with people you trust. Payments are secured on Arc Testnet.</p>
           </>
         )}
       </div>

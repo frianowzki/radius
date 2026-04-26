@@ -128,7 +128,7 @@ button, input, textarea, select { font: inherit; }
   margin-top: -28px;
   width: 56px;
   height: 56px;
-  border-radius: 22px;
+  border-radius: 999px;
   display: grid;
   place-items: center;
   color: white;

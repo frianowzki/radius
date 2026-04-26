@@ -24,7 +24,7 @@ function formatDate(value?: number) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
-export function ReceiptCard({ amount, token, status, fromLabel, toLabel, note, metaLabel, metaValue, txHash, explorerUrl, createdAt }: ReceiptCardProps) {
+export function ReceiptCard({ amount, token, status, fromLabel, toLabel, note, metaLabel, metaValue, txHash, explorerUrl, createdAt, preview }: ReceiptCardProps) {
   const [fallbackCreatedAt] = useState(() => Date.now());
   const confirmedAt = createdAt || (txHash ? fallbackCreatedAt : undefined);
 
@@ -43,7 +43,7 @@ export function ReceiptCard({ amount, token, status, fromLabel, toLabel, note, m
         {txHash && <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">Transaction Hash</span><a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-[#6f60d5]">{txHash.slice(0, 6)}...{txHash.slice(-4)}</a></div>}
         {metaLabel && metaValue && <div className="flex justify-between"><span className="text-[#9a94a3]">{metaLabel}</span><span>{metaValue}</span></div>}
       </div>
-      {note && <div className="mt-5 rounded-2xl bg-white/70 p-4"><p className="text-[11px] text-[#9a94a3]">Note</p><p className="mt-1 text-sm">{note}</p></div>}
+      {note && !preview && <div className="mt-5 rounded-2xl bg-white/70 p-4"><p className="text-[11px] text-[#9a94a3]">Note</p><p className="mt-1 text-sm">{note}</p></div>}
     </div>
   );
 }

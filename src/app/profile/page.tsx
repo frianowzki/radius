@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useAccount, useDisconnect } from "wagmi";
-import { isAddress } from "viem";
 import Image from "next/image";
-import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { ProfilePfpUpload } from "@/components/ProfilePfpUpload";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { addContact, formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
+import { formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
 import { fetchRegistryProfile, registryProfileToIdentity, saveRegistryProfile } from "@/lib/registry-client";
 
 export default function ProfilePage() {
@@ -21,10 +19,7 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [handle, setHandle] = useState(profile.handle || "");
   const [bio, setBio] = useState(profile.bio || "");
-  const [contactName, setContactName] = useState("");
-  const [contactAddress, setContactAddress] = useState("");
   const [saved, setSaved] = useState(false);
-  const [contactSaved, setContactSaved] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [registryStatus, setRegistryStatus] = useState("");
 
@@ -85,15 +80,7 @@ export default function ProfilePage() {
     await logout();
   }
 
-  function handleQuickContact(e: React.FormEvent) {
-    e.preventDefault();
-    if (!contactName.trim() || !isAddress(contactAddress)) return;
-    addContact(contactName.trim(), contactAddress);
-    setContactName("");
-    setContactAddress("");
-    setContactSaved(true);
-    setTimeout(() => setContactSaved(false), 1600);
-  }
+
 
   return (
     <AppShell>
@@ -138,20 +125,6 @@ export default function ProfilePage() {
           {registryStatus && <p className="text-xs text-[#8b8795]">{registryStatus}</p>}
           <button type="submit" disabled={!displayName.trim() || !address} className="primary-btn w-full text-sm disabled:opacity-40">{saved ? "Saved globally" : "Save global profile"}</button>
         </form>
-
-        <section className="soft-card rounded-[28px] p-5">
-          <p className="mb-3 text-sm font-bold">Quick actions</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Link href="/faucet" className="ghost-btn text-center text-sm">Faucet</Link>
-            <Link href="/contacts" className="ghost-btn text-center text-sm">Contacts</Link>
-          </div>
-          <form onSubmit={handleQuickContact} className="mt-5 space-y-3">
-            <p className="text-sm font-semibold">Save contact</p>
-            <input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Name" className="radius-input text-sm" />
-            <input value={contactAddress} onChange={(e) => setContactAddress(e.target.value)} placeholder="0x wallet address" className="radius-input font-mono text-sm" />
-            <button type="submit" disabled={!contactName.trim() || !isAddress(contactAddress)} className="primary-btn w-full text-sm disabled:opacity-40">{contactSaved ? "Saved" : "Save contact"}</button>
-          </form>
-        </section>
 
         <p className="text-center text-[11px] leading-5 text-[#9a94a3]">{isConnected ? "Profile is connected to your current wallet/social wallet." : "Connect first to use this profile in payments."}</p>
       </div>

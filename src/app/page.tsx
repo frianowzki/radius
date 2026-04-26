@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAccount, useBalance, useReadContract } from "wagmi";
+import { useAccount, useReadContracts } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AppShell } from "@/components/AppShell";
@@ -10,6 +10,7 @@ import { SocialLoginButton } from "@/components/SocialLoginButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
+import { arcTestnet } from "@/config/wagmi";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
 
 
@@ -75,17 +76,21 @@ export default function DashboardPage() {
   const [hideBalance, setHideBalance] = useState(false);
   const [showAssets, setShowAssets] = useState(false);
 
-  const { data: nativeBalance } = useBalance({ address, query: { enabled: !!address } });
-  const { data: eurcBalance } = useReadContract({
-    address: TOKENS.EURC.address,
-    abi: ERC20_TRANSFER_ABI,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
+  const { data: balances } = useReadContracts({
+    contracts: address ? (["USDC", "EURC"] as const).map((key) => ({
+      address: TOKENS[key].address,
+      abi: ERC20_TRANSFER_ABI,
+      functionName: "balanceOf",
+      args: [address],
+      chainId: arcTestnet.id,
+    })) : [],
     query: { enabled: !!address },
   });
 
-  const usdcDisplay = nativeBalance?.value !== undefined ? formatAmount(nativeBalance.value, 18) : "0.00";
-  const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance as bigint, TOKENS.EURC.decimals) : "0.00";
+  const usdcBalance = balances?.[0]?.result as bigint | undefined;
+  const eurcBalance = balances?.[1]?.result as bigint | undefined;
+  const usdcDisplay = usdcBalance !== undefined ? formatAmount(usdcBalance, TOKENS.USDC.decimals) : "0.00";
+  const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance, TOKENS.EURC.decimals) : "0.00";
   const totalDisplay = (Number(usdcDisplay.replace(/,/g, "")) + Number(eurcDisplay.replace(/,/g, ""))).toLocaleString(undefined, { maximumFractionDigits: 2 });
   const contacts = getContacts().slice(0, 5);
   const recentTransfers = address ? getLocalTransfers(address).slice(0, 3) : [];
@@ -128,7 +133,7 @@ export default function DashboardPage() {
 
         <section className="gradient-card rounded-[24px] p-5">
           <div className="flex items-center justify-between text-xs text-white/75">
-            <span>Total Balance</span><button type="button" onClick={() => setHideBalance((v) => !v)} className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white">{hideBalance ? "Show" : "Hide"}</button>
+            <span>Total Balance</span><button type="button" aria-label={hideBalance ? "Show balance" : "Hide balance"} onClick={() => setHideBalance((v) => !v)} className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-base font-bold text-white">{hideBalance ? "🙈" : "👁"}</button>
           </div>
           <p className={`mt-3 text-4xl font-semibold tracking-[-0.06em] ${hideBalance ? "balance-hidden" : ""}`}>${visibleTotal}</p>
           <div className="mt-5 grid grid-cols-2 gap-3">
@@ -147,7 +152,7 @@ export default function DashboardPage() {
         </section>
 
         <section className="mt-7">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">Latest Activities</h2><Link href="/request" className="text-xs text-[#8f7cff]">View all</Link></div>
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">Latest Activities</h2></div>
           <div className="soft-card rounded-2xl p-4">
             {recentTransfers.length === 0 ? (
               <p className="text-sm text-[#8b8795]">No latest activities yet.</p>
@@ -170,7 +175,7 @@ export default function DashboardPage() {
             <div className="soft-card rounded-2xl p-4 text-sm text-[#8b8795]">No contacts saved yet.</div>
           ) : (
             <div className="flex justify-between gap-2">
-              {contacts.map((c) => <div key={c.id} className="min-w-0 text-center text-[10px] font-medium text-[#595465]"><div className="mx-auto mb-2 grid h-11 w-11 place-items-center rounded-full bg-[#8f7cff] text-white shadow-sm">{(c.avatar || c.name).slice(0,1).toUpperCase()}</div><span className="block truncate">{c.name}</span></div>)}
+              {contacts.map((c) => <Link href={`/send?to=${encodeURIComponent(c.handle ? c.handle.replace(/^@/, "") : c.address)}`} key={c.id} className="min-w-0 text-center text-[10px] font-medium text-[#595465]"><div className="mx-auto mb-2 grid h-11 w-11 place-items-center rounded-full bg-[#8f7cff] text-white shadow-sm">{(c.avatar || c.name).slice(0,1).toUpperCase()}</div><span className="block truncate">{c.name}</span></Link>)}
             </div>
           )}
         </section>

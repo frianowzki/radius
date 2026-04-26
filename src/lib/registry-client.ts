@@ -14,7 +14,7 @@ export function registryProfileToIdentity(profile: RegistryProfile): UserIdentit
   return {
     displayName: profile.displayName || "Arc user",
     handle: profile.handle,
-    avatar: profile.avatar,
+    avatar: profile.avatar && (!profile.avatar.startsWith("data:") || profile.avatar.length > 1000) ? profile.avatar : undefined,
     bio: profile.bio,
     authMode: "wallet",
   };
@@ -43,7 +43,7 @@ export async function saveRegistryProfile(input: {
   const res = await fetch("/api/registry/profile", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, avatar: input.avatar?.startsWith("data:") ? undefined : input.avatar }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || "Could not save registry profile");

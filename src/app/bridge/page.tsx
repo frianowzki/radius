@@ -493,7 +493,8 @@ export default function BridgePage() {
           <div>
             <form onSubmit={handleSend} className="space-y-5">
               <div className="glass-panel-strong rounded-[32px] p-8">
-<h2 className="text-3xl font-semibold tracking-tight text-glow">Bridge across testnets</h2>
+<h2 className="text-3xl font-black tracking-tight text-glow">Crosschains Bridge</h2>
+                <p className="mt-3 max-w-xs text-sm leading-6 text-zinc-400">Move USDC between supported testnets without mixing it into your simple Arc sends.</p>
               </div>
 
               <div className="glass-panel rounded-[28px] p-5">

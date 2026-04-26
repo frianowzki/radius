@@ -205,7 +205,7 @@ export function resolveRecipientInput(input: string): {
   const trimmed = input.trim();
   if (!trimmed) return { inputType: "unknown" };
 
-  if (trimmed.startsWith("@")) {
+  if (trimmed.startsWith("@") || !trimmed.startsWith("0x")) {
     const contact = findContactByHandle(trimmed);
     return {
       address: contact?.address,
