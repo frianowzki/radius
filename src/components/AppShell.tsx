@@ -1,185 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount, useDisconnect } from "wagmi";
-import { useLogout, usePrivy, useWallets } from "@privy-io/react-auth";
-import { DynamicBackground } from "@/components/DynamicBackground";
-import { SocialLoginButton } from "@/components/SocialLoginButton";
-import { hasConfiguredPrivy } from "@/lib/privy";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Home", icon: "◆" },
-  { href: "/send", label: "Send", icon: "↗" },
-  { href: "/request", label: "Request", icon: "⬇" },
-  { href: "/contacts", label: "Contact", icon: "◎" },
-  { href: "/profile", label: "Profile", icon: "◌" },
-  { href: "/history", label: "History", icon: "☰" },
-  { href: "/faucet", label: "Faucet", icon: "滴" },
+  { href: "/", label: "Home", icon: "⌂" },
+  { href: "/request", label: "Request", icon: "↧" },
+  { href: "/send", label: "Pay", icon: "▦", special: true },
+  { href: "/history", label: "Receipts", icon: "▤" },
+  { href: "/profile", label: "Profile", icon: "♙" },
 ];
-
-function formatAddress(address?: string | null) {
-  if (!address) return null;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window === "undefined") return "light";
-    const saved = window.localStorage.getItem("radius-theme");
-    return saved === "light" || saved === "dark" ? saved : "light";
-  });
-  const { isConnected: wagmiConnected, address: wagmiAddress } = useAccount();
-  const { disconnect } = useDisconnect();
-  const { logout } = useLogout();
-  const { authenticated, user, ready } = usePrivy();
-  const { wallets } = useWallets();
-
-  const privyWalletAddress = wallets[0]?.address ?? null;
-  const connectedAddress = wagmiAddress ?? privyWalletAddress ?? null;
-  const isConnected = wagmiConnected || authenticated;
-  const authLabel = authenticated
-    ? user?.email?.address || user?.google?.email || user?.github?.email || user?.twitter?.username || user?.apple?.email || formatAddress(connectedAddress)
-    : null;
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
-
-  function toggleTheme() {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    localStorage.setItem("radius-theme", nextTheme);
-    document.documentElement.dataset.theme = nextTheme;
-  }
-
-  async function handleDisconnect() {
-    if (wagmiConnected) disconnect();
-    if (authenticated) await logout();
-  }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <DynamicBackground />
-
-      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-3 pb-24 pt-3 sm:px-4 sm:pb-28 sm:pt-4 lg:flex-row lg:gap-6 lg:px-6 lg:pb-8">
-        <aside className="mobile-panel hidden w-64 shrink-0 flex-col overflow-hidden rounded-[28px] lg:flex">
-          <div className="border-b border-white/8 px-6 py-5">
-            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-sm font-bold text-zinc-950 shadow-lg shadow-black/20">
-              R
-            </div>
-            <div>
-              <h1 className="text-base font-semibold tracking-tight text-white">Radius</h1>
-              <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.24em] text-zinc-500">
-                Arc testnet payments
-              </p>
-            </div>
-          </div>
-
-          <nav className="flex-1 space-y-1.5 px-3 py-4">
-            {NAV_ITEMS.map((item) => {
-              const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all ${
-                    isActive ? "bg-white text-zinc-950" : "text-zinc-400 hover:bg-white/6 hover:text-zinc-100"
-                  }`}
-                >
-                  <span
-                    className={`flex h-9 w-9 items-center justify-center rounded-xl text-base transition-all ${
-                      isActive ? "bg-zinc-950 text-white" : "bg-white/5 text-zinc-300 group-hover:bg-white/10"
-                    }`}
-                  >
-                    {item.icon}
-                  </span>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {!isConnected && (
-            <div className="border-t border-white/8 px-5 py-4 text-xs leading-6 text-zinc-400">
-              <p className="font-semibold text-zinc-100">Mobile auth</p>
-              <p className="mt-2">
-                {hasConfiguredPrivy
-                  ? "Privy email and enabled social login are ready for cleaner mobile onboarding."
-                  : "Add real Privy app and client ids to enable social or email login."}
-              </p>
-            </div>
-          )}
-        </aside>
-
-        <div className="flex min-h-screen flex-1 flex-col gap-3 sm:gap-4 lg:gap-6">
-          <header className="mobile-panel rounded-[26px] px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex min-w-0 items-center justify-between gap-3">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.24em] text-zinc-500">Radius</p>
-                  <p className="mt-1 text-sm text-zinc-300">Fast stablecoin payments, cleaner in portrait mode</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className="shrink-0 rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-zinc-100 shadow-sm transition-colors"
-                >
-                  {theme === "dark" ? "Light" : "Dark"}
-                </button>
-              </div>
-
-              <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-                {!isConnected && hasConfiguredPrivy && ready && (
-                  <SocialLoginButton className="mobile-button mobile-button-primary w-full sm:w-auto" />
-                )}
-
-                <div className="wallet-connect-row">
-                  <ConnectButton
-                    showBalance={false}
-                    chainStatus="icon"
-                    accountStatus={isConnected ? "full" : "address"}
-                  />
-                  {authenticated && authLabel && (
-                    <div className="mt-2 flex flex-col gap-2 rounded-2xl border border-white/8 bg-white/[0.04] p-3 text-sm text-zinc-200">
-                      <span className="truncate">{authLabel}</span>
-                      <button
-                        type="button"
-                        onClick={handleDisconnect}
-                        className="rounded-xl border border-white/8 bg-white/[0.05] px-3 py-2 text-xs font-semibold text-zinc-100 transition-colors hover:bg-white/[0.1]"
-                      >
-                        Disconnect
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1">
-            <div className="mx-auto w-full max-w-6xl">{children}</div>
-          </main>
-        </div>
-      </div>
-
-      <nav className="mobile-tabbar lg:hidden">
-        <div className="mobile-tabbar-scroll">
+    <div className="phone-shell">
+      <main>{children}</main>
+      <nav className="bottom-nav">
+        <div className="grid grid-cols-5 items-end gap-1">
           {NAV_ITEMS.map((item) => {
-            const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex min-w-[4.25rem] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-colors ${
-                  isActive ? "bg-white text-zinc-950" : "text-zinc-400"
+                className={`flex flex-col items-center justify-end gap-1 text-[10px] font-semibold transition ${
+                  active ? "text-[#6f60d5]" : "text-[#a5a0ad]"
                 }`}
               >
-                <span className="text-sm">{item.icon}</span>
-                <span className="max-w-full truncate">{item.label}</span>
+                <span className={item.special ? "nav-pay text-xl" : "text-lg leading-none"}>{item.icon}</span>
+                <span>{item.label}</span>
               </Link>
             );
           })}

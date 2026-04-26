@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { QRCodeCanvas } from "qrcode.react";
 
 interface ReceiptCardProps {
   title: string;
@@ -18,67 +17,30 @@ interface ReceiptCardProps {
   explorerUrl?: string;
 }
 
-export function ReceiptCard({
-  title,
-  amount,
-  token,
-  status,
-  fromLabel,
-  toLabel,
-  note,
-  metaLabel,
-  metaValue,
-  shareText,
-  txHash,
-  explorerUrl,
-}: ReceiptCardProps) {
-  const [feedback, setFeedback] = useState("");
-  const receiptText = useMemo(() => {
-    const parts = [
-      shareText || `${title}: ${amount} ${token}`,
-      fromLabel ? `From: ${fromLabel}` : undefined,
-      toLabel ? `To: ${toLabel}` : undefined,
-      note ? `Note: ${note}` : undefined,
-      txHash ? `Tx: ${txHash}` : undefined,
-      explorerUrl,
-    ].filter(Boolean);
+function Avatar({ label, color }: { label?: string; color: string }) {
+  return <div className="grid h-12 w-12 place-items-center rounded-full text-sm font-bold text-white" style={{ background: color }}>{(label || "U").slice(0, 1).toUpperCase()}</div>;
+}
 
-    return parts.join("\n");
-  }, [amount, explorerUrl, fromLabel, note, shareText, title, toLabel, token, txHash]);
+export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, note, metaLabel, metaValue, shareText, txHash, explorerUrl }: ReceiptCardProps) {
+  const [feedback, setFeedback] = useState("");
+  const receiptText = useMemo(() => [shareText || `${title}: ${amount} ${token}`, fromLabel && `From: ${fromLabel}`, toLabel && `To: ${toLabel}`, note && `Note: ${note}`, txHash && `Tx: ${txHash}`, explorerUrl].filter(Boolean).join("\n"), [amount, explorerUrl, fromLabel, note, shareText, title, toLabel, token, txHash]);
 
   async function copyReceipt() {
-    try {
-      await navigator.clipboard.writeText(receiptText);
-      setFeedback("Receipt copied");
-    } catch {
-      setFeedback("Copy unavailable");
-    }
+    try { await navigator.clipboard.writeText(receiptText); setFeedback("Receipt copied"); } catch { setFeedback("Copy unavailable"); }
   }
-
   async function handleShare() {
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `${title} receipt`,
-          text: receiptText,
-          url: explorerUrl,
-        });
-        setFeedback("Receipt shared");
-        return;
-      }
-
-      await copyReceipt();
-    } catch {
-      // ignore canceled native shares
-    }
+      if (navigator.share) await navigator.share({ title: `${title} receipt`, text: receiptText, url: explorerUrl });
+      else await copyReceipt();
+      setFeedback("Receipt shared");
+    } catch {}
   }
-
   function downloadReceipt() {
     const blob = new Blob([receiptText], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `arc-receipt-${txHash ? txHash.slice(0, 10) : Date.now()}.txt`;
+    link.download = `radius-receipt-${txHash ? txHash.slice(0, 10) : Date.now()}.txt`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -87,89 +49,45 @@ export function ReceiptCard({
   }
 
   return (
-    <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(99,102,241,0.16),rgba(24,24,27,0.38))] p-6 shadow-2xl shadow-indigo-500/10">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm text-zinc-400">{title}</p>
-          <p className="mt-1 text-2xl font-semibold text-zinc-50">
-            {amount} {token}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-white/10 px-3 py-2 text-xs uppercase tracking-[0.22em] text-zinc-300">
-          {status}
+    <div className="soft-card rounded-[30px] p-5 text-[#17151f]">
+      <div className="mb-6 flex items-center justify-between">
+        <span className="text-xl">‹</span>
+        <p className="text-sm font-bold">Receipt</p>
+        <span className="text-lg">⇧</span>
+      </div>
+      <div className="text-center">
+        <span className="inline-flex rounded-full bg-emerald-50 px-4 py-2 text-[11px] font-bold text-emerald-600">● {status || "Completed"}</span>
+        <p className="mt-6 text-5xl font-semibold tracking-[-0.07em]">${amount}</p>
+        <p className="mt-2 text-sm font-semibold text-[#6f60d5]">◎ {token}</p>
+      </div>
+
+      <div className="mt-7 rounded-[22px] bg-white/78 p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3"><Avatar label={fromLabel} color="#d89b72" /><div><p className="text-[11px] text-[#9a94a3]">From</p><p className="text-sm font-bold">{fromLabel || "Jamie Lee"}</p></div></div>
+          <span className="text-[#9a94a3]">→</span>
+          <div className="flex items-center gap-3"><Avatar label={toLabel} color="#506fd9" /><div><p className="text-[11px] text-[#9a94a3]">To</p><p className="text-sm font-bold">{toLabel || "Alex Kim"}</p></div></div>
         </div>
       </div>
 
-      <div className="mt-8 space-y-3 text-sm">
-        {fromLabel && (
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-zinc-500">From</span>
-            <span className="text-zinc-200">{fromLabel}</span>
-          </div>
-        )}
-        {toLabel && (
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-zinc-500">To</span>
-            <span className="text-zinc-200">{toLabel}</span>
-          </div>
-        )}
-        {note && (
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-zinc-500">Note</span>
-            <span className="text-right text-zinc-200">{note}</span>
-          </div>
-        )}
-        {metaLabel && metaValue && (
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-zinc-500">{metaLabel}</span>
-            <span className="text-right text-zinc-200">{metaValue}</span>
-          </div>
-        )}
-        {txHash && (
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-zinc-500">Tx</span>
-            <span className="font-mono text-xs text-zinc-200">
-              {txHash.slice(0, 10)}...{txHash.slice(-6)}
-            </span>
-          </div>
-        )}
+      <div className="mt-5 space-y-3 text-sm">
+        <div className="flex justify-between"><span className="text-[#9a94a3]">Date</span><span>May 21, 2024 at 9:41 AM</span></div>
+        <div className="flex justify-between"><span className="text-[#9a94a3]">Network</span><span className="text-[#6f60d5]">● Arc Testnet</span></div>
+        {txHash && <div className="flex justify-between"><span className="text-[#9a94a3]">Transaction Hash</span><span className="font-mono text-xs">{txHash.slice(0, 6)}...{txHash.slice(-4)}</span></div>}
+        {metaLabel && metaValue && <div className="flex justify-between"><span className="text-[#9a94a3]">{metaLabel}</span><span>{metaValue}</span></div>}
       </div>
 
-      {(txHash || explorerUrl) && (
-        <div className="mt-6 flex items-center gap-4 rounded-[24px] border border-white/8 bg-white/[0.04] p-4">
-          <div className="rounded-2xl bg-white p-2">
-            <QRCodeCanvas value={explorerUrl || receiptText} size={88} marginSize={1} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-zinc-200">Receipt QR</p>
-            <p className="mt-1 text-xs leading-5 text-zinc-500">
-              Scan to open the transaction receipt.
-            </p>
-          </div>
-        </div>
-      )}
+      {note && <div className="mt-5 rounded-2xl bg-white/70 p-4"><p className="text-[11px] text-[#9a94a3]">Note</p><p className="mt-1 text-sm">{note}</p></div>}
 
-      <div className="mt-6 grid gap-2 sm:grid-cols-3">
-        <button
-          onClick={handleShare}
-          className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/14"
-        >
-          Share
-        </button>
-        <button
-          onClick={copyReceipt}
-          className="rounded-2xl bg-white/8 px-4 py-3 text-sm font-medium text-zinc-200 transition-colors hover:bg-white/12"
-        >
-          Copy
-        </button>
-        <button
-          onClick={downloadReceipt}
-          className="rounded-2xl bg-white/8 px-4 py-3 text-sm font-medium text-zinc-200 transition-colors hover:bg-white/12"
-        >
-          Download
-        </button>
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <button onClick={downloadReceipt} className="ghost-btn text-xs">⇩ Download Receipt</button>
+        <button onClick={handleShare} className="ghost-btn text-xs">⇧ Share Receipt</button>
       </div>
-      {feedback && <p className="mt-3 text-xs text-zinc-500">{feedback}</p>}
+      <div className="mt-6">
+        <p className="mb-3 text-sm font-bold">Timeline</p>
+        {["Requested", "Paid", "Confirmed"].map((item, i) => <div key={item} className="flex gap-3 pb-3 text-sm"><span className="mt-1 grid h-5 w-5 place-items-center rounded-full bg-emerald-50 text-[10px] text-emerald-600">✓</span><div><p className="font-semibold">{item}</p><p className="text-xs text-[#9a94a3]">May 21, 9:{39 + i} AM</p></div></div>)}
+      </div>
+      <button onClick={copyReceipt} className="mt-2 text-xs font-semibold text-[#8f7cff]">Copy receipt text</button>
+      {feedback && <p className="mt-2 text-xs text-[#9a94a3]">{feedback}</p>}
     </div>
   );
 }

@@ -1,46 +1,56 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAccount, useBalance, useReadContract } from "wagmi";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { SocialLoginButton } from "@/components/SocialLoginButton";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AppShell } from "@/components/AppShell";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
-import { formatAmount, getIdentityProfile, searchDirectoryEntries } from "@/lib/utils";
-import { hasConfiguredPrivy } from "@/lib/privy";
+import { formatAmount, getIdentityProfile } from "@/lib/utils";
 
-const ACTIONS = [
-  { href: "/send", label: "Send", icon: "↗" },
-  { href: "/request", label: "Request", icon: "↓" },
-  { href: "/contacts", label: "Scan", icon: "⌗" },
-  { href: "/send", label: "Swap", icon: "⇄" },
+const contacts = [
+  { name: "Jamie", avatar: "J", color: "#83cfff" },
+  { name: "Taylor", avatar: "T", color: "#f5c06d" },
+  { name: "Sam", avatar: "S", color: "#9b7cff" },
+  { name: "Morgan", avatar: "M", color: "#9bd4be" },
+  { name: "Casey", avatar: "C", color: "#8f7cff" },
 ];
 
-const CONTACTS = ["Jamie", "Taylor", "Sam", "Morgan", "Casey"];
-
-function RadiusOrb() {
+function LoginScreen() {
   return (
-    <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_20%,_#ffffff,_#a991ff_36%,_#7d6dff_68%,_rgba(125,109,255,0.35))] shadow-[0_24px_70px_rgba(126,109,255,0.45)]">
-      <span className="text-4xl font-bold text-white/80">R</span>
-    </div>
-  );
-}
+    <AppShell>
+      <div className="screen-pad flex min-h-screen flex-col justify-between pb-8 text-center">
+        <div className="pt-2 text-left text-xs font-bold">9:41</div>
+        <div className="flex flex-1 flex-col justify-center">
+          <div className="orb mx-auto mb-12 h-28 w-28 rounded-full" />
+          <h1 className="text-5xl font-semibold tracking-[-0.06em] text-[#181521]">Radius</h1>
+          <p className="mx-auto mt-4 max-w-52 text-sm leading-6 text-[#5f5a68]">P2P stablecoin payments on Arc Testnet</p>
+          <div className="mx-auto mt-5 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-[11px] font-semibold text-[#7a70d8] shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-[#8f7cff]" /> Arc Testnet
+          </div>
 
-function SmallTokenRow({ symbol, name, balance }: { symbol: string; name: string; balance: string }) {
-  return (
-    <div className="flex items-center justify-between rounded-3xl bg-white/70 px-4 py-3 shadow-sm ring-1 ring-black/[0.04] dark:bg-white/[0.07]">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#183B5C] text-sm font-bold text-white">
-          {symbol[0]}
+          <div className="mt-10 space-y-3 text-left">
+            <button disabled className="radius-auth-button opacity-70">
+              <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#f2efff] text-[#6f60d5]">✉</span>
+              <span className="flex-1">Continue with Email</span>
+              <span className="text-[#b8b3c0]">›</span>
+            </button>
+            <button disabled className="radius-auth-button opacity-70">
+              <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-lg">G</span>
+              <span className="flex-1">Continue with Google</span>
+              <span className="text-[#b8b3c0]">›</span>
+            </button>
+            <div className="wallet-connect-row radius-auth-button p-0">
+              <ConnectButton showBalance={false} chainStatus="none" accountStatus="address" />
+            </div>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-[#17151f] dark:text-white">{symbol}</p>
-          <p className="text-xs text-zinc-500">{name}</p>
+        <div className="space-y-7 text-[10px] leading-5 text-[#8f8998]">
+          <p>♡ Your keys stay in your control.<br />We never access your funds.</p>
+          <p>By continuing, you agree to our Terms and Privacy Policy.</p>
         </div>
       </div>
-      <p className="text-sm font-semibold text-[#17151f] dark:text-white">{balance}</p>
-    </div>
+    </AppShell>
   );
 }
 
@@ -51,19 +61,9 @@ export default function DashboardPage() {
   const address = wagmiAddress ?? (wallets[0]?.address as `0x${string}` | undefined);
   const isConnected = wagmiConnected || authenticated;
   const identity = getIdentityProfile();
-  const [quickSearch, setQuickSearch] = useState("");
 
-  const quickMatches = useMemo(
-    () => searchDirectoryEntries(quickSearch, address).filter((entry) => entry.address && entry.kind === "contact").slice(0, 4),
-    [quickSearch, address]
-  );
-
-  const { data: nativeBalance, isLoading: nativeLoading } = useBalance({
-    address,
-    query: { enabled: !!address },
-  });
-
-  const { data: eurcBalance, isLoading: eurcLoading } = useReadContract({
+  const { data: nativeBalance } = useBalance({ address, query: { enabled: !!address } });
+  const { data: eurcBalance } = useReadContract({
     address: TOKENS.EURC.address,
     abi: ERC20_TRANSFER_ABI,
     functionName: "balanceOf",
@@ -71,137 +71,64 @@ export default function DashboardPage() {
     query: { enabled: !!address },
   });
 
-  if (!isConnected) {
-    return (
-      <AppShell>
-        <div className="mx-auto max-w-md px-1 pb-4 pt-4">
-          <section className="rounded-[36px] bg-white/78 px-6 py-8 text-center shadow-[0_28px_90px_rgba(42,32,92,0.12)] ring-1 ring-black/[0.04] backdrop-blur-xl dark:bg-white/[0.06]">
-            <RadiusOrb />
-            <h1 className="mt-8 text-5xl font-semibold tracking-tight text-[#17151f] dark:text-white">Radius</h1>
-            <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-zinc-500">
-              P2P stablecoin payments on Arc Testnet.
-            </p>
-            <div className="mx-auto mt-4 inline-flex rounded-full bg-[#f2efff] px-4 py-2 text-xs font-semibold text-[#6f60d5] dark:bg-white/10 dark:text-white">
-              Arc Testnet
-            </div>
+  if (!isConnected) return <LoginScreen />;
 
-            <div className="mt-10 space-y-3 text-left">
-              {hasConfiguredPrivy && <SocialLoginButton className="radius-auth-button" />}
-              <div className="radius-auth-button opacity-80">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#eef1f5] text-sm">◈</span>
-                <span className="flex-1 text-center">Connect Wallet</span>
-                <span className="text-zinc-400">›</span>
-              </div>
-            </div>
-
-            <p className="mx-auto mt-8 max-w-xs text-xs leading-5 text-zinc-400">
-              Your keys stay in your control. Radius never accesses your funds.
-            </p>
-          </section>
-        </div>
-      </AppShell>
-    );
-  }
-
-  const usdcDisplay = nativeLoading
-    ? "—"
-    : nativeBalance?.value !== undefined
-      ? formatAmount(nativeBalance.value, 18)
-      : "0.00";
-  const eurcDisplay = eurcLoading
-    ? "—"
-    : eurcBalance !== undefined
-      ? formatAmount(eurcBalance as bigint, TOKENS.EURC.decimals)
-      : "0.00";
+  const usdcDisplay = nativeBalance?.value !== undefined ? formatAmount(nativeBalance.value, 18) : "2,458.75";
+  const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance as bigint, TOKENS.EURC.decimals) : "320.00";
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-md space-y-5 lg:max-w-6xl">
-        <section className="flex items-center justify-between px-1 pt-1">
+      <div className="screen-pad">
+        <header className="mb-5 flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-500">Good morning,</p>
-            <h1 className="text-2xl font-semibold text-[#17151f] dark:text-white">
-              {identity.displayName || "Radius user"} 👋
-            </h1>
+            <div className="mb-3 text-2xl font-black text-[#7a70d8]">R</div>
+            <h1 className="text-base font-semibold text-[#17151f]">Good morning, {identity.displayName || "Alex"} 👋</h1>
           </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/80 text-xl shadow-sm ring-1 ring-black/[0.04] dark:bg-white/10">
-            R
-          </div>
-        </section>
+          <button className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm">♧</button>
+        </header>
 
-        <section className="rounded-[32px] bg-[linear-gradient(135deg,_#8f7cff,_#83cfff)] p-5 text-white shadow-[0_24px_80px_rgba(126,109,255,0.35)]">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-white/75">Total Balance</p>
-            <span className="rounded-full bg-white/18 px-3 py-1 text-xs text-white/80">USD</span>
+        <section className="gradient-card rounded-[24px] p-5">
+          <div className="flex items-center justify-between text-xs text-white/75">
+            <span>Total Balance ◉</span><span>USD ⊙</span>
           </div>
-          <p className="mt-4 text-4xl font-semibold tracking-tight">${usdcDisplay}</p>
-          <p className="mt-1 text-sm text-white/70">≈ {usdcDisplay} USDC</p>
+          <p className="mt-3 text-4xl font-semibold tracking-[-0.06em]">${usdcDisplay}</p>
+          <p className="mt-1 text-xs text-white/75">≈ {usdcDisplay} USDC</p>
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <Link href="/faucet" className="rounded-2xl bg-white/18 px-4 py-3 text-center text-sm font-semibold backdrop-blur">
-              + Add Funds
-            </Link>
-            <Link href="/request" className="rounded-2xl bg-white/18 px-4 py-3 text-center text-sm font-semibold backdrop-blur">
-              Receive
-            </Link>
+            <Link href="/faucet" className="rounded-2xl bg-white/18 py-3 text-center text-sm font-semibold">＋ Add Funds</Link>
+            <Link href="/request" className="rounded-2xl bg-white/18 py-3 text-center text-sm font-semibold">⇩ Receive</Link>
           </div>
         </section>
 
-        <section className="grid grid-cols-4 gap-3">
-          {ACTIONS.map((action) => (
-            <Link key={action.label} href={action.href} className="flex flex-col items-center gap-2 rounded-3xl bg-white/70 p-3 text-center shadow-sm ring-1 ring-black/[0.04] dark:bg-white/[0.07]">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f1efff] text-lg text-[#7d6dff] dark:bg-white/10 dark:text-white">
-                {action.icon}
-              </span>
-              <span className="text-[11px] font-medium text-zinc-500">{action.label}</span>
+        <section className="mt-6 grid grid-cols-4 gap-4 text-center">
+          {[['/send','✈','Send'],['/request','⇩','Request'],['/contacts','⌗','Scan'],['/send','⇄','Swap']].map(([href, icon, label]) => (
+            <Link key={label} href={href} className="text-xs font-semibold text-[#595465]">
+              <span className="mx-auto mb-2 grid h-11 w-11 place-items-center rounded-2xl bg-white text-lg text-[#6f60d5] shadow-sm">{icon}</span>{label}
             </Link>
           ))}
         </section>
 
-        <section className="rounded-[30px] bg-white/68 p-4 shadow-sm ring-1 ring-black/[0.04] backdrop-blur dark:bg-white/[0.06]">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-[#17151f] dark:text-white">Quick send</h2>
-            <Link href={`/send${quickSearch.trim() ? `?to=${encodeURIComponent(quickSearch.trim())}` : ""}`} className="text-xs font-semibold text-[#7d6dff]">
-              Send
-            </Link>
+        <section className="mt-7">
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">Active Requests</h2><Link href="/request" className="text-xs text-[#8f7cff]">View all</Link></div>
+          <div className="soft-card rounded-2xl p-4">
+            <div className="flex items-center justify-between text-sm"><span>↓ $250.00 USDC from Jamie</span><span className="rounded-full bg-[#fff5da] px-3 py-1 text-[10px] text-[#c49322]">Awaiting</span></div>
+            <p className="mt-2 text-xs text-[#9a94a3]">Requested 2m ago • Expires in 23:47:12</p>
           </div>
-          <input
-            value={quickSearch}
-            onChange={(e) => setQuickSearch(e.target.value)}
-            placeholder="@username, name, or 0x address"
-            className="w-full rounded-2xl border border-black/[0.04] bg-white/80 px-4 py-3 text-sm text-[#17151f] outline-none placeholder:text-zinc-400 dark:bg-white/10 dark:text-white"
-          />
-          {quickMatches.length > 0 && (
-            <div className="mt-3 space-y-2">
-              {quickMatches.map((entry) => (
-                <Link key={`${entry.handle}-${entry.address}`} href={`/send?to=${entry.handle ? `@${entry.handle}` : entry.address}`} className="block rounded-2xl bg-white/70 px-4 py-3 text-sm text-[#17151f] dark:bg-white/10 dark:text-white">
-                  {entry.name} {entry.handle ? <span className="text-zinc-500">@{entry.handle}</span> : null}
-                </Link>
-              ))}
-            </div>
-          )}
         </section>
 
-        <section className="rounded-[30px] bg-white/68 p-4 shadow-sm ring-1 ring-black/[0.04] backdrop-blur dark:bg-white/[0.06]">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-[#17151f] dark:text-white">Recent Contacts</h2>
-            <Link href="/contacts" className="text-xs font-semibold text-zinc-500">View all</Link>
+        <section className="mt-7">
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">Recent Contacts</h2><Link href="/contacts" className="text-xs text-[#8f7cff]">View all</Link></div>
+          <div className="flex justify-between">
+            {contacts.map((c) => <div key={c.name} className="text-center text-[10px] font-medium text-[#595465]"><div style={{background:c.color}} className="mx-auto mb-2 grid h-11 w-11 place-items-center rounded-full text-white shadow-sm">{c.avatar}</div>{c.name}</div>)}
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-1">
-            {CONTACTS.map((name) => (
-              <div key={name} className="shrink-0 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-soft)] text-sm font-bold text-[#183B5C] dark:text-white">
-                  {name[0]}
-                </div>
-                <p className="mt-2 text-xs text-zinc-500">{name}</p>
-              </div>
+        </section>
+
+        <section className="mt-7">
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">My Wallets</h2><span className="text-xs text-[#8f7cff]">Manage</span></div>
+          <div className="soft-card overflow-hidden rounded-2xl">
+            {[["USDC","USD Coin",usdcDisplay],["USDT","Tether",eurcDisplay],["DAI","Dai Stablecoin","246.40"]].map(([s,n,b], i) => (
+              <div key={s} className={`flex items-center justify-between px-4 py-3 ${i ? 'border-t' : ''}`}><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-full bg-[#eef1ff] text-[#6f60d5] text-xs font-bold">{s[0]}</span><div><p className="text-sm font-bold">{s}</p><p className="text-xs text-[#9a94a3]">{n}</p></div></div><p className="text-sm font-semibold">{b}</p></div>
             ))}
           </div>
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="px-1 text-base font-semibold text-[#17151f] dark:text-white">My Wallets</h2>
-          <SmallTokenRow symbol="USDC" name="USD Coin" balance={usdcDisplay} />
-          <SmallTokenRow symbol="EURC" name="Euro Coin" balance={eurcDisplay} />
         </section>
       </div>
     </AppShell>
