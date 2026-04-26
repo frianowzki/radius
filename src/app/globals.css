@@ -137,3 +137,26 @@ button, input, textarea, select { font: inherit; }
 }
 .wallet-connect-row [data-rk], .wallet-connect-row button { width: 100%; }
 .wallet-connect-row button { min-height: 52px; border-radius: 16px !important; }
+
+/* Legacy app panels kept for send/bridge flows while matching the new light Radius look. */
+.glass-panel,
+.glass-panel-strong,
+.mobile-panel {
+  background: rgba(255,255,255,.82);
+  border: 1px solid rgba(255,255,255,.72);
+  box-shadow: 0 18px 50px rgba(55,46,88,.09);
+  backdrop-filter: blur(18px);
+}
+.glass-panel { color: #17151f; }
+.glass-panel-strong { color: #17151f; }
+.text-glow { color: #17151f; }
+.glass-panel input,
+.glass-panel-strong input,
+.glass-panel textarea,
+.glass-panel-strong textarea {
+  color: #17151f !important;
+  background: rgba(255,255,255,.8) !important;
+  border-color: rgba(27,22,43,.08) !important;
+}
+.glass-panel input::placeholder,
+.glass-panel-strong input::placeholder { color: #a9a2b4 !important; }

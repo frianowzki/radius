@@ -185,9 +185,15 @@ export default function SendPage() {
   }
 
   async function getActiveProvider() {
-    if (walletClient?.transport) return walletClient.transport as unknown as EIP1193Provider;
-    if (!privyWallet) return null;
-    return (await privyWallet.getEthereumProvider()) as EIP1193Provider;
+    if (privyWallet) {
+      return (await privyWallet.getEthereumProvider()) as EIP1193Provider;
+    }
+
+    const injectedProvider = (globalThis as typeof globalThis & {
+      ethereum?: EIP1193Provider;
+    }).ethereum;
+
+    return injectedProvider ?? null;
   }
 
   async function handleSend(e: React.FormEvent) {
@@ -524,7 +530,7 @@ export default function SendPage() {
               <div className="glass-panel rounded-[28px] p-5">
                 <div className="mb-3 flex items-center justify-between">
                   <label className="text-sm font-medium text-zinc-400">Route</label>
-                  <span className="text-xs text-zinc-500">Crosschain ready</span>
+                  <span className="text-xs text-zinc-500">Arc App Kit Bridge</span>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {CROSSCHAIN_ROUTES.map((route) => (
@@ -745,8 +751,8 @@ export default function SendPage() {
                   </p>
                   <p className="mt-2 text-xs leading-6 text-zinc-500">
                     {isBridgeRoute
-                      ? "This route uses Arc App Kit bridge flow for USDC between supported testnets."
-                      : "This route uses the direct Arc same-chain send flow."}
+                      ? "This route uses Arc App Kit’s CCTP bridge flow: estimate fees, burn on source, wait for Circle attestation, then mint on destination."
+                      : "This route uses Arc App Kit-style same-chain send behavior on Arc Testnet."}
                   </p>
                   <p className="mt-2 text-xs leading-6 text-zinc-400">
                     {isBridgeRoute
