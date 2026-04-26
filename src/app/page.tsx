@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useAccount, useBalance, useReadContract } from "wagmi";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useRadiusAuth } from "@/lib/web3auth";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AppShell } from "@/components/AppShell";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
@@ -70,9 +70,8 @@ function LoginScreen() {
 
 export default function DashboardPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated } = usePrivy();
-  const { wallets } = useWallets();
-  const address = wagmiAddress ?? (wallets[0]?.address as `0x${string}` | undefined);
+  const { authenticated, address: authAddress } = useRadiusAuth();
+  const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const identity = getIdentityProfile();
 

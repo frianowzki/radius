@@ -2,20 +2,21 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { usePrivy } from "@privy-io/react-auth";
+import { useRadiusAuth } from "@/lib/web3auth";
 
 export function ProfilePfpUpload() {
-  const { user } = usePrivy();
+  const { address, user } = useRadiusAuth();
   const [pfpUrl, setPfpUrl] = useState<string | null>(
     typeof window !== "undefined" ? localStorage.getItem("pfpUrl") : null
   );
 
   async function uploadPfp(file: File) {
-    if (!user?.id) return;
+    const userId = user?.email || user?.name || address;
+    if (!userId) return;
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("userId", user.id);
+    formData.append("userId", userId);
 
     const res = await fetch("/api/profile/pfp", {
       method: "POST",

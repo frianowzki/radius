@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAccount } from "wagmi";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useRadiusAuth } from "@/lib/web3auth";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { QRCodeSVG } from "qrcode.react";
 import { AppShell } from "@/components/AppShell";
@@ -12,9 +12,8 @@ import { buildPaymentUrl, formatPreferredRecipientInput } from "@/lib/utils";
 
 export default function RequestPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated } = usePrivy();
-  const { wallets } = useWallets();
-  const address = wagmiAddress ?? wallets[0]?.address;
+  const { authenticated, address: authAddress } = useRadiusAuth();
+  const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
 
   const [amount, setAmount] = useState("250.00");

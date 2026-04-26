@@ -9,7 +9,7 @@ import {
   useChainId,
   useSwitchChain,
 } from "wagmi";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useRadiusAuth } from "@/lib/web3auth";
 import { createWalletClient, custom, parseUnits, isAddress } from "viem";
 import type { EIP1193Provider } from "viem";
 import { AppShell } from "@/components/AppShell";
@@ -48,12 +48,10 @@ type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
 export default function SendPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated } = usePrivy();
-  const { wallets } = useWallets();
-  const privyWallet = wallets[0];
-  const address = wagmiAddress ?? (privyWallet?.address as `0x${string}` | undefined);
+  const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId } = useRadiusAuth();
+  const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
-  const chainId = useChainId();
+  const wagmiChainId = useChainId();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
   const { switchChainAsync } = useSwitchChain();
@@ -91,7 +89,8 @@ export default function SendPage() {
   const sourceUsdcAddress = CHAIN_USDC_ADDRESSES[selectedRouteConfig.fromChain];
   const destinationUsdcAddress = CHAIN_USDC_ADDRESSES[selectedRouteConfig.toChain];
   const routeExplorerUrl = sourceChainMeta.explorerUrl;
-  const isOnExpectedSourceChain = chainId === expectedSourceChainId;
+  const activeChainId = wagmiConnected ? wagmiChainId : authChainId;
+  const isOnExpectedSourceChain = activeChainId === expectedSourceChainId;
   const canSwitchSourceChain = !isOnExpectedSourceChain && !!switchChainAsync;
 
   const { data: balances } = useReadContracts({
@@ -175,19 +174,16 @@ export default function SendPage() {
 
   async function getActiveWalletClient() {
     if (walletClient) return walletClient;
-    if (!privyWallet || !address) return null;
-    const provider = await privyWallet.getEthereumProvider();
+    if (!authProvider || !address) return null;
     return createWalletClient({
       account: address,
       chain: arcTestnet,
-      transport: custom(provider),
+      transport: custom(authProvider),
     });
   }
 
   async function getActiveProvider() {
-    if (privyWallet) {
-      return (await privyWallet.getEthereumProvider()) as EIP1193Provider;
-    }
+    if (authProvider) return authProvider as EIP1193Provider;
 
     const injectedProvider = (globalThis as typeof globalThis & {
       ethereum?: EIP1193Provider;

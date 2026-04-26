@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAccount, usePublicClient } from "wagmi";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useRadiusAuth } from "@/lib/web3auth";
 import { AppShell } from "@/components/AppShell";
 import { ProfileChip } from "@/components/ProfileChip";
 import { TOKENS, type TokenKey } from "@/config/tokens";
@@ -34,9 +34,8 @@ interface TransferEvent {
 
 export default function HistoryPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated } = usePrivy();
-  const { wallets } = useWallets();
-  const address = wagmiAddress ?? wallets[0]?.address;
+  const { authenticated, address: authAddress } = useRadiusAuth();
+  const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const publicClient = usePublicClient({ chainId: arcTestnet.id });
 

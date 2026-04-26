@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useRadiusAuth } from "@/lib/web3auth";
 import { createWalletClient, custom, parseUnits, isAddress } from "viem";
 import { AppShell } from "@/components/AppShell";
 import { ReceiptCard } from "@/components/ReceiptCard";
@@ -26,10 +26,8 @@ type PayStatus = "idle" | "sending" | "confirming" | "success" | "error";
 function PayContent() {
   const searchParams = useSearchParams();
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated } = usePrivy();
-  const { wallets } = useWallets();
-  const privyWallet = wallets[0];
-  const address = wagmiAddress ?? (privyWallet?.address as `0x${string}` | undefined);
+  const { authenticated, address: authAddress, provider: authProvider } = useRadiusAuth();
+  const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
@@ -61,12 +59,11 @@ function PayContent() {
 
   async function getActiveWalletClient() {
     if (walletClient) return walletClient;
-    if (!privyWallet || !address) return null;
-    const provider = await privyWallet.getEthereumProvider();
+    if (!authProvider || !address) return null;
     return createWalletClient({
       account: address,
       chain: arcTestnet,
-      transport: custom(provider),
+      transport: custom(authProvider),
     });
   }
 
