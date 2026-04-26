@@ -33,7 +33,7 @@ export const privyConfig: PrivyClientConfig = {
   loginMethods: ["email", ...enabledSocialLoginMethods, "wallet"],
   embeddedWallets: {
     ethereum: {
-      createOnLogin: "users-without-wallets",
+      createOnLogin: "off",
     },
   },
 };
