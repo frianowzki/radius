@@ -184,15 +184,15 @@ export default function HistoryPage() {
               </p>
             </div>
 
-            <div className="frosted-segment w-fit">
+            <div className="history-filter frosted-segment w-fit">
               {(["all", "sent", "received"] as const).map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
                   className={`rounded-2xl px-4 py-2.5 text-sm font-medium capitalize transition-all ${
                     filter === f
-                      ? "bg-white/70 text-[#17151f] shadow"
-                      : "text-[#8b8795] hover:text-[#17151f]"
+                      ? "history-filter-active bg-white/70 text-[#17151f] shadow"
+                      : "history-filter-idle text-[#8b8795] hover:text-[#17151f]"
                   }`}
                 >
                   {f}
@@ -229,7 +229,7 @@ export default function HistoryPage() {
                   return (
                     <div
                       key={`${tx.txHash}-${tx.direction}`}
-                      className="glass-panel group rounded-[28px] p-5 transition-all hover:border-white/14"
+                      className="history-card glass-panel group rounded-[28px] p-5 transition-all hover:border-white/14"
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-4">
@@ -245,16 +245,16 @@ export default function HistoryPage() {
                           <div className="space-y-3">
                             <div>
                               <div className="flex flex-wrap items-center gap-2">
-                                <p className="text-base font-semibold text-zinc-100">
-                                  {isSent ? "Sent" : "Received"} <span className="text-zinc-500">{tx.token}</span>
+                                <p className="history-title text-base font-semibold text-zinc-100">
+                                  {isSent ? "Sent" : "Received"} <span className="history-token text-zinc-500">{tx.token}</span>
                                 </p>
                                 {tx.source === "local" && (
-                                  <span className="rounded-full border border-indigo-400/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-indigo-300">
+                                  <span className="history-saved rounded-full border border-indigo-400/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-indigo-300">
                                     Saved
                                   </span>
                                 )}
                               </div>
-                              <p className="mt-1 font-mono text-xs text-zinc-500">
+                              <p className="history-counterparty mt-1 font-mono text-xs text-zinc-500">
                                 {isSent ? "To " : "From "}
                                 {formatContactLabel(counterparty)}
                               </p>
@@ -279,7 +279,7 @@ export default function HistoryPage() {
                             href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-1 inline-block text-xs text-zinc-500 transition-colors hover:text-indigo-300"
+                            className="history-link mt-1 inline-block text-xs text-zinc-500 transition-colors hover:text-indigo-300"
                           >
                             View on ArcScan →
                           </a>
