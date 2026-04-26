@@ -51,6 +51,7 @@ export default function BridgePage() {
   const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
+  const isSocialWalletOnly = authenticated && !wagmiConnected;
   const wagmiChainId = useChainId();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
@@ -164,6 +165,7 @@ export default function BridgePage() {
     status !== "sending" &&
     status !== "confirming" &&
     isOnExpectedSourceChain &&
+    !isSocialWalletOnly &&
     (!isBridgeRoute || token === "USDC");
 
   function resetBridgeFeedback() {
@@ -196,6 +198,11 @@ export default function BridgePage() {
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!publicClient || !address) return;
+    if (isSocialWalletOnly) {
+      setStatus("error");
+      setError("Bridge currently requires an external wallet. Web3Auth social wallets can still send Arc → Arc, but Arc App Kit bridge is not stable with the embedded social provider yet.");
+      return;
+    }
 
     const activeWalletClient = await getActiveWalletClient();
     if (!activeWalletClient) {
@@ -679,6 +686,12 @@ export default function BridgePage() {
                 {recipient && !validRecipient && (
                   <p className="mt-2 text-xs text-red-400">Enter a valid address or a saved @username</p>
                 )}
+                {isSocialWalletOnly && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                    Bridge currently requires an external wallet. Social wallets can still use Send on Arc.
+                  </div>
+                )}
+
                 {isBridgeRoute && token !== "USDC" && (
                   <p className="mt-2 text-xs text-amber-400">Crosschain route currently supports USDC only.</p>
                 )}

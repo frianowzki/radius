@@ -1,56 +1,65 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRadiusAuth } from "@/lib/web3auth";
+
+function readAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 export function ProfilePfpUpload() {
   const { address, user } = useRadiusAuth();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [pfpUrl, setPfpUrl] = useState<string | null>(
     typeof window !== "undefined" ? localStorage.getItem("pfpUrl") : null
   );
+  const [fileName, setFileName] = useState("");
+  const [status, setStatus] = useState("");
 
   async function uploadPfp(file: File) {
-    const userId = user?.email || user?.name || address;
-    if (!userId) return;
+    const userId = user?.email || user?.name || address || "local-profile";
+    setFileName(file.name);
+    setStatus("Saving...");
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("userId", userId);
+    const localPreview = await readAsDataUrl(file);
+    localStorage.setItem("pfpUrl", localPreview);
+    setPfpUrl(localPreview);
 
-    const res = await fetch("/api/profile/pfp", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("userId", userId);
 
-    const data = await res.json();
-
-    if (data.url) {
-      localStorage.setItem("pfpUrl", data.url);
-      setPfpUrl(data.url);
+      const res = await fetch("/api/profile/pfp", { method: "POST", body: formData });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        localStorage.setItem("pfpUrl", data.url);
+        setPfpUrl(data.url);
+        setStatus("Uploaded");
+      } else {
+        setStatus("Saved locally");
+      }
+    } catch {
+      setStatus("Saved locally");
     }
   }
 
   return (
-    <div className="space-y-3">
-      {pfpUrl && (
-        <Image
-          src={pfpUrl}
-          alt="Profile"
-          width={80}
-          height={80}
-          className="h-20 w-20 rounded-full object-cover"
-        />
-      )}
-
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) uploadPfp(file);
-        }}
-      />
+    <div className="flex items-center gap-4">
+      <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-white/60 text-2xl font-black text-[#8f7cff] shadow-sm">
+        {pfpUrl ? <Image src={pfpUrl} alt="Profile" width={80} height={80} className="h-20 w-20 object-cover" unoptimized={pfpUrl.startsWith("data:")} /> : "R"}
+      </div>
+      <div className="min-w-0 flex-1">
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadPfp(file); }} />
+        <button type="button" onClick={() => inputRef.current?.click()} className="ghost-btn w-full text-sm">Choose profile picture</button>
+        <p className="mt-2 truncate text-xs text-[#8b8795]">{fileName || status || "PNG/JPG supported"}</p>
+      </div>
     </div>
   );
 }

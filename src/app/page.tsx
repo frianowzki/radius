@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAccount, useBalance, useDisconnect, useReadContract } from "wagmi";
+import { useAccount, useBalance, useReadContract } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AppShell } from "@/components/AppShell";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
-import { formatAddress, formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
+import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
 
 
 
@@ -67,13 +67,11 @@ function LoginScreen() {
 
 export default function DashboardPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated, address: authAddress, logout } = useRadiusAuth();
-  const { disconnect } = useDisconnect();
+  const { authenticated, address: authAddress } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const identity = getIdentityProfile();
   const [hideBalance, setHideBalance] = useState(() => typeof window !== "undefined" && localStorage.getItem("radius-hide-balance") === "true");
-  const [copiedAddress, setCopiedAddress] = useState(false);
 
   const { data: nativeBalance } = useBalance({ address, query: { enabled: !!address } });
   const { data: eurcBalance } = useReadContract({
@@ -86,27 +84,17 @@ export default function DashboardPage() {
 
   const usdcDisplay = nativeBalance?.value !== undefined ? formatAmount(nativeBalance.value, 18) : "0.00";
   const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance as bigint, TOKENS.EURC.decimals) : "0.00";
+  const totalDisplay = (Number(usdcDisplay.replace(/,/g, "")) + Number(eurcDisplay.replace(/,/g, ""))).toLocaleString(undefined, { maximumFractionDigits: 2 });
   const contacts = getContacts().slice(0, 5);
   const recentTransfers = address ? getLocalTransfers(address).slice(0, 3) : [];
   const profileName = identity.handle ? `@${identity.handle}` : identity.displayName || "Arc user";
+  const visibleTotal = hideBalance ? "••••••" : totalDisplay;
   const visibleUsdc = hideBalance ? "••••••" : usdcDisplay;
   const visibleEurc = hideBalance ? "••••••" : eurcDisplay;
 
   useEffect(() => {
     localStorage.setItem("radius-hide-balance", String(hideBalance));
   }, [hideBalance]);
-
-  async function copyAddress() {
-    if (!address) return;
-    await navigator.clipboard.writeText(address);
-    setCopiedAddress(true);
-    setTimeout(() => setCopiedAddress(false), 1500);
-  }
-
-  async function disconnectAll() {
-    disconnect();
-    await logout();
-  }
 
   if (!isConnected) return <LoginScreen />;
 
@@ -115,7 +103,7 @@ export default function DashboardPage() {
       <div className="screen-pad">
         <header className="mb-5 flex items-center justify-between">
           <div>
-            <div className="mb-3 text-2xl font-black text-[#7a70d8]">R</div>
+            <div className="mb-3 text-2xl font-black text-[#7a70d8]">Radius</div>
             <h1 className="text-base font-semibold text-[#17151f]">Hello, {profileName} 👋</h1>
           </div>
           <ThemeToggle />
@@ -125,18 +113,13 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between text-xs text-white/75">
             <span>Total Balance ◉</span><button type="button" onClick={() => setHideBalance((v) => !v)} className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white">{hideBalance ? "Show" : "Hide"}</button>
           </div>
-          <p className={`mt-3 text-4xl font-semibold tracking-[-0.06em] ${hideBalance ? "balance-hidden" : ""}`}>${visibleUsdc}</p>
-          <p className="mt-1 text-xs text-white/75">≈ {visibleUsdc} USDC</p>
+          <p className={`mt-3 text-4xl font-semibold tracking-[-0.06em] ${hideBalance ? "balance-hidden" : ""}`}>${visibleTotal}</p>
+          <p className="mt-1 text-xs text-white/75">USDC + EURC combined</p>
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <Link href="/faucet" className="rounded-2xl bg-white/18 py-3 text-center text-sm font-semibold">＋ Add Funds</Link>
+            <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer" className="rounded-2xl bg-white/18 py-3 text-center text-sm font-semibold">＋ Add Funds</a>
             <Link href="/request" className="rounded-2xl bg-white/18 py-3 text-center text-sm font-semibold">⇩ Receive</Link>
           </div>
-          {address && (
-            <div className="mt-3 grid grid-cols-2 gap-3 text-xs font-semibold">
-              <button type="button" onClick={copyAddress} className="rounded-2xl bg-white/14 py-3 text-white/90">{copiedAddress ? "Copied" : `Copy ${formatAddress(address)}`}</button>
-              <button type="button" onClick={disconnectAll} className="rounded-2xl bg-white/14 py-3 text-white/90">Disconnect</button>
-            </div>
-          )}
+
         </section>
 
         <section className="mt-6 grid grid-cols-4 gap-4 text-center">

@@ -21,14 +21,8 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   }, [theme]);
 
   return (
-    <button
-      type="button"
-      onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
-      className={`theme-toggle ${className}`}
-      aria-label="Toggle theme"
-    >
+    <button type="button" onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} className={`theme-toggle icon-only ${className}`} aria-label="Toggle theme">
       <span className="theme-toggle-dot">{theme === "dark" ? "☾" : "☼"}</span>
-      <span>{theme === "dark" ? "Dark" : "Light"}</span>
     </button>
   );
 }
