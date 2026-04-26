@@ -275,14 +275,18 @@ export default function HistoryPage() {
                             {isSent ? "−" : "+"}
                             {formatAmount(tx.value, tokenInfo.decimals)} {tx.token}
                           </p>
-                          <a
-                            href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="history-link mt-1 inline-block text-xs text-zinc-500 transition-colors hover:text-indigo-300"
-                          >
-                            View on ArcScan →
-                          </a>
+                          {tx.txHash.startsWith("0x") ? (
+                            <a
+                              href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="history-link mt-1 inline-block text-xs text-zinc-500 transition-colors hover:text-indigo-300"
+                            >
+                              View on ArcScan →
+                            </a>
+                          ) : (
+                            <span className="history-link mt-1 inline-block text-xs text-zinc-500">Balance update</span>
+                          )}
                         </div>
                       </div>
                     </div>

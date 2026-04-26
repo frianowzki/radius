@@ -13,7 +13,7 @@ import { TokenLogo } from "@/components/TokenLogo";
 import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
 import { arcTestnet } from "@/config/wagmi";
-import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
+import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel, saveLocalTransfer } from "@/lib/utils";
 
 
 function WalletLoginButton() {
@@ -129,6 +129,15 @@ export default function DashboardPage() {
         const tokenInfo = TOKENS[symbol];
         const delta = current - BigInt(previous);
         const message = `Received ${formatAmount(delta, tokenInfo.decimals)} ${symbol}`;
+        saveLocalTransfer({
+          from: "0x0000000000000000000000000000000000000000",
+          to: address,
+          value: delta.toString(),
+          token: symbol,
+          txHash: `balance-${symbol.toLowerCase()}-${Date.now()}`,
+          direction: "received",
+          routeLabel: "Balance update",
+        });
         setActivityNotice(message);
         window.setTimeout(() => setActivityNotice(""), 4200);
         if ("Notification" in window) {

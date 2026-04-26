@@ -161,7 +161,7 @@ function PayContent() {
                 You paid {amount} {token} to {formatContactLabel(recipientAddress)} on Arc Testnet.
               </p>
 
-              <div className="mt-8 rounded-[28px] border border-white/8 bg-white/[0.04] p-6">
+              <div className="pay-success-summary mt-8 rounded-[28px] border border-white/8 bg-white/[0.04] p-6">
                 <div className="flex items-center justify-between border-b border-white/8 pb-4">
                   <div>
                     <p className="text-sm text-zinc-500">Amount</p>
@@ -188,14 +188,14 @@ function PayContent() {
               </div>
 
               {showSaveRecipient && (
-                <div className="mt-6 rounded-[28px] border border-white/8 bg-white/[0.04] p-5 space-y-3">
+                <div className="pay-save-card mt-6 rounded-[28px] border border-white/8 bg-white/[0.04] p-5 space-y-3">
                   <p className="text-sm font-medium text-zinc-200">Save this recipient</p>
                   <input
                     type="text"
                     placeholder="Name"
                     value={saveName}
                     onChange={(e) => setSaveName(e.target.value)}
-                    className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                    className="pay-save-input w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
                   />
                   <div className="grid gap-3 sm:grid-cols-2">
                     <input
@@ -203,7 +203,7 @@ function PayContent() {
                       placeholder="@username"
                       value={saveHandle}
                       onChange={(e) => setSaveHandle(e.target.value)}
-                      className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                      className="pay-save-input w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
                     />
                     <input
                       type="text"
@@ -211,12 +211,12 @@ function PayContent() {
                       value={saveAvatar}
                       onChange={(e) => setSaveAvatar(e.target.value)}
                       maxLength={4}
-                      className="w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                      className="pay-save-input w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
                     />
                   </div>
                   <button
                     onClick={handleSaveRecipient}
-                    className="w-full rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/14"
+                    className="pay-save-button w-full rounded-2xl bg-white/10 px-4 py-3 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/14"
                   >
                     Save recipient
                   </button>
@@ -228,7 +228,7 @@ function PayContent() {
                   href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-6 inline-flex rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20"
+                  className="pay-success-link mt-6 inline-flex rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20"
                 >
                   View on ArcScan
                 </a>
