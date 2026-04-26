@@ -8,6 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import { ReceiptCard } from "@/components/ReceiptCard";
 import { ProfileChip } from "@/components/ProfileChip";
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
+import { TokenLogo } from "@/components/TokenLogo";
 import { arcTestnet } from "@/config/wagmi";
 import { formatAmount, formatContactLabel, getDirectoryEntries, getIdentityLabel, getIdentityProfile, resolveRecipientInput, saveLocalTransfer, upsertContactByAddress } from "@/lib/utils";
 import type { DirectoryEntry } from "@/lib/utils";
@@ -26,7 +27,7 @@ export default function SendPage() {
   const { switchChainAsync } = useSwitchChain();
 
   const [token, setToken] = useState<TokenKey>("USDC");
-  const [recipient, setRecipient] = useState("");
+  const [recipient, setRecipient] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("to") || "" : "");
   const [amount, setAmount] = useState("");
   const [status, setStatus] = useState<SendStatus>("idle");
   const [txHash, setTxHash] = useState("");
@@ -114,7 +115,7 @@ export default function SendPage() {
 
   function handleSelectDirectoryEntry(entry: DirectoryEntry) {
     if (entry.kind !== "contact" || !entry.address) return;
-    setRecipient(entry.handle ? `@${entry.handle}` : entry.address);
+    setRecipient(entry.handle ? `@${entry.handle.replace(/^@/, "")}` : entry.address);
     setShowDirectory(false);
   }
 
@@ -162,9 +163,7 @@ export default function SendPage() {
         ) : (
           <form onSubmit={handleSend} className="space-y-5">
             <div className="glass-panel-strong rounded-[32px] p-6">
-              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Send on Arc</p>
-              <h2 className="text-3xl font-semibold tracking-tight text-glow">Arc to Arc only.</h2>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">Same-network payments only. Use Bridge for crosschain USDC.</p>
+              <h2 className="text-3xl font-black tracking-tight text-glow">SEND ON ARC</h2>
             </div>
 
             <div className="glass-panel rounded-[28px] p-5">
@@ -172,7 +171,7 @@ export default function SendPage() {
               <div className="grid grid-cols-2 gap-2">
                 {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
                   <button key={key} type="button" onClick={() => setToken(key)} className={`frosted-choice ${token === key ? "active" : ""}`}>
-                    <div className="font-semibold">{TOKENS[key].symbol}</div>
+                    <div className="flex items-center gap-2 font-semibold"><TokenLogo symbol={key} size={24} />{TOKENS[key].symbol}</div>
                     {balanceByToken[key] !== undefined && <div className="mt-1 text-xs opacity-70">Balance: {formatAmount(balanceByToken[key]!, TOKENS[key].decimals)}</div>}
                   </button>
                 ))}

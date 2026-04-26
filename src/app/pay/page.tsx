@@ -6,9 +6,6 @@ import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { createWalletClient, custom, parseUnits, isAddress } from "viem";
 import { AppShell } from "@/components/AppShell";
-import { ReceiptCard } from "@/components/ReceiptCard";
-import { PrivacyBadge } from "@/components/PrivacyBadge";
-import { RequesterIdentityCard } from "@/components/RequesterIdentityCard";
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
 import { arcTestnet } from "@/config/wagmi";
 import {
@@ -50,6 +47,7 @@ function PayContent() {
   const matchedRecipient = recipientAddress ? findContactByAddress(recipientAddress) : undefined;
   const identity = getIdentityProfile();
   const payerLabel = getIdentityLabel(identity);
+  void payerLabel;
 
   const validRequest =
     isAddress(recipientAddress) &&
@@ -151,7 +149,7 @@ function PayContent() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-6xl">
+      <div className="screen-pad">
         {status === "success" ? (
           <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="glass-panel-strong rounded-[32px] p-8">
@@ -236,45 +234,10 @@ function PayContent() {
                 </a>
               )}
             </div>
-
-            <div className="glass-panel rounded-[32px] p-8">
-              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Receipt preview</p>
-              {matchedRecipient && (
-                <div className="mb-4">
-                  <RequesterIdentityCard
-                    title="Recipient"
-                    contact={matchedRecipient}
-                    address={recipientAddress}
-                    tone="compact"
-                  />
-                </div>
-              )}
-              <ReceiptCard
-                title="Arc Flow"
-                amount={amount}
-                token={token}
-                status="Paid"
-                fromLabel={payerLabel}
-                toLabel={formatContactLabel(recipientAddress)}
-                note={memo || "Arc Testnet"}
-                metaLabel="Paid by"
-                metaValue={payerLabel}
-                shareText={`Paid ${amount} ${token} on Arc as ${payerLabel} to ${formatContactLabel(recipientAddress)}${memo ? ` for ${memo}` : ""}`}
-              />
-            </div>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="space-y-5">
-              <div className="glass-panel-strong rounded-[32px] p-8">
-                <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Pay request</p>
-                <h2 className="text-4xl font-semibold tracking-tight text-glow">
-                  Pay a request with confidence, not clutter.
-                </h2>
-                <p className="mt-4 text-base leading-7 text-zinc-400">
-                  This should feel like accepting a payment moment, not parsing a blockchain form.
-                </p>
-              </div>
+          <div className="space-y-5">
+
 
               <div className="glass-panel rounded-[28px] p-6">
                 <div className="text-center mb-6">
@@ -336,38 +299,6 @@ function PayContent() {
                 <p className="text-center text-sm text-red-400">{error}</p>
               )}
             </div>
-
-            <div className="space-y-5">
-              <PrivacyBadge />
-
-              <RequesterIdentityCard
-                title="Request context"
-                contact={matchedRecipient}
-                address={recipientAddress}
-              />
-
-              <div className="glass-panel rounded-[32px] p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-sm font-medium text-zinc-400">Live receipt</p>
-                  <span className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-zinc-500">
-                    Ready to settle
-                  </span>
-                </div>
-                <ReceiptCard
-                  title="Request"
-                  amount={amount}
-                  token={token}
-                  status="Ready to settle"
-                  fromLabel={payerLabel}
-                  toLabel={formatContactLabel(recipientAddress)}
-                  note={memo || "Arc Testnet"}
-                  metaLabel="Paying as"
-                  metaValue={payerLabel}
-                  shareText={`Payment request to settle as ${payerLabel}: ${amount} ${token} to ${formatContactLabel(recipientAddress)}${memo ? ` for ${memo}` : ""}`}
-                />
-              </div>
-            </div>
-          </div>
         )}
       </div>
     </AppShell>

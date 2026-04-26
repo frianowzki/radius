@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { isAddress } from "viem";
 import { AppShell } from "@/components/AppShell";
-import { addContact, formatAddress, getContacts, removeContact, type Contact } from "@/lib/utils";
+import { addContact, formatAddress, getContacts, removeContact, updateContact, type Contact } from "@/lib/utils";
 
 function ContactAvatar({ contact }: { contact: Contact }) {
   return (
@@ -21,6 +21,7 @@ export default function ContactsPage() {
   const [address, setAddress] = useState("");
   const [handle, setHandle] = useState("");
   const [note, setNote] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -35,9 +36,20 @@ export default function ContactsPage() {
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !isAddress(address)) return;
-    addContact(name.trim(), address, { handle, note });
+    if (editingId) updateContact(editingId, { name: name.trim(), address, handle, note });
+    else addContact(name.trim(), address, { handle, note });
     setContacts(getContacts());
+    setEditingId(null);
     resetForm();
+  }
+
+  function startEdit(contact: Contact) {
+    setEditingId(contact.id);
+    setName(contact.name);
+    setAddress(contact.address);
+    setHandle(contact.handle || "");
+    setNote(contact.note || "");
+    setShowForm(true);
   }
 
   function handleDelete(id: string) {
@@ -64,7 +76,7 @@ export default function ContactsPage() {
             <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="0x wallet address" className="radius-input font-mono text-sm" />
             <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@username optional" className="radius-input text-sm" />
             <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note optional" className="radius-input text-sm" />
-            <button type="submit" disabled={!name.trim() || !isAddress(address)} className="primary-btn w-full text-sm disabled:opacity-40">Save contact</button>
+            <button type="submit" disabled={!name.trim() || !isAddress(address)} className="primary-btn w-full text-sm disabled:opacity-40">{editingId ? "Save changes" : "Save contact"}</button>
           </form>
         )}
 
@@ -83,7 +95,7 @@ export default function ContactsPage() {
                     <p className="mt-1 font-mono text-xs text-[#8b8795]">{formatAddress(contact.address)}</p>
                     {contact.note && <p className="mt-1 truncate text-xs text-[#8b8795]">{contact.note}</p>}
                   </div>
-                  <button type="button" onClick={() => handleDelete(contact.id)} className="rounded-2xl bg-white/60 px-3 py-2 text-xs font-bold text-[#8b8795]">Remove</button>
+                  <div className="flex gap-2"><button type="button" onClick={() => startEdit(contact)} className="rounded-2xl bg-white/60 px-3 py-2 text-xs font-bold text-[#8b8795]">Edit</button><button type="button" onClick={() => handleDelete(contact.id)} className="rounded-2xl bg-white/60 px-3 py-2 text-xs font-bold text-[#8b8795]">Remove</button></div>
                 </div>
               </div>
             ))}

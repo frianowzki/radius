@@ -8,6 +8,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { QRCodeSVG } from "qrcode.react";
 import { AppShell } from "@/components/AppShell";
 import { TOKENS, type TokenKey } from "@/config/tokens";
+import { TokenLogo } from "@/components/TokenLogo";
 import { buildPaymentUrl, formatPreferredRecipientInput } from "@/lib/utils";
 
 export default function RequestPage() {
@@ -51,7 +52,10 @@ export default function RequestPage() {
   function saveQr() {
     const svg = qrWrapRef.current?.querySelector("svg");
     if (!svg || !qrValue) return;
-    const serialized = new XMLSerializer().serializeToString(svg);
+    const clone = svg.cloneNode(true) as SVGElement;
+    clone.setAttribute("width", "500");
+    clone.setAttribute("height", "500");
+    const serialized = new XMLSerializer().serializeToString(clone);
     const blob = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -82,14 +86,11 @@ export default function RequestPage() {
         ) : (
           <>
             <form onSubmit={generate} className="text-center">
-              <div className="mx-auto mb-5 inline-flex rounded-full bg-[#fff7dc] px-4 py-2 text-[11px] font-semibold text-[#c49322]">◌ Awaiting payment</div>
-              <p className="text-xs font-medium text-[#8b8795]">You’re requesting</p>
+              
               <div className="mt-3 flex items-center justify-center gap-3">
                 <span className="text-4xl font-semibold tracking-[-0.06em]">$</span>
                 <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className="w-40 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none" />
-                <select value={token} onChange={(e) => setToken(e.target.value as TokenKey)} className="rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm">
-                  {(Object.keys(TOKENS) as TokenKey[]).map((key) => <option key={key}>{key}</option>)}
-                </select>
+                <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} /><select value={token} onChange={(e) => setToken(e.target.value as TokenKey)} className="bg-transparent outline-none">{(Object.keys(TOKENS) as TokenKey[]).map((key) => <option key={key}>{key}</option>)}</select></div>
               </div>
               <p className="mt-2 text-xs text-[#b2adba]">≈ {amount || "0.00"} {token}</p>
 
@@ -109,9 +110,9 @@ export default function RequestPage() {
                 <input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="Note" className="radius-input mt-3 text-sm" />
 
                 <div className="mt-4 grid grid-cols-3 gap-3">
-                  <button type="button" onClick={shareLink} className="ghost-btn text-xs">Share Link</button>
-                  <button type="button" onClick={copyLink} className="ghost-btn text-xs">{copied ? "Copied" : "Copy Link"}</button>
-                  <button type="button" onClick={saveQr} disabled={!qrValue} className="ghost-btn text-xs disabled:opacity-40">Save QR</button>
+                  <button type="button" aria-label="Share link" onClick={shareLink} className="ghost-btn text-lg">⇧</button>
+                  <button type="button" aria-label="Copy link" onClick={copyLink} className="ghost-btn text-lg">{copied ? "✓" : "⧉"}</button>
+                  <button type="button" aria-label="Save QR" onClick={saveQr} disabled={!qrValue} className="ghost-btn text-lg disabled:opacity-40">⇩</button>
                 </div>
               </div>
             </form>

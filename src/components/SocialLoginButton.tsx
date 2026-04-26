@@ -64,7 +64,7 @@ export function SocialLoginButton({
         title={!hasConfiguredWeb3Auth ? "Web3Auth is not configured" : undefined}
         className={className || "radius-auth-button disabled:cursor-not-allowed disabled:opacity-50"}
       >
-        {icon ?? <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#f2efff] text-[#6f60d5]">✉</span>}
+        {icon ?? <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#f2efff] text-lg">📧</span>}
         <span className="flex-1 text-center">{busy ? "Opening..." : label ?? "Continue with Email"}</span>
         <span className="text-[#b8b3c0]">›</span>
       </button>

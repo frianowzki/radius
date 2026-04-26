@@ -172,9 +172,8 @@ export default function HistoryPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-6xl">
-        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="space-y-6">
+      <div className="screen-pad">
+        <div className="space-y-6">
             <div className="glass-panel-strong rounded-[32px] p-8">
               <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">History</p>
               <h2 className="text-4xl font-semibold tracking-tight text-glow">
@@ -292,21 +291,7 @@ export default function HistoryPage() {
               </div>
             )}
           </div>
-
-          <div className="space-y-5">
-            <div className="glass-panel rounded-[32px] p-6">
-              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Receipts</p>
-              <h3 className="text-2xl font-semibold tracking-tight text-zinc-100">
-                Contacts turn history into memory.
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-zinc-500">
-                Successful sends are saved locally right away, then merged with onchain logs when the RPC can serve them.
-              </p>
-            </div>
-
-          </div>
         </div>
-      </div>
     </AppShell>
   );
 }

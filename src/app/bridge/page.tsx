@@ -14,7 +14,6 @@ import { createWalletClient, custom, parseUnits, isAddress } from "viem";
 import type { EIP1193Provider } from "viem";
 import { AppShell } from "@/components/AppShell";
 import { ReceiptCard } from "@/components/ReceiptCard";
-import { PrivacyBadge } from "@/components/PrivacyBadge";
 import { ProfileChip } from "@/components/ProfileChip";
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
 import {
@@ -79,6 +78,8 @@ export default function BridgePage() {
   const [bridgeDetails, setBridgeDetails] = useState<string[]>([]);
   const [bridgeSpeed, setBridgeSpeed] = useState<BridgeSpeed>("FAST");
   const [bridgeProgress, setBridgeProgress] = useState("");
+  void bridgeEstimateText;
+  void bridgeDetails;
 
   const selectedRouteConfig =
     bridgeRoutes.find((route) => route.id === selectedRoute) ?? bridgeRoutes[0] ?? CROSSCHAIN_ROUTES[0];
@@ -357,7 +358,7 @@ export default function BridgePage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-6xl">
+      <div className="screen-pad">
         {status === "success" ? (
           <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="glass-panel-strong rounded-[32px] p-8">
@@ -489,18 +490,10 @@ export default function BridgePage() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <div>
             <form onSubmit={handleSend} className="space-y-5">
               <div className="glass-panel-strong rounded-[32px] p-8">
-                <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">
-                  Bridge USDC
-                </p>
-                <h2 className="text-4xl font-semibold tracking-tight text-glow">
-                  Bridge USDC across testnets cleanly.
-                </h2>
-                <p className="mt-4 text-base leading-7 text-zinc-400">
-                  Arc App Kit bridge flow separated from same-network payments so sending stays simple.
-                </p>
+<h2 className="text-3xl font-semibold tracking-tight text-glow">Bridge across testnets</h2>
               </div>
 
               <div className="glass-panel rounded-[28px] p-5">
@@ -534,7 +527,7 @@ export default function BridgePage() {
               <div className="glass-panel rounded-[28px] p-5">
                 <div className="mb-3 flex items-center justify-between">
                   <label className="text-sm font-medium text-zinc-400">Route</label>
-                  <span className="text-xs text-zinc-500">Arc App Kit Bridge</span>
+                  
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {bridgeRoutes.map((route) => (
@@ -622,7 +615,7 @@ export default function BridgePage() {
               <div className="glass-panel rounded-[28px] p-5">
                 <div className="mb-3 flex items-center justify-between">
                   <label className="text-sm font-medium text-zinc-400">Recipient</label>
-                  <span className="text-xs text-zinc-500">Directory-first</span>
+                  <span className="text-xs text-zinc-500"></span>
                 </div>
 
                 <div className="mb-3 rounded-[24px] border border-white/8 bg-white/[0.03] p-3">
@@ -687,7 +680,7 @@ export default function BridgePage() {
                   <p className="mt-2 text-xs text-red-400">Enter a valid address or a saved @username</p>
                 )}
                 {isSocialWalletOnly && (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                  <div className="mt-3 rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 text-sm text-amber-600">
                     Bridge currently requires an external wallet. Social wallets can still use Send on Arc.
                   </div>
                 )}
@@ -747,84 +740,6 @@ export default function BridgePage() {
               )}
             </form>
 
-            <div className="space-y-5">
-              <PrivacyBadge />
-
-              <div className="glass-panel rounded-[32px] p-6">
-                <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">
-                  Payment story
-                </p>
-                <div className="mb-4 rounded-[24px] border border-white/8 bg-white/[0.04] p-4 text-sm">
-                  <p className="text-zinc-500">Selected route</p>
-                  <p className="mt-1 font-medium text-zinc-200">
-                    {selectedRouteConfig.label}
-                  </p>
-                  <p className="mt-2 text-xs leading-6 text-zinc-500">
-                    {isBridgeRoute
-                      ? "This route uses Arc App Kit’s CCTP bridge flow: estimate fees, burn on source, wait for Circle attestation, then mint on destination."
-                      : "This route uses Arc App Kit-style same-chain send behavior on Arc Testnet."}
-                  </p>
-                  <p className="mt-2 text-xs leading-6 text-zinc-400">
-                    {isBridgeRoute
-                      ? `You are moving value from ${expectedSourceChainLabel} to ${destinationChainLabel} for the recipient.`
-                      : "You are sending directly on Arc without a bridge step."}
-                  </p>
-                  {isBridgeRoute && (
-                    <p className="mt-2 text-xs leading-6 text-zinc-400">
-                      Speed: {bridgeSpeed === "FAST" ? "Fast" : "Standard"}
-                    </p>
-                  )}
-                  {bridgeProgress && (
-                    <p className="mt-2 text-xs leading-6 text-indigo-300">{bridgeProgress}</p>
-                  )}
-                  {bridgeEstimateText && (
-                    <p className="mt-2 text-xs leading-6 text-indigo-300">{bridgeEstimateText}</p>
-                  )}
-                  {bridgeDetails.length > 0 && (
-                    <div className="mt-3 space-y-2 text-xs leading-6 text-zinc-400">
-                      {bridgeDetails.map((detail) => (
-                        <p key={detail} className="rounded-2xl border border-white/6 bg-white/[0.03] px-3 py-2">
-                          {detail}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {resolvedRecipient.contact && resolvedRecipientAddress && (
-                  <div className="mb-4">
-                    <ProfileChip
-                      contact={resolvedRecipient.contact}
-                      address={resolvedRecipientAddress}
-                    />
-                  </div>
-                )}
-                <h3 className="text-2xl font-semibold tracking-tight text-zinc-100">
-                  This should feel snappy and decisive.
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-zinc-500">
-                  Arc’s speed should show up in the interface. No endless pending energy, no cluttered wallet panels, just a fast send flow with strong visual confirmation and a receipt worth sharing.
-                </p>
-              </div>
-
-              <div className="glass-panel rounded-[32px] p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-sm font-medium text-zinc-400">Live preview</p>
-                  <span className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-zinc-500">
-                    Receipt-ready
-                  </span>
-                </div>
-                <ReceiptCard
-                  title="Bridge preview"
-                  amount={amount && Number(amount) > 0 ? amount : "0.00"}
-                  token={token}
-                  status={isBridgeRoute ? "Bridge preview" : "Preview"}
-                  fromLabel={address ? senderLabel : "Connect wallet"}
-                  toLabel={validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : "Waiting for address"}
-                  note={isBridgeRoute ? `${expectedSourceChainLabel} → ${destinationChainLabel}` : "Arc Testnet"}
-                  shareText={validRecipient && resolvedRecipientAddress ? isBridgeRoute ? `Planned bridge: ${amount && Number(amount) > 0 ? amount : "0.00"} ${token} from ${expectedSourceChainLabel} to ${destinationChainLabel} for ${formatContactLabel(resolvedRecipientAddress)}` : `Planned payment: ${amount && Number(amount) > 0 ? amount : "0.00"} ${token} to ${formatContactLabel(resolvedRecipientAddress)}` : undefined}
-                />
-              </div>
-            </div>
           </div>
         )}
       </div>

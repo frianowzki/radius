@@ -9,6 +9,7 @@ import { AppShell } from "@/components/AppShell";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
+import { TokenLogo } from "@/components/TokenLogo";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
 
 
@@ -25,7 +26,7 @@ function WalletConnectButton() {
             onClick={connected ? (chain.unsupported ? openChainModal : openAccountModal) : openConnectModal}
             className="radius-auth-button"
           >
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#eef1ff] text-[#6f60d5]">◈</span>
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#eef1ff] text-lg">👛</span>
             <span className="flex-1 text-center">
               {connected ? (chain.unsupported ? "Wrong network" : account.displayName) : "Connect Wallet"}
             </span>
@@ -51,15 +52,15 @@ function LoginScreen() {
           </div>
 
           <div className="mt-10 space-y-3 text-left">
-            <SocialLoginButton method="email" label="Continue with Email" icon={<span className="grid h-8 w-8 place-items-center rounded-xl bg-[#f2efff] text-[#6f60d5]">✉</span>} />
-            <SocialLoginButton method="google" label="Continue with Google" icon={<span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-lg">G</span>} />
+            <SocialLoginButton method="email" label="Continue with Email" icon={<span className="grid h-8 w-8 place-items-center rounded-xl bg-[#f2efff] text-lg">📧</span>} />
+            <SocialLoginButton method="google" label="Continue with Google" icon={<span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-lg font-bold text-[#4285f4]">G</span>} />
             <WalletConnectButton />
           </div>
         </div>
         <div className="space-y-7 text-[10px] leading-5 text-[#8f8998]">
-          <p>♡ Your keys stay in your control.<br />We never access your funds.</p>
-          <p>By continuing, you agree to our Terms and Privacy Policy.</p>
+          
         </div>
+
       </div>
     </AppShell>
   );
@@ -72,6 +73,7 @@ export default function DashboardPage() {
   const isConnected = wagmiConnected || authenticated;
   const identity = getIdentityProfile();
   const [hideBalance, setHideBalance] = useState(false);
+  const [showAssets, setShowAssets] = useState(false);
 
   const { data: nativeBalance } = useBalance({ address, query: { enabled: !!address } });
   const { data: eurcBalance } = useReadContract({
@@ -126,10 +128,9 @@ export default function DashboardPage() {
 
         <section className="gradient-card rounded-[24px] p-5">
           <div className="flex items-center justify-between text-xs text-white/75">
-            <span>Total Balance ◉</span><button type="button" onClick={() => setHideBalance((v) => !v)} className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white">{hideBalance ? "Show" : "Hide"}</button>
+            <span>Total Balance</span><button type="button" onClick={() => setHideBalance((v) => !v)} className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white">{hideBalance ? "Show" : "Hide"}</button>
           </div>
           <p className={`mt-3 text-4xl font-semibold tracking-[-0.06em] ${hideBalance ? "balance-hidden" : ""}`}>${visibleTotal}</p>
-          <p className="mt-1 text-xs text-white/75">USDC + EURC combined</p>
           <div className="mt-5 grid grid-cols-2 gap-3">
             <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer" className="rounded-2xl bg-white/18 py-3 text-center text-sm font-semibold">＋ Add Funds</a>
             <Link href="/request" className="rounded-2xl bg-white/18 py-3 text-center text-sm font-semibold">⇩ Receive</Link>
@@ -137,26 +138,26 @@ export default function DashboardPage() {
 
         </section>
 
-        <section className="mt-6 grid grid-cols-4 gap-4 text-center">
-          {[['/send','✈','Send'],['/request','⇩','Request'],['/scan','⌗','Scan'],['/bridge','⇄','Bridge']].map(([href, icon, label]) => (
-            <Link key={label} href={href} className="text-xs font-semibold text-[#595465]">
-              <span className="mx-auto mb-2 grid h-11 w-11 place-items-center rounded-2xl bg-white text-lg text-[#6f60d5] shadow-sm">{icon}</span>{label}
+        <section className="mt-6 grid grid-cols-5 gap-3 text-center">
+          {[['/send','↗','Send'],['/request','↙','Request'],['/scan','⌗','Scan'],['/contacts','☻','Contacts'],['/bridge','⇄','Bridge']].map(([href, icon, label]) => (
+            <Link key={label} href={href} className="quick-action text-xs font-semibold text-[#595465]">
+              <span className="icon-chip mx-auto mb-2 text-lg">{icon}</span>{label}
             </Link>
           ))}
         </section>
 
         <section className="mt-7">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">Active Requests</h2><Link href="/request" className="text-xs text-[#8f7cff]">View all</Link></div>
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">Latest Activities</h2><Link href="/request" className="text-xs text-[#8f7cff]">View all</Link></div>
           <div className="soft-card rounded-2xl p-4">
             {recentTransfers.length === 0 ? (
-              <p className="text-sm text-[#8b8795]">No active requests yet.</p>
+              <p className="text-sm text-[#8b8795]">No latest activities yet.</p>
             ) : (
               <div className="space-y-3">
                 {recentTransfers.map((transfer) => (
-                  <div key={transfer.id} className="flex items-center justify-between text-sm">
+                  <Link href="/history" key={transfer.id} className="flex items-center justify-between text-sm">
                     <span>{transfer.direction === "sent" ? "↑" : "↓"} {formatAmount(BigInt(transfer.value), TOKENS[transfer.token].decimals)} {transfer.token}</span>
                     <span className="text-xs text-[#8b8795]">{formatContactLabel(transfer.direction === "sent" ? transfer.to : transfer.from)}</span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -175,13 +176,28 @@ export default function DashboardPage() {
         </section>
 
         <section className="mt-7">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">My Wallets</h2><span className="text-xs text-[#8f7cff]">Manage</span></div>
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">My Assets</h2><button type="button" onClick={() => setShowAssets(true)} className="text-xs text-[#8f7cff]">Manage</button></div>
           <div className="soft-card overflow-hidden rounded-2xl">
             {[["USDC","USD Coin",visibleUsdc],["EURC","Euro Coin",visibleEurc]].map(([s,n,b], i) => (
-              <div key={s} className={`flex items-center justify-between px-4 py-3 ${i ? 'border-t' : ''}`}><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-full bg-[#eef1ff] text-[#6f60d5] text-xs font-bold">{s[0]}</span><div><p className="text-sm font-bold">{s}</p><p className="text-xs text-[#9a94a3]">{n}</p></div></div><p className="text-sm font-semibold">{b}</p></div>
+              <div key={s} className={`flex items-center justify-between px-4 py-3 ${i ? 'border-t' : ''}`}><div className="flex items-center gap-3"><TokenLogo symbol={s} size={36} /><div><p className="text-sm font-bold">{s}</p><p className="text-xs text-[#9a94a3]">{n}</p></div></div><p className="text-sm font-semibold">{b}</p></div>
             ))}
           </div>
         </section>
+
+        {showAssets && (
+          <div className="fixed inset-0 z-[80] grid place-items-end bg-black/30 p-4" onClick={() => setShowAssets(false)}>
+            <div className="soft-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-bold">My Assets</h3><button onClick={() => setShowAssets(false)} className="ghost-btn px-3 py-2 text-xs">Close</button></div>
+              <div className="space-y-3">
+                {[["USDC","USD Coin",visibleUsdc],["EURC","Euro Coin",visibleEurc]].map(([s,n,b]) => (
+                  <div key={s} className="flex items-center justify-between rounded-2xl bg-white/55 p-3">
+                    <div className="flex items-center gap-3"><TokenLogo symbol={s} /><div><p className="text-sm font-bold">{s}</p><p className="text-xs text-[#8b8795]">{n}</p></div></div><p className="text-sm font-semibold">{b}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AppShell>
   );

@@ -355,3 +355,34 @@ html[data-theme="dark"] .bottom-nav {
 html[data-theme="dark"] .bottom-nav a[class*="text-[#6f60d5]"] {
   background: rgba(255,255,255,.10);
 }
+html[data-theme="dark"] .quick-action span,
+html[data-theme="dark"] .soft-card .bg-white,
+html[data-theme="dark"] .bg-\[\#f7f5fb\] {
+  background: rgba(255,255,255,.10) !important;
+  color: #f7f4ff !important;
+}
+html[data-theme="dark"] select,
+html[data-theme="dark"] option,
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea {
+  background-color: rgba(25,26,44,.88) !important;
+  color: #f7f4ff !important;
+}
+html[data-theme="dark"] .soft-card .text-\[\#17151f\],
+html[data-theme="dark"] .soft-card p,
+html[data-theme="dark"] .soft-card h1,
+html[data-theme="dark"] .soft-card h2,
+html[data-theme="dark"] .soft-card h3 { color: inherit; }
+.icon-chip {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.78);
+  color: #6f60d5;
+  box-shadow: 0 12px 28px rgba(55,46,88,.10);
+  border: 1px solid rgba(255,255,255,.72);
+  backdrop-filter: blur(18px);
+}
+html[data-theme="dark"] .icon-chip { background: rgba(255,255,255,.10); color: #d9d3ff; border-color: rgba(255,255,255,.12); }
