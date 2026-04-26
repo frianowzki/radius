@@ -1,4 +1,4 @@
-import { list, put } from "@vercel/blob";
+import { get, put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { isAddress } from "viem";
 import { normalizeHandle } from "@/lib/utils";
@@ -34,14 +34,10 @@ function cleanText(value: unknown, max = 120) {
 async function readTable(): Promise<RegistryTable> {
   if (!process.env.BLOB_READ_WRITE_TOKEN) return emptyTable();
 
-  const blobs = await list({ prefix: REGISTRY_PATH, limit: 1 });
-  const item = blobs.blobs.find((blob) => blob.pathname === REGISTRY_PATH);
-  if (!item) return emptyTable();
+  const blob = await get(REGISTRY_PATH, { access: "private", useCache: false }).catch(() => null);
+  if (!blob || blob.statusCode !== 200) return emptyTable();
 
-  const res = await fetch(item.url, { cache: "no-store" });
-  if (!res.ok) return emptyTable();
-
-  const parsed = await res.json().catch(() => emptyTable());
+  const parsed = await new Response(blob.stream).json().catch(() => emptyTable());
   if (!parsed || !Array.isArray(parsed.profiles)) return emptyTable();
   return {
     version: 1,
@@ -56,7 +52,7 @@ async function writeTable(table: RegistryTable) {
   }
 
   await put(REGISTRY_PATH, JSON.stringify(table, null, 2), {
-    access: "public",
+    access: "private",
     addRandomSuffix: false,
     allowOverwrite: true,
     contentType: "application/json",
