@@ -67,11 +67,11 @@ function LoginScreen() {
 
 export default function DashboardPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated, address: authAddress } = useRadiusAuth();
+  const { initialized, authenticated, address: authAddress } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const identity = getIdentityProfile();
-  const [hideBalance, setHideBalance] = useState(() => typeof window !== "undefined" && localStorage.getItem("radius-hide-balance") === "true");
+  const [hideBalance, setHideBalance] = useState(false);
 
   const { data: nativeBalance } = useBalance({ address, query: { enabled: !!address } });
   const { data: eurcBalance } = useReadContract({
@@ -93,8 +93,23 @@ export default function DashboardPage() {
   const visibleEurc = hideBalance ? "••••••" : eurcDisplay;
 
   useEffect(() => {
+    queueMicrotask(() => setHideBalance(localStorage.getItem("radius-hide-balance") === "true"));
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem("radius-hide-balance", String(hideBalance));
   }, [hideBalance]);
+
+  if (!initialized) {
+    return (
+      <AppShell>
+        <div className="screen-pad flex min-h-screen flex-col items-center justify-center text-center">
+          <div className="orb mb-6 h-20 w-20 rounded-full" />
+          <p className="text-sm font-semibold text-[#8b8795]">Restoring your Radius session…</p>
+        </div>
+      </AppShell>
+    );
+  }
 
   if (!isConnected) return <LoginScreen />;
 

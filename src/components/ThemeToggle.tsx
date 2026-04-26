@@ -4,15 +4,18 @@ import { useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
 
-function getInitialTheme(): Theme {
-  if (typeof window === "undefined") return "light";
-  const saved = window.localStorage.getItem("radius-theme");
-  if (saved === "dark" || saved === "light") return saved;
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
 export function ThemeToggle({ className = "" }: { className?: string }) {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [theme, setTheme] = useState<Theme>("light");
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("radius-theme");
+    const next = saved === "dark" || saved === "light"
+      ? saved
+      : window.matchMedia?.("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+    queueMicrotask(() => setTheme(next));
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;

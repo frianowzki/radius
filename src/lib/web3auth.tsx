@@ -54,6 +54,7 @@ function createWeb3Auth() {
       },
     ],
     storageType: "local",
+    sessionTime: 30 * 24 * 60 * 60,
     uiConfig: {
       appName: "Radius",
       mode: "light",
@@ -132,13 +133,6 @@ export function RadiusAuthProvider({ children }: { children: ReactNode }) {
       .then(async () => {
         if (cancelled) return;
         setInitialized(true);
-        if (!web3auth.provider && web3auth.cachedConnector) {
-          try {
-            await web3auth.connectTo(web3auth.cachedConnector as Parameters<typeof web3auth.connectTo>[0]);
-          } catch (error) {
-            console.warn("Web3Auth cached reconnect failed", error);
-          }
-        }
         await refresh(web3auth.provider);
       })
       .catch((error) => {
