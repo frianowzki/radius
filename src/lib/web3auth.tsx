@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Web3Auth, AUTH_CONNECTION, CHAIN_NAMESPACES, WEB3AUTH_NETWORK } from "@web3auth/modal";
+import { Web3Auth, AUTH_CONNECTION, CHAIN_NAMESPACES, UX_MODE, WEB3AUTH_NETWORK } from "@web3auth/modal";
 import type { IProvider, UserInfo } from "@web3auth/base";
 import type { EIP1193Provider } from "viem";
 import { arcTestnet } from "@/config/wagmi";
@@ -61,6 +61,7 @@ function createWeb3Auth() {
       logoDark: "https://radius-gules.vercel.app/icon.png",
       theme: { primary: "#8f7cff" },
       primaryButton: "socialLogin",
+      uxMode: UX_MODE.REDIRECT,
       loginMethodsOrder: ["google", "email_passwordless", "github", "twitter", "apple"],
     },
     modalConfig: {
@@ -85,7 +86,6 @@ function authConnectionFor(method?: SocialLoginMethod) {
   if (method === "github") return AUTH_CONNECTION.GITHUB;
   if (method === "twitter") return AUTH_CONNECTION.TWITTER;
   if (method === "apple") return AUTH_CONNECTION.APPLE;
-  if (method === "email") return AUTH_CONNECTION.EMAIL_PASSWORDLESS;
   return undefined;
 }
 
