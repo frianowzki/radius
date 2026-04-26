@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAccount, usePublicClient, useWalletClient, useReadContracts, useChainId, useSwitchChain } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { createWalletClient, custom, parseUnits, isAddress } from "viem";
@@ -12,6 +12,7 @@ import { TokenLogo } from "@/components/TokenLogo";
 import { arcTestnet } from "@/config/wagmi";
 import { formatAmount, formatContactLabel, getDirectoryEntries, getIdentityLabel, getIdentityProfile, resolveRecipientInput, saveLocalTransfer, upsertContactByAddress } from "@/lib/utils";
 import type { DirectoryEntry } from "@/lib/utils";
+import { fetchRegistryProfile, type RegistryProfile } from "@/lib/registry-client";
 
 type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
@@ -38,6 +39,7 @@ export default function SendPage() {
   const [saveName, setSaveName] = useState("");
   const [saveHandle, setSaveHandle] = useState("");
   const [saveAvatar, setSaveAvatar] = useState("");
+  const [registryRecipient, setRegistryRecipient] = useState<RegistryProfile | null>(null);
   const identity = getIdentityProfile();
   const senderLabel = getIdentityLabel(identity);
 
@@ -65,9 +67,26 @@ export default function SendPage() {
   }, [address, directoryQuery]);
 
   const resolvedRecipient = resolveRecipientInput(recipient);
-  const resolvedRecipientAddress = resolvedRecipient.address;
+  const registryRecipientAddress = registryRecipient?.address;
+  const resolvedRecipientAddress = resolvedRecipient.address || registryRecipientAddress;
   const validRecipient = !!resolvedRecipientAddress && isAddress(resolvedRecipientAddress);
+  const recipientLabel = registryRecipient ? `${registryRecipient.displayName}${registryRecipient.handle ? ` (@${registryRecipient.handle})` : ""}` : validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : recipient;
   const readyToSend = canSend && validRecipient;
+
+  useEffect(() => {
+    const handle = recipient.trim().startsWith("@") ? recipient.trim() : "";
+    if (!handle || resolvedRecipient.address) {
+      queueMicrotask(() => setRegistryRecipient(null));
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      fetchRegistryProfile({ handle })
+        .then((profile) => { if (!cancelled) setRegistryRecipient(profile); })
+        .catch(() => { if (!cancelled) setRegistryRecipient(null); });
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [recipient, resolvedRecipient.address]);
 
   async function getActiveWalletClient() {
     if (walletClient) return walletClient;
@@ -105,7 +124,7 @@ export default function SendPage() {
       setStatus("confirming");
       await publicClient.waitForTransactionReceipt({ hash });
       saveLocalTransfer({ from: address, to: resolvedRecipientAddress, value: parsedAmount.toString(), token, txHash: hash, direction: "sent", routeLabel: "Arc → Arc" });
-      setShowSaveRecipient(!resolvedRecipient.contact);
+      setShowSaveRecipient(!resolvedRecipient.contact && !registryRecipient);
       setStatus("success");
     } catch (err) {
       setStatus("error");
@@ -144,7 +163,7 @@ export default function SendPage() {
             <div className="glass-panel-strong rounded-[32px] p-6">
               <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Payment sent</p>
               <h2 className="text-3xl font-semibold tracking-tight text-glow">Sent on Arc.</h2>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">{amount} {token} sent to {validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : recipient}.</p>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">{amount} {token} sent to {recipientLabel}.</p>
               {showSaveRecipient && resolvedRecipientAddress && (
                 <div className="mt-5 space-y-3 rounded-[24px] bg-white/70 p-4">
                   <p className="text-sm font-semibold">Save this recipient</p>
@@ -158,7 +177,7 @@ export default function SendPage() {
                 {txHash && <a href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`} target="_blank" className="primary-btn text-center text-sm">View tx</a>}
               </div>
             </div>
-            <ReceiptCard title="Arc Flow" amount={amount} token={token} status="Settled" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : recipient} note="Arc Testnet" shareText={validRecipient && resolvedRecipientAddress ? `Sent ${amount} ${token} on Arc to ${formatContactLabel(resolvedRecipientAddress)}` : undefined} txHash={txHash} explorerUrl={txHash ? `${arcTestnet.blockExplorers.default.url}/tx/${txHash}` : undefined} />
+            <ReceiptCard title="Arc Flow" amount={amount} token={token} status="Settled" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={recipientLabel} note="Arc Testnet" shareText={validRecipient ? `Sent ${amount} ${token} on Arc to ${recipientLabel}` : undefined} txHash={txHash} explorerUrl={txHash ? `${arcTestnet.blockExplorers.default.url}/tx/${txHash}` : undefined} />
           </div>
         ) : (
           <form onSubmit={handleSend} className="space-y-5">
@@ -191,6 +210,11 @@ export default function SendPage() {
                   {directoryEntries.slice(0, 4).map((entry) => entry.address && <button key={`${entry.kind}-${entry.address}`} type="button" onClick={() => handleSelectDirectoryEntry(entry)} className="w-full rounded-2xl bg-white/60 p-3 text-left text-sm"><ProfileChip contact={entry.kind === "contact" ? { id: entry.address, name: entry.name, address: entry.address, handle: entry.handle, avatar: entry.avatar, note: entry.note } : undefined} address={entry.address} /></button>)}
                 </div>
               )}
+              {registryRecipient && !resolvedRecipient.contact && (
+                <button type="button" onClick={() => { setRecipient(`@${registryRecipient.handle}`); setShowDirectory(false); }} className="mt-3 w-full rounded-2xl bg-white/60 p-3 text-left text-sm">
+                  <ProfileChip contact={{ id: registryRecipient.address, name: registryRecipient.displayName, address: registryRecipient.address, handle: registryRecipient.handle, avatar: registryRecipient.avatar, note: registryRecipient.bio }} address={registryRecipient.address} />
+                </button>
+              )}
             </div>
 
             <div className="glass-panel rounded-[28px] p-5">
@@ -201,7 +225,7 @@ export default function SendPage() {
             {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
             <button type="submit" disabled={!readyToSend} className="primary-btn w-full disabled:opacity-40">{status === "sending" ? "Sending..." : status === "confirming" ? "Confirming..." : "Send on Arc"}</button>
 
-            <ReceiptCard title="Send preview" amount={amount || "0.00"} token={token} status="Preview" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : recipient || "Recipient"} note="Arc Testnet" preview />
+            <ReceiptCard title="Send preview" amount={amount || "0.00"} token={token} status="Preview" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={validRecipient ? recipientLabel : recipient || "Recipient"} note="Arc Testnet" preview />
           </form>
         )}
       </div>

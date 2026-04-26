@@ -13,11 +13,11 @@ function readAsDataUrl(file: File) {
   });
 }
 
-export function ProfilePfpUpload() {
+export function ProfilePfpUpload({ initialUrl, onUploaded }: { initialUrl?: string; onUploaded?: (url: string) => void }) {
   const { address, user } = useRadiusAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [pfpUrl, setPfpUrl] = useState<string | null>(
-    typeof window !== "undefined" ? localStorage.getItem("pfpUrl") : null
+    initialUrl || (typeof window !== "undefined" ? localStorage.getItem("pfpUrl") : null)
   );
   const [fileName, setFileName] = useState("");
   const [status, setStatus] = useState("");
@@ -30,6 +30,7 @@ export function ProfilePfpUpload() {
     const localPreview = await readAsDataUrl(file);
     localStorage.setItem("pfpUrl", localPreview);
     setPfpUrl(localPreview);
+    onUploaded?.(localPreview);
 
     try {
       const formData = new FormData();
@@ -41,6 +42,7 @@ export function ProfilePfpUpload() {
       if (res.ok && data.url) {
         localStorage.setItem("pfpUrl", data.url);
         setPfpUrl(data.url);
+        onUploaded?.(data.url);
         setStatus("Uploaded");
       } else {
         setStatus("Saved locally");

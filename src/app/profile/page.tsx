@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useDisconnect } from "wagmi";
 import { isAddress } from "viem";
+import Image from "next/image";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { ProfilePfpUpload } from "@/components/ProfilePfpUpload";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { addContact, formatAddress, getIdentityProfile, isHandleAvailable, saveIdentityProfile } from "@/lib/utils";
+import { addContact, formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
+import { fetchRegistryProfile, registryProfileToIdentity, saveRegistryProfile } from "@/lib/registry-client";
 
 export default function ProfilePage() {
   const { isConnected: wagmiConnected, address: wagmiAddress } = useAccount();
@@ -24,18 +26,51 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [contactSaved, setContactSaved] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
+  const [registryStatus, setRegistryStatus] = useState("");
 
   const normalizedHandle = handle.trim().replace(/^@+/, "").toLowerCase();
-  const handleAvailable = isHandleAvailable(normalizedHandle, address);
 
-  function handleSave(e: React.FormEvent) {
+  useEffect(() => {
+    if (!address) return;
+    let cancelled = false;
+    fetchRegistryProfile({ address })
+      .then((remote) => {
+        if (!remote || cancelled) return;
+        const next = registryProfileToIdentity(remote);
+        saveIdentityProfile(next);
+        setProfile(next);
+        setDisplayName(next.displayName);
+        setHandle(next.handle || "");
+        setBio(next.bio || "");
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [address]);
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!displayName.trim() || (normalizedHandle && !handleAvailable)) return;
+    if (!displayName.trim() || !address) return;
     const next = { displayName: displayName.trim(), handle: normalizedHandle || undefined, avatar: profile.avatar, bio: bio.trim() || undefined, authMode: "wallet" as const };
     saveIdentityProfile(next);
     setProfile(next);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1600);
+    setRegistryStatus("Saving global profile...");
+    try {
+      const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle, avatar: next.avatar, bio: next.bio });
+      const synced = registryProfileToIdentity(remote);
+      saveIdentityProfile(synced);
+      setProfile(synced);
+      setRegistryStatus("Global profile saved");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1600);
+    } catch (err) {
+      setRegistryStatus(err instanceof Error ? err.message : "Could not save global profile");
+    }
+  }
+
+  function handleAvatarUploaded(url: string) {
+    const next = { ...profile, avatar: url };
+    saveIdentityProfile(next);
+    setProfile(next);
   }
 
   async function copyAddress() {
@@ -65,7 +100,7 @@ export default function ProfilePage() {
       <div className="screen-pad space-y-5">
         <section className="gradient-card rounded-[30px] p-6 text-center">
           <div className="mx-auto grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-white/20 text-3xl font-black text-white shadow-lg">
-            {(profile.handle || profile.displayName || user?.name || "R").slice(0, 1).toUpperCase()}
+            {profile.avatar ? <Image src={profile.avatar} alt="Profile" width={80} height={80} className="h-full w-full object-cover" unoptimized={profile.avatar.startsWith("data:")} /> : (profile.handle || profile.displayName || user?.name || "R").slice(0, 1).toUpperCase()}
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-[-0.04em]">{profile.displayName || "Radius user"}</h1>
           <p className="mt-1 text-sm text-white/78">{profile.handle ? `@${profile.handle}` : "Claim a username below"}</p>
@@ -83,7 +118,7 @@ export default function ProfilePage() {
 
         <section className="soft-card rounded-[28px] p-5">
           <p className="mb-3 text-sm font-bold">Profile picture</p>
-          <ProfilePfpUpload />
+          <ProfilePfpUpload initialUrl={profile.avatar} onUploaded={handleAvatarUploaded} />
         </section>
 
         <form onSubmit={handleSave} className="soft-card rounded-[28px] p-5 space-y-3">
@@ -94,14 +129,14 @@ export default function ProfilePage() {
           <div>
             <label className="mb-2 block text-xs font-bold text-[#8b8795]">Username for sending</label>
             <input className="radius-input text-sm" value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@yourname" />
-            {normalizedHandle && !handleAvailable && <p className="mt-2 text-xs text-amber-600">This username is already used by a local contact.</p>}
-            {normalizedHandle && handleAvailable && <p className="mt-2 text-xs text-emerald-600">@{normalizedHandle} is available locally.</p>}
+            {normalizedHandle && <p className="mt-2 text-xs text-[#8b8795]">@{normalizedHandle} will be checked against the global registry on save.</p>}
           </div>
           <div>
             <label className="mb-2 block text-xs font-bold text-[#8b8795]">Bio</label>
             <textarea className="radius-input min-h-24 text-sm" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Short profile bio" />
           </div>
-          <button type="submit" disabled={!displayName.trim() || (!!normalizedHandle && !handleAvailable)} className="primary-btn w-full text-sm disabled:opacity-40">{saved ? "Saved" : "Save profile"}</button>
+          {registryStatus && <p className="text-xs text-[#8b8795]">{registryStatus}</p>}
+          <button type="submit" disabled={!displayName.trim() || !address} className="primary-btn w-full text-sm disabled:opacity-40">{saved ? "Saved globally" : "Save global profile"}</button>
         </form>
 
         <section className="soft-card rounded-[28px] p-5">
