@@ -34,9 +34,10 @@ export function SocialLoginButton({
     if (!hasConfiguredWeb3Auth || busy) return;
     setBusy(true);
     try {
+      localStorage.setItem("radius-login-pending", "true");
       await login(method ?? "google");
-      window.setTimeout(() => window.location.replace("/"), 250);
     } catch (error) {
+      localStorage.removeItem("radius-login-pending");
       console.error("Web3Auth login failed", error);
     } finally {
       setBusy(false);

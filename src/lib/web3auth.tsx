@@ -113,13 +113,15 @@ export function RadiusAuthProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(
     async (nextProvider = web3auth?.provider ?? provider) => {
       setProvider(nextProvider ?? null);
-      setAddress(await getProviderAddress(nextProvider ?? null));
+      const nextAddress = await getProviderAddress(nextProvider ?? null);
+      setAddress(nextAddress);
       setChainId(await getProviderChainId(nextProvider ?? null));
       try {
         setUser(web3auth?.connected ? await web3auth.getUserInfo() : null);
       } catch {
         setUser(null);
       }
+      return nextAddress;
     },
     [provider, web3auth]
   );
@@ -133,7 +135,11 @@ export function RadiusAuthProvider({ children }: { children: ReactNode }) {
       .then(async () => {
         if (cancelled) return;
         setInitialized(true);
-        await refresh(web3auth.provider);
+        const nextAddress = await refresh(web3auth.provider);
+        if (nextAddress && localStorage.getItem("radius-login-pending") === "true") {
+          localStorage.removeItem("radius-login-pending");
+          window.location.replace("/");
+        }
       })
       .catch((error) => {
         console.error("Web3Auth init failed", error);
