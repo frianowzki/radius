@@ -53,9 +53,7 @@ function LoginScreen() {
           </div>
 
           <div className="mt-10 space-y-3 text-left">
-            <SocialLoginButton method="email" label="Continue with Email" icon={<span className="grid h-8 w-8 place-items-center rounded-xl bg-[#f2efff] text-lg">📧</span>} />
-            <SocialLoginButton method="google" label="Continue with Google" icon={<span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-lg font-bold text-[#4285f4]">G</span>} />
-            <WalletConnectButton />
+            <SocialLoginButton method="email" label="Press to Continue" icon={<span className="grid h-8 w-8 place-items-center rounded-xl bg-[#f2efff] text-lg">📧</span>} />
           </div>
         </div>
         <div className="space-y-7 text-[10px] leading-5 text-[#8f8998]">
