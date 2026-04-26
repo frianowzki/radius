@@ -180,8 +180,8 @@ function PayContent() {
                   </div>
                   {memo && (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-zinc-500">Memo</span>
-                      <span className="text-zinc-300">{memo}</span>
+                      <span className="pay-muted">Memo</span>
+                      <span className="pay-value">{memo}</span>
                     </div>
                   )}
                 </div>
@@ -239,34 +239,34 @@ function PayContent() {
           <div className="space-y-5">
 
 
-              <div className="glass-panel rounded-[28px] p-6">
+              <div className="pay-request-card glass-panel rounded-[28px] p-6">
                 <div className="text-center mb-6">
-                  <p className="text-sm text-zinc-400 mb-1">Amount requested</p>
-                  <p className="text-4xl font-bold text-zinc-100">
-                    {amount} <span className="text-zinc-500 text-2xl">{token}</span>
+                  <p className="pay-muted text-sm mb-1">Amount requested</p>
+                  <p className="pay-amount text-4xl font-bold">
+                    {amount} <span className="pay-token text-2xl">{token}</span>
                   </p>
                 </div>
 
-                <div className="space-y-4 text-sm">
+                <div className="pay-detail-list space-y-4 text-sm">
                   <div className="flex justify-between py-3 border-t border-white/8">
-                    <span className="text-zinc-500">To</span>
-                    <span className="font-mono text-zinc-300">
+                    <span className="pay-muted">To</span>
+                    <span className="pay-value font-mono">
                       {formatContactLabel(recipientAddress)}
                     </span>
                   </div>
                   <div className="flex justify-between py-3 border-t border-white/8">
-                    <span className="text-zinc-500">Token</span>
-                    <span className="text-zinc-200">{TOKENS[token].name}</span>
+                    <span className="pay-muted">Token</span>
+                    <span className="pay-value">{TOKENS[token].name}</span>
                   </div>
                   {memo && (
                     <div className="flex justify-between py-3 border-t border-white/8">
-                      <span className="text-zinc-500">Memo</span>
-                      <span className="text-zinc-300">{memo}</span>
+                      <span className="pay-muted">Memo</span>
+                      <span className="pay-value">{memo}</span>
                     </div>
                   )}
                   <div className="flex justify-between py-3 border-t border-white/8">
-                    <span className="text-zinc-500">Network</span>
-                    <span className="text-zinc-200">Arc Testnet</span>
+                    <span className="pay-muted">Network</span>
+                    <span className="pay-value">Arc Testnet</span>
                   </div>
                 </div>
               </div>
@@ -279,7 +279,7 @@ function PayContent() {
                 <button
                   onClick={handlePay}
                   disabled={status === "sending" || status === "confirming"}
-                  className="w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-4 font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all hover:shadow-indigo-500/30 disabled:opacity-60"
+                  className="pay-submit-button w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-4 font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all hover:shadow-indigo-500/30 disabled:opacity-60"
                 >
                   {status === "sending" || status === "confirming" ? (
                     <span className="flex items-center justify-center gap-2">
