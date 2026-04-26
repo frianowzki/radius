@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRadiusAuth } from "@/lib/web3auth";
 
 function readAsDataUrl(file: File) {
@@ -21,6 +21,10 @@ export function ProfilePfpUpload({ initialUrl, onUploaded }: { initialUrl?: stri
   );
   const [fileName, setFileName] = useState("");
   const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    if (initialUrl) queueMicrotask(() => setPfpUrl(initialUrl));
+  }, [initialUrl]);
 
   async function uploadPfp(file: File) {
     const userId = user?.email || user?.name || address || "local-profile";
@@ -42,7 +46,7 @@ export function ProfilePfpUpload({ initialUrl, onUploaded }: { initialUrl?: stri
         localStorage.setItem("pfpUrl", data.url);
         setPfpUrl(data.url);
         onUploaded?.(data.url);
-        setStatus("Uploaded");
+        setStatus("Uploaded globally");
       } else {
         setStatus("Saved locally");
       }

@@ -3,17 +3,19 @@
 import { useState } from "react";
 import { hasConfiguredWeb3Auth, type SocialLoginMethod, useRadiusAuth } from "@/lib/web3auth";
 
+type LoginMode = SocialLoginMethod | "modal";
+
 function isEmbeddedMobileBrowser(userAgent: string) {
   return /Telegram|FBAN|FBAV|Instagram|Line\/|Twitter|TikTok|Snapchat/i.test(userAgent);
 }
 
 export function SocialLoginButton({
   className = "",
-  method,
+  method = "google",
   label = "Press to Continue",
 }: {
   className?: string;
-  method?: SocialLoginMethod;
+  method?: LoginMode;
   label?: string;
 }) {
   const { login, initialized } = useRadiusAuth();
@@ -35,7 +37,7 @@ export function SocialLoginButton({
     setBusy(true);
     try {
       localStorage.setItem("radius-login-pending", "true");
-      await login(method ?? "google");
+      await login(method === "modal" ? undefined : method);
     } catch (error) {
       localStorage.removeItem("radius-login-pending");
       console.error("Web3Auth login failed", error);

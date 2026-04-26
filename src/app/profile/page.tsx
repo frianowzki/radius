@@ -62,10 +62,21 @@ export default function ProfilePage() {
     }
   }
 
-  function handleAvatarUploaded(url: string) {
-    const next = { ...profile, avatar: url };
+  async function handleAvatarUploaded(url: string) {
+    const next = { ...profile, displayName: displayName.trim() || profile.displayName || "Radius user", handle: normalizedHandle || profile.handle, bio: bio.trim() || profile.bio, avatar: url };
     saveIdentityProfile(next);
     setProfile(next);
+    if (!address) return;
+    setRegistryStatus("Syncing global picture...");
+    try {
+      const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle, avatar: url, bio: next.bio });
+      const synced = registryProfileToIdentity(remote);
+      saveIdentityProfile(synced);
+      setProfile(synced);
+      setRegistryStatus("Global picture saved");
+    } catch (err) {
+      setRegistryStatus(err instanceof Error ? err.message : "Could not sync global picture");
+    }
   }
 
   async function copyAddress() {

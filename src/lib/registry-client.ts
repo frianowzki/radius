@@ -14,7 +14,7 @@ export function registryProfileToIdentity(profile: RegistryProfile): UserIdentit
   return {
     displayName: profile.displayName || "Arc user",
     handle: profile.handle,
-    avatar: profile.avatar && (!profile.avatar.startsWith("data:") || profile.avatar.length > 1000) ? profile.avatar : undefined,
+    avatar: profile.avatar && !profile.avatar.startsWith("data:") ? profile.avatar : undefined,
     bio: profile.bio,
     authMode: "wallet",
   };

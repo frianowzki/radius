@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAccount, useReadContracts } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { AppShell } from "@/components/AppShell";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
@@ -13,6 +14,34 @@ import { arcTestnet } from "@/config/wagmi";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel } from "@/lib/utils";
 
 
+function WalletLoginButton() {
+  return (
+    <ConnectButton.Custom>
+      {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
+        const connected = mounted && account && chain;
+        return (
+          <button
+            type="button"
+            onClick={connected ? (chain.unsupported ? openChainModal : openAccountModal) : openConnectModal}
+            className="radius-auth-button secondary justify-center"
+          >
+            <span>{connected ? (chain.unsupported ? "Switch network" : account.displayName) : "Connect wallet"}</span>
+          </button>
+        );
+      }}
+    </ConnectButton.Custom>
+  );
+}
+
+function EyeIcon({ hidden }: { hidden: boolean }) {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true" className="h-5 w-5 fill-current">
+      <path d="M24 11C12.5 11 5 24 5 24s7.5 13 19 13 19-13 19-13-7.5-13-19-13Zm0 20.5a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" />
+      <circle cx="24" cy="24" r="4.2" fill="white" opacity=".92" />
+      {hidden && <path d="M8 42 42 8" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />}
+    </svg>
+  );
+}
 
 function LoginScreen() {
   return (
@@ -29,6 +58,8 @@ function LoginScreen() {
 
           <div className="mt-10 space-y-3 text-left">
             <SocialLoginButton label="Press to Continue" />
+            <SocialLoginButton method="modal" label="Other social options" className="radius-auth-button secondary justify-center disabled:cursor-not-allowed disabled:opacity-50" />
+            <WalletLoginButton />
           </div>
         </div>
         <div className="space-y-7 text-[10px] leading-5 text-[#8f8998]">
@@ -106,7 +137,7 @@ export default function DashboardPage() {
 
         <section className="gradient-card rounded-[24px] p-5">
           <div className="flex items-center justify-between text-xs text-white/75">
-            <span>Total Balance</span><button type="button" aria-label={hideBalance ? "Show balance" : "Hide balance"} onClick={() => setHideBalance((v) => !v)} className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-base font-bold text-white">{hideBalance ? "🙈" : "👁"}</button>
+            <span>Total Balance</span><button type="button" aria-label={hideBalance ? "Show balance" : "Hide balance"} onClick={() => setHideBalance((v) => !v)} className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-base font-bold text-white"><EyeIcon hidden={hideBalance} /></button>
           </div>
           <p className={`mt-3 text-4xl font-semibold tracking-[-0.06em] ${hideBalance ? "balance-hidden" : ""}`}>${visibleTotal}</p>
           <div className="mt-5 grid grid-cols-2 gap-3">
