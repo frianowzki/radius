@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useLogin } from "@privy-io/react-auth";
 import { enabledSocialLoginMethods, hasConfiguredPrivy } from "@/lib/privy";
 
 function isEmbeddedMobileBrowser(userAgent: string) {
@@ -13,12 +12,10 @@ function socialLabel(method: string) {
 }
 
 export function SocialLoginButton({ className = "" }: { className?: string }) {
-  const { login } = useLogin();
   const [isEmbeddedBrowser] = useState(() =>
     typeof window !== "undefined" ? isEmbeddedMobileBrowser(window.navigator.userAgent) : false
   );
   const [copied, setCopied] = useState(false);
-  const enabledMethods = ["email", ...enabledSocialLoginMethods] as Array<"email" | "google" | "apple" | "github" | "twitter">;
   const methodLabel = enabledSocialLoginMethods.length
     ? `email, ${enabledSocialLoginMethods.map(socialLabel).join(", ")}`
     : "email";
@@ -34,7 +31,7 @@ export function SocialLoginButton({ className = "" }: { className?: string }) {
     <div className="space-y-2">
       {isEmbeddedBrowser && (
         <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
-          Privy’s human check is unreliable inside Telegram/In-app browsers. Copy this link and open it in Chrome/Safari for login.
+          Privy’s human check is currently failing on some browsers. Use wallet connect for now while social login is disabled.
           <button
             type="button"
             onClick={copyCurrentUrl}
@@ -47,16 +44,13 @@ export function SocialLoginButton({ className = "" }: { className?: string }) {
       <button
         type="button"
         onClick={() => {
-          if (!hasConfiguredPrivy || isEmbeddedBrowser) return;
-          login({ loginMethods: enabledMethods });
+          return;
         }}
-        disabled={!hasConfiguredPrivy || isEmbeddedBrowser}
+        disabled
         title={
           !hasConfiguredPrivy
             ? "Set NEXT_PUBLIC_PRIVY_APP_ID and NEXT_PUBLIC_PRIVY_CLIENT_ID to enable Privy auth"
-            : isEmbeddedBrowser
-              ? "Open in Chrome/Safari for login"
-              : `Social Login (${methodLabel})`
+            : `Social Login (${methodLabel}) is temporarily disabled`
         }
         className={
           className ||
@@ -65,9 +59,7 @@ export function SocialLoginButton({ className = "" }: { className?: string }) {
       >
         {!hasConfiguredPrivy
           ? "Social or email needs Privy config"
-          : isEmbeddedBrowser
-            ? "Open in browser for login"
-            : "Social Login"}
+          : "Social Login temporarily disabled"}
       </button>
       {hasConfiguredPrivy && enabledSocialLoginMethods.length === 0 && (
         <p className="text-xs leading-5 text-zinc-500">
