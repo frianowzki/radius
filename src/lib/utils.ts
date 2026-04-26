@@ -77,6 +77,13 @@ export function saveIdentityProfile(profile: UserIdentityProfile) {
   );
 }
 
+export function clearRadiusLocalSession() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(IDENTITY_KEY);
+  localStorage.removeItem(CONTACTS_KEY);
+  localStorage.removeItem("pfpUrl");
+}
+
 export function addContact(
   name: string,
   address: string,

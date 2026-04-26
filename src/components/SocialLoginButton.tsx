@@ -3,22 +3,18 @@
 import { useState } from "react";
 import { hasConfiguredWeb3Auth, type SocialLoginMethod, useRadiusAuth } from "@/lib/web3auth";
 
-type LoginMethod = SocialLoginMethod | "wallet";
-
 function isEmbeddedMobileBrowser(userAgent: string) {
   return /Telegram|FBAN|FBAV|Instagram|Line\/|Twitter|TikTok|Snapchat/i.test(userAgent);
 }
 
 export function SocialLoginButton({
   className = "",
-  method = "email",
-  label,
-  icon,
+  method,
+  label = "Press to Continue",
 }: {
   className?: string;
-  method?: LoginMethod;
+  method?: SocialLoginMethod;
   label?: string;
-  icon?: React.ReactNode;
 }) {
   const { login, initialized } = useRadiusAuth();
   const [isEmbeddedBrowser] = useState(() =>
@@ -26,7 +22,6 @@ export function SocialLoginButton({
   );
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
-  const isMethodEnabled = method !== "wallet";
 
   async function copyCurrentUrl() {
     if (typeof window === "undefined") return;
@@ -36,7 +31,7 @@ export function SocialLoginButton({
   }
 
   async function handleLogin() {
-    if (!hasConfiguredWeb3Auth || !isMethodEnabled || busy) return;
+    if (!hasConfiguredWeb3Auth || busy) return;
     setBusy(true);
     try {
       await login(method);
@@ -60,13 +55,11 @@ export function SocialLoginButton({
       <button
         type="button"
         onClick={handleLogin}
-        disabled={!initialized || !hasConfiguredWeb3Auth || !isMethodEnabled || busy}
+        disabled={!initialized || !hasConfiguredWeb3Auth || busy}
         title={!hasConfiguredWeb3Auth ? "Web3Auth is not configured" : undefined}
-        className={className || "radius-auth-button disabled:cursor-not-allowed disabled:opacity-50"}
+        className={className || "radius-auth-button justify-center disabled:cursor-not-allowed disabled:opacity-50"}
       >
-        {icon ?? <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#f2efff] text-lg">📧</span>}
-        <span className="flex-1 text-center">{busy ? "Opening..." : label ?? "Continue with Email"}</span>
-        <span className="text-[#b8b3c0]">›</span>
+        <span className="text-center font-semibold">{busy ? "Opening..." : label}</span>
       </button>
     </div>
   );

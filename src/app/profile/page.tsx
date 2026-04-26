@@ -6,7 +6,7 @@ import Image from "next/image";
 import { AppShell } from "@/components/AppShell";
 import { ProfilePfpUpload } from "@/components/ProfilePfpUpload";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
+import { clearRadiusLocalSession, formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
 import { fetchRegistryProfile, registryProfileToIdentity, saveRegistryProfile } from "@/lib/registry-client";
 
 export default function ProfilePage() {
@@ -78,6 +78,8 @@ export default function ProfilePage() {
   async function disconnectAll() {
     disconnect();
     await logout();
+    clearRadiusLocalSession();
+    window.location.replace("/");
   }
 
 
