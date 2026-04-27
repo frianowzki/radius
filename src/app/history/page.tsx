@@ -5,6 +5,7 @@ import { useAccount, usePublicClient } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { AppShell } from "@/components/AppShell";
 import { ProfileChip } from "@/components/ProfileChip";
+import { TokenLogo } from "@/components/TokenLogo";
 import { TOKENS, type TokenKey } from "@/config/tokens";
 import { arcTestnet } from "@/config/wagmi";
 import {
@@ -233,14 +234,18 @@ export default function HistoryPage() {
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-4">
-                          <div
-                            className={`flex h-12 w-12 items-center justify-center rounded-2xl text-lg ${
-                              isSent
-                                ? "bg-red-500/10 text-red-300"
-                                : "bg-emerald-500/10 text-emerald-300"
-                            }`}
-                          >
-                            {isSent ? "↗" : "↙"}
+                          <div className="relative shrink-0">
+                            <TokenLogo symbol={tx.token} size={48} />
+                            <span
+                              className={`absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full text-[10px] shadow-sm ${
+                                isSent
+                                  ? "bg-red-500 text-white"
+                                  : "bg-emerald-500 text-white"
+                              }`}
+                              aria-hidden="true"
+                            >
+                              {isSent ? "↗" : "↙"}
+                            </span>
                           </div>
                           <div className="space-y-3">
                             <div>

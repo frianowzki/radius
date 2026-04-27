@@ -6,6 +6,7 @@ import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { createWalletClient, custom, parseUnits, isAddress } from "viem";
 import { AppShell } from "@/components/AppShell";
+import { TokenLogo } from "@/components/TokenLogo";
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
 import { arcTestnet } from "@/config/wagmi";
 import {
@@ -242,9 +243,12 @@ function PayContent() {
               <div className="pay-request-card glass-panel rounded-[28px] p-6">
                 <div className="text-center mb-6">
                   <p className="pay-muted text-sm mb-1">Amount requested</p>
-                  <p className="pay-amount text-4xl font-bold">
-                    {amount} <span className="pay-token text-2xl">{token}</span>
-                  </p>
+                  <div className="mt-3 flex items-center justify-center gap-3">
+                    <TokenLogo symbol={token} size={42} />
+                    <p className="pay-amount text-4xl font-bold">
+                      {amount} <span className="pay-token text-2xl">{token}</span>
+                    </p>
+                  </div>
                 </div>
 
                 <div className="pay-detail-list space-y-4 text-sm">
@@ -256,7 +260,7 @@ function PayContent() {
                   </div>
                   <div className="flex justify-between py-3 border-t border-white/8">
                     <span className="pay-muted">Token</span>
-                    <span className="pay-value">{TOKENS[token].name}</span>
+                    <span className="pay-value flex items-center gap-2"><TokenLogo symbol={token} size={22} />{TOKENS[token].name}</span>
                   </div>
                   {memo && (
                     <div className="flex justify-between py-3 border-t border-white/8">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TokenLogo } from "@/components/TokenLogo";
 
 interface ReceiptCardProps {
   title: string;
@@ -32,7 +33,10 @@ export function ReceiptCard({ amount, token, status, fromLabel, toLabel, note, m
     <div className="soft-card rounded-[30px] p-5 text-[#17151f]">
       <div className="text-center">
         <span className="inline-flex rounded-full bg-emerald-50 px-4 py-2 text-[11px] font-bold text-emerald-600">● {status || "Preview"}</span>
-        <p className="mt-6 text-5xl font-semibold tracking-[-0.07em]">${amount || "0.00"}</p>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <TokenLogo symbol={token} size={42} />
+          <p className="text-5xl font-semibold tracking-[-0.07em]">${amount || "0.00"}</p>
+        </div>
         <p className="mt-2 text-sm font-semibold text-[#6f60d5]">{token}</p>
       </div>
       <div className="mt-7 space-y-3 text-sm">

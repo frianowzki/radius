@@ -15,6 +15,7 @@ import type { EIP1193Provider } from "viem";
 import { AppShell } from "@/components/AppShell";
 import { ReceiptCard } from "@/components/ReceiptCard";
 import { ProfileChip } from "@/components/ProfileChip";
+import { TokenLogo } from "@/components/TokenLogo";
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
 import {
   CHAIN_METADATA,
@@ -514,7 +515,7 @@ export default function BridgePage() {
                           : "border border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
                       }`}
                     >
-                      <div className="font-semibold">{TOKENS[key].symbol}</div>
+                      <div className="flex items-center gap-2 font-semibold"><TokenLogo symbol={key} size={26} />{TOKENS[key].symbol}</div>
                       {currentBalance !== undefined && token === key && (
                         <div className="mt-1 text-xs opacity-70">
                           Balance: {formatAmount(currentBalance, currentDecimals)}
@@ -579,11 +580,11 @@ export default function BridgePage() {
                     </div>
                     <div className="grid gap-2 text-xs sm:grid-cols-2">
                       <div className="bridge-info-card rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
-                        <p className="text-zinc-500">Source USDC</p>
+                        <p className="flex items-center gap-2 text-zinc-500"><TokenLogo symbol="USDC" size={22} />Source USDC</p>
                         <p className="mt-1 break-all font-mono text-zinc-300">{sourceUsdcAddress}</p>
                       </div>
                       <div className="bridge-info-card rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
-                        <p className="text-zinc-500">Destination USDC</p>
+                        <p className="flex items-center gap-2 text-zinc-500"><TokenLogo symbol="USDC" size={22} />Destination USDC</p>
                         <p className="mt-1 break-all font-mono text-zinc-300">{destinationUsdcAddress}</p>
                       </div>
                     </div>
@@ -706,8 +707,8 @@ export default function BridgePage() {
                     step="any"
                     className="bridge-input w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-4 pr-16 text-lg font-medium text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-zinc-400">
-                    {token}
+                  <span className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 text-sm font-medium text-zinc-400">
+                    <TokenLogo symbol={token} size={22} />{token}
                   </span>
                 </div>
               </div>
