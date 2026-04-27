@@ -79,9 +79,9 @@ export async function estimateBridgeTransfer(
   return kit.estimateBridge({
     from: { adapter, chain: route.fromChain },
     to: {
-      adapter,
       chain: route.toChain,
       recipientAddress: recipient,
+      useForwarder: true,
     },
     amount,
     token: "USDC",
@@ -123,9 +123,9 @@ export async function executeBridgeTransfer(
     return await kit.bridge({
       from: { adapter, chain: route.fromChain },
       to: {
-        adapter,
         chain: route.toChain,
         recipientAddress: recipient,
+        useForwarder: true,
       },
       amount,
       token: "USDC",

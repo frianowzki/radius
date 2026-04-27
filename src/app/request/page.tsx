@@ -10,6 +10,7 @@ import { AppShell } from "@/components/AppShell";
 import { TOKENS, type TokenKey } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { buildPaymentUrl, expirePaymentRequest, formatPreferredRecipientInput, getPaymentRequests, savePaymentRequest, type PaymentRequestRecord } from "@/lib/utils";
+import { usePaymentRequestWatcher } from "@/lib/usePaymentRequestWatcher";
 
 export default function RequestPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
@@ -41,6 +42,8 @@ export default function RequestPage() {
     if (!address) return;
     setRequests(getPaymentRequests(address).slice(0, 5));
   }
+
+  usePaymentRequestWatcher({ address, onPaid: () => refreshRequests() });
 
   function generate(e: React.FormEvent) {
     e.preventDefault();

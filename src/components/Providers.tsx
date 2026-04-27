@@ -8,6 +8,11 @@ import "@rainbow-me/rainbowkit/styles.css";
 import { useState } from "react";
 import { config } from "@/config/wagmi";
 import { RadiusAuthProvider } from "@/lib/web3auth";
+import { installCircleFetchProxy } from "@/lib/install-circle-fetch-proxy";
+
+if (typeof window !== "undefined") {
+  installCircleFetchProxy();
+}
 
 function WalletProviders({ children }: { children: ReactNode }) {
   return (

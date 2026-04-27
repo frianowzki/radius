@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { isAddress } from "viem";
 import { AppShell } from "@/components/AppShell";
 import { addContact, formatAddress, getContacts, removeContact, updateContact, type Contact } from "@/lib/utils";
@@ -96,7 +97,8 @@ export default function ContactsPage() {
                     {contact.note && <p className="mt-1 truncate text-xs text-[#8b8795]">{contact.note}</p>}
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  <Link href={`/send?to=${encodeURIComponent(contact.handle ? contact.handle.replace(/^@/, "") : contact.address)}`} className="rounded-2xl bg-[#8f7cff]/12 px-3 py-2.5 text-center text-xs font-bold text-[#6f60d5]">Send to</Link>
                   <button type="button" onClick={() => startEdit(contact)} className="rounded-2xl bg-emerald-500/12 px-3 py-2.5 text-xs font-bold text-emerald-600">Edit</button>
                   <button type="button" onClick={() => handleDelete(contact.id)} className="rounded-2xl bg-red-500/12 px-3 py-2.5 text-xs font-bold text-red-600">Delete</button>
                 </div>

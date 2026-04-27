@@ -47,7 +47,7 @@ import type { DirectoryEntry } from "@/lib/utils";
 type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
 export default function BridgePage() {
-  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: wagmiConnected, connector } = useAccount();
   const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
@@ -193,6 +193,14 @@ export default function BridgePage() {
   }
 
   async function getActiveProvider() {
+    if (wagmiConnected && connector?.getProvider) {
+      try {
+        const provider = (await connector.getProvider()) as EIP1193Provider | undefined;
+        if (provider) return provider;
+      } catch {
+        // fall through to other sources
+      }
+    }
     if (authProvider) return authProvider as EIP1193Provider;
 
     const injectedProvider = (globalThis as typeof globalThis & {
