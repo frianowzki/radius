@@ -1031,12 +1031,9 @@ html[data-theme="dark"] .nav-orb {
   stroke-linejoin: round;
 }
 .token-logo-rail-small { stroke-width: 3.5; opacity: .94; }
-.token-logo text {
+.token-logo-core {
   fill: currentColor;
-  font-family: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
-  font-size: 35px;
-  font-weight: 900;
-  dominant-baseline: middle;
+  opacity: .94;
   filter: drop-shadow(0 1px 0 rgba(0,0,0,.08));
 }
 .token-logo-usdc { --token-logo-color: #2775ca; }
