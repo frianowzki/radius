@@ -323,7 +323,7 @@ export function getPaymentRequests(currentAddress?: string): PaymentRequestRecor
 }
 
 export function savePaymentRequest(
-  request: Omit<PaymentRequestRecord, "id" | "status" | "createdAt">
+  request: Omit<PaymentRequestRecord, "status" | "createdAt"> & { id?: string }
 ): PaymentRequestRecord {
   const requests = getPaymentRequests();
   const existing = requests.find(
@@ -337,7 +337,7 @@ export function savePaymentRequest(
 
   const record: PaymentRequestRecord = {
     ...request,
-    id: crypto.randomUUID(),
+    id: request.id || crypto.randomUUID(),
     status: "pending",
     createdAt: Date.now(),
   };
@@ -350,12 +350,14 @@ export function markMatchingPaymentRequestPaid(
   token: TokenKey,
   receivedRaw: bigint,
   decimals: number,
-  recipient?: string
+  recipient?: string,
+  requestId?: string | null
 ): PaymentRequestRecord | undefined {
   const requests = getPaymentRequests();
   const normalizedRecipient = recipient?.toLowerCase();
   const match = requests.find((request) => {
     if (request.status !== "pending" || request.token !== token) return false;
+    if (requestId && request.id !== requestId) return false;
     if (normalizedRecipient && request.recipient.toLowerCase() !== normalizedRecipient) return false;
     return receivedRaw >= decimalToUnits(request.amount, decimals);
   });
@@ -443,10 +445,12 @@ export function buildPaymentUrl(
   recipient: string,
   amount: string,
   token: TokenKey,
-  memo: string
+  memo: string,
+  requestId?: string
 ): string {
   const base = typeof window !== "undefined" ? window.location.origin : "";
   const params = new URLSearchParams({ to: recipient, amount, token });
+  if (requestId) params.set("rid", requestId);
   if (memo.trim()) params.set("memo", memo.trim());
   return `${base}/pay?${params.toString()}`;
 }

@@ -27,9 +27,13 @@ export default function SendPage() {
   const { data: walletClient } = useWalletClient();
   const { switchChainAsync } = useSwitchChain();
 
-  const [token, setToken] = useState<TokenKey>("USDC");
+  const [token, setToken] = useState<TokenKey>(() => {
+    if (typeof window === "undefined") return "USDC";
+    const value = new URLSearchParams(window.location.search).get("token") as TokenKey | null;
+    return value && value in TOKENS ? value : "USDC";
+  });
   const [recipient, setRecipient] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("to") || "" : "");
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("amount") || "" : "");
   const [status, setStatus] = useState<SendStatus>("idle");
   const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
@@ -40,6 +44,7 @@ export default function SendPage() {
   const [saveHandle, setSaveHandle] = useState("");
   const [saveAvatar, setSaveAvatar] = useState("");
   const [registryRecipient, setRegistryRecipient] = useState<RegistryProfile | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const identity = getIdentityProfile();
   const senderLabel = getIdentityLabel(identity);
 
@@ -95,7 +100,7 @@ export default function SendPage() {
     return createWalletClient({ account: address, chain: arcTestnet, transport: custom(authProvider) });
   }
 
-  async function handleSend(e: React.FormEvent) {
+  function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!publicClient || !address || !validRecipient || !resolvedRecipientAddress) return;
     if (!isOnArc) {
@@ -103,6 +108,12 @@ export default function SendPage() {
       setError("Switch to Arc Testnet before sending. Bridge is now a separate tab.");
       return;
     }
+    setShowConfirm(true);
+  }
+
+  async function executeSend() {
+    if (!publicClient || !address || !validRecipient || !resolvedRecipientAddress) return;
+    setShowConfirm(false);
     const activeWalletClient = await getActiveWalletClient();
     if (!activeWalletClient) {
       setStatus("error");
@@ -225,11 +236,41 @@ export default function SendPage() {
               <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="w-full bg-transparent text-5xl font-semibold tracking-tight outline-none" />
             </div>
 
+            {readyToSend && (
+              <div className="glass-panel rounded-[28px] p-5 text-sm">
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Review before sending</p>
+                <div className="space-y-3">
+                  <div className="flex justify-between gap-4"><span className="text-zinc-500">Recipient</span><span className="text-right font-medium">{recipientLabel}</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-zinc-500">Amount</span><span className="font-medium">{amount} {token}</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-zinc-500">Network</span><span className="font-medium text-emerald-500">Arc Testnet</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-zinc-500">Network fee</span><span className="font-medium">Wallet estimate</span></div>
+                </div>
+              </div>
+            )}
+
             {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
             <button type="submit" disabled={!readyToSend} className="primary-btn w-full disabled:opacity-40">{status === "sending" ? "Sending..." : status === "confirming" ? "Confirming..." : "Send on Arc"}</button>
 
             <ReceiptCard title="Send preview" amount={amount || "0.00"} token={token} status="Preview" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={validRecipient ? recipientLabel : recipient || "Recipient"} note="Arc Testnet" preview />
           </form>
+        )}
+
+        {showConfirm && (
+          <div className="fixed inset-0 z-[90] grid place-items-end bg-black/35 p-4" onClick={() => setShowConfirm(false)}>
+            <div className="soft-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8b8795]">Confirm send</p>
+              <h3 className="mt-2 text-2xl font-bold">Send {amount} {token}?</h3>
+              <div className="mt-5 space-y-3 rounded-2xl bg-white/55 p-4 text-sm">
+                <div className="flex justify-between gap-4"><span className="text-[#8b8795]">To</span><span className="text-right font-semibold">{recipientLabel}</span></div>
+                <div className="flex justify-between gap-4"><span className="text-[#8b8795]">Network</span><span className="font-semibold">Arc Testnet</span></div>
+                <div className="flex justify-between gap-4"><span className="text-[#8b8795]">Fee</span><span className="font-semibold">Shown in wallet</span></div>
+              </div>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => setShowConfirm(false)} className="ghost-btn text-sm">Cancel</button>
+                <button type="button" onClick={executeSend} className="primary-btn text-sm">Confirm</button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </AppShell>

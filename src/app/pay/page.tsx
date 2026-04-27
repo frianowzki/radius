@@ -15,6 +15,7 @@ import {
   getIdentityLabel,
   getIdentityProfile,
   resolveRecipientInput,
+  markMatchingPaymentRequestPaid,
   saveLocalTransfer,
   upsertContactByAddress,
 } from "@/lib/utils";
@@ -34,6 +35,7 @@ function PayContent() {
   const amount = searchParams.get("amount") || "";
   const token = (searchParams.get("token") as TokenKey) || "USDC";
   const memo = searchParams.get("memo") || "";
+  const requestId = searchParams.get("rid");
 
   const [status, setStatus] = useState<PayStatus>("idle");
   const [txHash, setTxHash] = useState("");
@@ -101,6 +103,7 @@ function PayContent() {
         direction: "sent",
         routeLabel: "Payment request",
       });
+      markMatchingPaymentRequestPaid(token, parsedAmount, tokenInfo.decimals, recipientAddress, requestId);
       setShowSaveRecipient(!matchedRecipient);
       setStatus("success");
     } catch (err: unknown) {

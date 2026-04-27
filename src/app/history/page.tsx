@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useAccount, usePublicClient } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { AppShell } from "@/components/AppShell";
@@ -280,18 +281,26 @@ export default function HistoryPage() {
                             {isSent ? "−" : "+"}
                             {formatAmount(tx.value, tokenInfo.decimals)} {tx.token}
                           </p>
-                          {tx.txHash.startsWith("0x") ? (
-                            <a
-                              href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="history-link mt-1 inline-block text-xs text-zinc-500 transition-colors hover:text-indigo-300"
+                          <div className="mt-2 flex flex-wrap gap-2 sm:justify-end">
+                            <Link
+                              href={`/send?to=${encodeURIComponent(counterparty)}&amount=${encodeURIComponent(formatAmount(tx.value, tokenInfo.decimals).replace(/,/g, ""))}&token=${tx.token}`}
+                              className="history-link inline-block rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-500 transition-colors hover:text-indigo-300"
                             >
-                              View on ArcScan →
-                            </a>
-                          ) : (
-                            <span className="history-link mt-1 inline-block text-xs text-zinc-500">Balance update</span>
-                          )}
+                              Send again
+                            </Link>
+                            {tx.txHash.startsWith("0x") ? (
+                              <a
+                                href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="history-link inline-block rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-500 transition-colors hover:text-indigo-300"
+                              >
+                                View on ArcScan →
+                              </a>
+                            ) : (
+                              <span className="history-link inline-block rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-500">Balance update</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

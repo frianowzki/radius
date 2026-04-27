@@ -169,6 +169,11 @@ export default function BridgePage() {
     isOnExpectedSourceChain &&
     !isSocialWalletOnly &&
     (!isBridgeRoute || token === "USDC");
+  const bridgeTimeline = [
+    { label: "Source confirmed", done: status === "confirming" || status === "success", active: status === "sending" },
+    { label: "Relaying", done: status === "success", active: status === "confirming" && !!bridgeProgress },
+    { label: "Destination received", done: status === "success", active: false },
+  ];
 
   function resetBridgeFeedback() {
     setBridgeEstimateText("");
@@ -372,6 +377,22 @@ export default function BridgePage() {
               <p className="mt-4 text-base leading-7 text-zinc-400">
                 {successDescription}
               </p>
+
+              {isBridgeRoute && (
+                <div className="mt-8 rounded-[28px] border border-white/8 bg-white/[0.05] p-6">
+                  <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Bridge timeline</p>
+                  <div className="space-y-3">
+                    {bridgeTimeline.map((step, index) => (
+                      <div key={step.label} className="flex items-center gap-3 text-sm">
+                        <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${step.done ? "bg-emerald-500 text-white" : step.active ? "bg-indigo-500 text-white" : "bg-white/10 text-zinc-500"}`}>
+                          {step.done ? "✓" : index + 1}
+                        </span>
+                        <span className={step.done ? "text-emerald-400" : step.active ? "text-indigo-300" : "text-zinc-500"}>{step.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-8 rounded-[28px] border border-white/8 bg-white/[0.05] p-6">
                 <div className="flex items-center justify-between border-b border-white/8 pb-4">
@@ -712,6 +733,24 @@ export default function BridgePage() {
                   </span>
                 </div>
               </div>
+
+
+              {isBridgeRoute && (
+                <div className="glass-panel rounded-[28px] p-5">
+                  <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Bridge timeline</p>
+                  <div className="space-y-3">
+                    {bridgeTimeline.map((step, index) => (
+                      <div key={step.label} className="flex items-center gap-3 text-sm">
+                        <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${step.done ? "bg-emerald-500 text-white" : step.active ? "bg-indigo-500 text-white" : "bg-white/10 text-zinc-500"}`}>
+                          {step.done ? "✓" : index + 1}
+                        </span>
+                        <span className={step.done ? "text-emerald-400" : step.active ? "text-indigo-300" : "text-zinc-500"}>{step.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-4 text-xs text-zinc-500">{bridgeProgress || "Timeline updates once the bridge starts."}</p>
+                </div>
+              )}
 
               <button
                 type="submit"

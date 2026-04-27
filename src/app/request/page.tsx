@@ -45,9 +45,10 @@ export default function RequestPage() {
   function generate(e: React.FormEvent) {
     e.preventDefault();
     if (!address || !amount || Number(amount) <= 0) return;
-    const url = buildPaymentUrl(formatPreferredRecipientInput(address), amount, token, memo);
+    const requestId = crypto.randomUUID();
+    const url = buildPaymentUrl(formatPreferredRecipientInput(address), amount, token, memo, requestId);
     setPaymentUrl(url);
-    savePaymentRequest({ recipient: address, amount, token, memo: memo.trim() || undefined, url });
+    savePaymentRequest({ id: requestId, recipient: address, amount, token, memo: memo.trim() || undefined, url });
     refreshRequests();
   }
 
