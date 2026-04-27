@@ -20,6 +20,22 @@ export interface UserIdentityProfile {
 const CONTACTS_KEY = "arc-p2p-contacts";
 const IDENTITY_KEY = "arc-p2p-identity";
 const LOCAL_TRANSFERS_KEY = "arc-p2p-local-transfers";
+const PAYMENT_REQUESTS_KEY = "radius-payment-requests";
+
+
+export type PaymentRequestStatus = "pending" | "paid" | "expired";
+
+export interface PaymentRequestRecord {
+  id: string;
+  recipient: string;
+  amount: string;
+  token: TokenKey;
+  memo?: string;
+  url: string;
+  status: PaymentRequestStatus;
+  createdAt: number;
+  paidAt?: number;
+}
 
 export interface LocalTransferRecord {
   id: string;
@@ -280,6 +296,89 @@ export function searchDirectoryEntries(query: string, currentAddress?: string): 
       normalized,
     ].some((value) => value?.includes(raw));
   });
+}
+
+
+export function decimalToUnits(value: string, decimals: number): bigint {
+  const normalized = value.trim().replace(/,/g, "");
+  if (!normalized || Number(normalized) <= 0) return BigInt(0);
+  const [whole = "0", fraction = ""] = normalized.split(".");
+  const padded = fraction.slice(0, decimals).padEnd(decimals, "0");
+  return BigInt(`${whole || "0"}${padded}`);
+}
+
+export function getPaymentRequests(currentAddress?: string): PaymentRequestRecord[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = localStorage.getItem(PAYMENT_REQUESTS_KEY);
+    const requests = raw ? (JSON.parse(raw) as PaymentRequestRecord[]) : [];
+    if (!currentAddress) return requests;
+
+    const normalized = currentAddress.toLowerCase();
+    return requests.filter((request) => request.recipient.toLowerCase() === normalized || request.recipient.toLowerCase() === `@${normalized}`);
+  } catch {
+    return [];
+  }
+}
+
+export function savePaymentRequest(
+  request: Omit<PaymentRequestRecord, "id" | "status" | "createdAt">
+): PaymentRequestRecord {
+  const requests = getPaymentRequests();
+  const existing = requests.find(
+    (item) =>
+      item.url === request.url &&
+      item.amount === request.amount &&
+      item.token === request.token &&
+      item.status === "pending"
+  );
+  if (existing) return existing;
+
+  const record: PaymentRequestRecord = {
+    ...request,
+    id: crypto.randomUUID(),
+    status: "pending",
+    createdAt: Date.now(),
+  };
+
+  localStorage.setItem(PAYMENT_REQUESTS_KEY, JSON.stringify([record, ...requests]));
+  return record;
+}
+
+export function markMatchingPaymentRequestPaid(
+  token: TokenKey,
+  receivedRaw: bigint,
+  decimals: number,
+  recipient?: string
+): PaymentRequestRecord | undefined {
+  const requests = getPaymentRequests();
+  const normalizedRecipient = recipient?.toLowerCase();
+  const match = requests.find((request) => {
+    if (request.status !== "pending" || request.token !== token) return false;
+    if (normalizedRecipient && request.recipient.toLowerCase() !== normalizedRecipient) return false;
+    return receivedRaw >= decimalToUnits(request.amount, decimals);
+  });
+
+  if (!match) return undefined;
+
+  const updated = requests.map((request) =>
+    request.id === match.id ? { ...request, status: "paid" as const, paidAt: Date.now() } : request
+  );
+  localStorage.setItem(PAYMENT_REQUESTS_KEY, JSON.stringify(updated));
+  return updated.find((request) => request.id === match.id);
+}
+
+export function expirePaymentRequest(id: string): PaymentRequestRecord | undefined {
+  const requests = getPaymentRequests();
+  let updatedRecord: PaymentRequestRecord | undefined;
+  const updated = requests.map((request) => {
+    if (request.id !== id) return request;
+    updatedRecord = { ...request, status: "expired" };
+    return updatedRecord;
+  });
+  localStorage.setItem(PAYMENT_REQUESTS_KEY, JSON.stringify(updated));
+  return updatedRecord;
 }
 
 export function getLocalTransfers(currentAddress?: string): LocalTransferRecord[] {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
@@ -9,7 +9,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { AppShell } from "@/components/AppShell";
 import { TOKENS, type TokenKey } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
-import { buildPaymentUrl, formatPreferredRecipientInput } from "@/lib/utils";
+import { buildPaymentUrl, expirePaymentRequest, formatPreferredRecipientInput, getPaymentRequests, savePaymentRequest, type PaymentRequestRecord } from "@/lib/utils";
 
 export default function RequestPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
@@ -24,6 +24,7 @@ export default function RequestPage() {
   const [paymentUrl, setPaymentUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
+  const [requests, setRequests] = useState<PaymentRequestRecord[]>([]);
 
   const qrValue = useMemo(() => {
     if (paymentUrl) return paymentUrl;
@@ -31,10 +32,28 @@ export default function RequestPage() {
     return buildPaymentUrl(formatPreferredRecipientInput(address), amount, token, memo);
   }, [address, amount, token, memo, paymentUrl]);
 
+  useEffect(() => {
+    if (!address) return;
+    queueMicrotask(() => setRequests(getPaymentRequests(address).slice(0, 5)));
+  }, [address]);
+
+  function refreshRequests() {
+    if (!address) return;
+    setRequests(getPaymentRequests(address).slice(0, 5));
+  }
+
   function generate(e: React.FormEvent) {
     e.preventDefault();
     if (!address || !amount || Number(amount) <= 0) return;
-    setPaymentUrl(buildPaymentUrl(formatPreferredRecipientInput(address), amount, token, memo));
+    const url = buildPaymentUrl(formatPreferredRecipientInput(address), amount, token, memo);
+    setPaymentUrl(url);
+    savePaymentRequest({ recipient: address, amount, token, memo: memo.trim() || undefined, url });
+    refreshRequests();
+  }
+
+  function expireRequest(id: string) {
+    expirePaymentRequest(id);
+    refreshRequests();
   }
 
   async function copyLink() {
@@ -119,6 +138,43 @@ export default function RequestPage() {
                 </div>
               </div>
             </form>
+
+
+            <section className="mt-5 rounded-[28px] soft-card p-5 text-left">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold">Request status</h3>
+                  <p className="mt-1 text-xs text-[#9a94a3]">Pending links turn paid when the matching balance lands.</p>
+                </div>
+                <button type="button" onClick={refreshRequests} className="ghost-btn px-3 py-2 text-xs">Refresh</button>
+              </div>
+              {requests.length === 0 ? (
+                <p className="rounded-2xl bg-white/50 p-4 text-sm text-[#8b8795]">No requests created yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {requests.map((request) => (
+                    <div key={request.id} className="rounded-2xl bg-white/55 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <TokenLogo symbol={request.token} size={30} />
+                          <div>
+                            <p className="text-sm font-bold">{request.amount} {request.token}</p>
+                            <p className="text-xs text-[#8b8795]">{request.memo || "Payment request"}</p>
+                          </div>
+                        </div>
+                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${request.status === "paid" ? "bg-emerald-500/12 text-emerald-600" : request.status === "expired" ? "bg-zinc-500/10 text-zinc-500" : "bg-amber-500/12 text-amber-600"}`}>
+                          {request.status}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        <button type="button" onClick={() => navigator.clipboard.writeText(request.url)} className="ghost-btn flex-1 px-3 py-2 text-xs">Copy link</button>
+                        {request.status === "pending" && <button type="button" onClick={() => expireRequest(request.id)} className="ghost-btn px-3 py-2 text-xs">Expire</button>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
 
             {showTokenPicker && (
               <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4" onClick={() => setShowTokenPicker(false)}>

@@ -13,7 +13,7 @@ import { TokenLogo } from "@/components/TokenLogo";
 import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
 import { arcTestnet } from "@/config/wagmi";
-import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel, saveLocalTransfer } from "@/lib/utils";
+import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel, markMatchingPaymentRequestPaid, saveLocalTransfer } from "@/lib/utils";
 
 
 function WalletLoginButton() {
@@ -138,7 +138,8 @@ export default function DashboardPage() {
           direction: "received",
           routeLabel: "Balance update",
         });
-        setActivityNotice(message);
+        const paidRequest = markMatchingPaymentRequestPaid(symbol, delta, tokenInfo.decimals, address);
+        setActivityNotice(paidRequest ? `Request paid: ${paidRequest.amount} ${symbol}` : message);
         window.setTimeout(() => setActivityNotice(""), 4200);
         if ("Notification" in window) {
           if (Notification.permission === "granted") new Notification("Radius activity", { body: message });
