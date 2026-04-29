@@ -145,6 +145,10 @@ export default function DashboardPage() {
     localStorage.setItem("radius-hide-balance", String(hideBalance));
   }, [hideBalance]);
 
+  async function enableNotifications() {
+    await showRadiusNotification("Radius notifications", { body: "Notifications are enabled." });
+  }
+
 
   useEffect(() => {
     if (!address || !balanceSnapshot) return;
@@ -190,48 +194,40 @@ export default function DashboardPage() {
   return (
     <AppShell>
       <OnboardingWizard />
-      <div className="screen-pad">
-        <header className="mb-5 flex items-center justify-between">
+      <div className="dashboard-reference-screen">
+        <header className="dashboard-reference-header">
           <div>
-            <div className="mb-3 text-2xl font-black text-[#7a70d8]">Radius</div>
-            <h1 className="text-base font-semibold text-[#17151f]">Hello, {profileName} 👋</h1>
+            <div className="dashboard-logo">Radius</div>
+            <h1>Hello, {profileName} 👋</h1>
           </div>
-          <ThemeToggle />
+          <button type="button" onClick={enableNotifications} className="dashboard-bell" aria-label="Enable notifications">♧</button>
         </header>
 
         {activityNotice && (
-          <div className="mb-4 rounded-2xl border border-emerald-300/40 bg-emerald-500/12 px-4 py-3 text-sm font-semibold text-emerald-700">
-            {activityNotice}
-          </div>
+          <div className="dashboard-alert success">{activityNotice}</div>
         )}
 
         {dueScheduleList.length > 0 && (
-          <Link
-            href="/scheduled"
-            className="mb-4 flex items-center justify-between rounded-2xl border border-amber-300/40 bg-amber-500/12 px-4 py-3 text-sm font-semibold text-amber-700"
-          >
-            <span>
-              {dueScheduleList.length === 1
-                ? `1 scheduled payment is due`
-                : `${dueScheduleList.length} scheduled payments are due`}
-            </span>
-            <span className="text-xs">Review →</span>
+          <Link href="/scheduled" className="dashboard-alert warning">
+            <span>{dueScheduleList.length === 1 ? `1 scheduled payment is due` : `${dueScheduleList.length} scheduled payments are due`}</span>
+            <span>Review →</span>
           </Link>
         )}
 
-        <section className="gradient-card rounded-[24px] p-5">
-          <div className="flex items-center justify-between text-xs text-white/75">
-            <span>Total Balance</span><button type="button" aria-label={hideBalance ? "Show balance" : "Hide balance"} onClick={() => setHideBalance((v) => !v)} className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-base font-bold text-white"><EyeIcon hidden={hideBalance} /></button>
+        <section className="dashboard-balance-card">
+          <div className="dashboard-balance-top">
+            <span>Total Balance</span>
+            <button type="button" aria-label={hideBalance ? "Show balance" : "Hide balance"} onClick={() => setHideBalance((v) => !v)}><EyeIcon hidden={hideBalance} /></button>
           </div>
-          <p className={`mt-3 text-4xl font-semibold tracking-[-0.06em] ${hideBalance ? "balance-hidden" : ""}`}>${visibleTotal}</p>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer" className="rounded-2xl bg-white/18 py-3 text-center text-sm font-semibold">＋ Add Funds</a>
-            <Link href="/request" className="rounded-2xl bg-white/18 py-3 text-center text-sm font-semibold">⇩ Receive</Link>
+          <p className={`dashboard-total ${hideBalance ? "balance-hidden" : ""}`}>${visibleTotal}</p>
+          <p className="dashboard-eq">≈ {visibleUsdc} USDC</p>
+          <div className="dashboard-balance-actions">
+            <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">＋ Add Funds</a>
+            <Link href="/request">⇩ Receive</Link>
           </div>
-
         </section>
 
-        <section className="mt-6 grid grid-cols-5 gap-3 text-center">
+        <section className="dashboard-actions-grid">
           {[
             { href: "/send", icon: "send", label: "Send" },
             { href: "/request", icon: "request", label: "Request" },
@@ -239,23 +235,23 @@ export default function DashboardPage() {
             { href: "/contacts", icon: "contacts", label: "Contacts" },
             { href: "/bridge", icon: "bridge", label: "Bridge" },
           ].map((item) => (
-            <Link key={item.label} href={item.href} className="quick-action text-xs font-semibold text-[#595465]">
-              <span className="icon-chip mx-auto mb-2"><QuickActionIcon name={item.icon as "send" | "request" | "scan" | "contacts" | "bridge"} /></span>{item.label}
+            <Link key={item.label} href={item.href} className="dashboard-action-item">
+              <span><QuickActionIcon name={item.icon as "send" | "request" | "scan" | "contacts" | "bridge"} /></span>{item.label}
             </Link>
           ))}
         </section>
 
-        <section className="mt-7">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">Latest Activities</h2></div>
-          <div className="soft-card rounded-2xl p-4">
+        <section className="dashboard-section">
+          <div className="dashboard-section-title"><h2>Latest Activities</h2><Link href="/history">View all</Link></div>
+          <div className="dashboard-list-card">
             {recentTransfers.length === 0 ? (
-              <p className="text-sm text-[#8b8795]">No latest activities yet.</p>
+              <p className="dashboard-empty">No latest activities yet.</p>
             ) : (
-              <div className="space-y-3">
-                {recentTransfers.map((transfer) => (
-                  <Link href="/history" key={transfer.id} className="flex items-center justify-between text-sm">
-                    <span>{transfer.direction === "sent" ? "↑" : "↓"} {formatAmount(BigInt(transfer.value), TOKENS[transfer.token].decimals)} {transfer.token}</span>
-                    <span className="text-xs text-[#8b8795]">{formatContactLabel(transfer.direction === "sent" ? transfer.to : transfer.from)}</span>
+              <div>
+                {recentTransfers.slice(0, 3).map((transfer) => (
+                  <Link href="/history" key={transfer.id} className="dashboard-activity-row">
+                    <div><span>↓</span><div><p>{formatAmount(BigInt(transfer.value), TOKENS[transfer.token].decimals)} {transfer.token}</p><small>{new Date(transfer.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</small></div></div>
+                    <small>{formatContactLabel(transfer.direction === "sent" ? transfer.to : transfer.from)}</small>
                   </Link>
                 ))}
               </div>
@@ -263,22 +259,24 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="mt-7">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">Recent Contacts</h2><Link href="/contacts" className="text-xs text-[#8f7cff]">View all</Link></div>
-          {contacts.length === 0 ? (
-            <div className="soft-card rounded-2xl p-4 text-sm text-[#8b8795]">No contacts saved yet.</div>
-          ) : (
-            <div className="flex justify-between gap-2">
-              {contacts.map((c) => <Link href={`/send?to=${encodeURIComponent(c.handle ? c.handle.replace(/^@/, "") : c.address)}`} key={c.id} className="min-w-0 text-center text-[10px] font-medium text-[#595465]"><div className="mx-auto mb-2 grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-[#8f7cff] text-white shadow-sm"><AvatarImage src={c.avatar} fallback={c.name} /></div><span className="block truncate">{c.name}</span></Link>)}
-            </div>
-          )}
+        <section className="dashboard-section">
+          <div className="dashboard-section-title"><h2>Recent Contacts</h2><Link href="/contacts">View all</Link></div>
+          <div className="dashboard-list-card">
+            {contacts.length === 0 ? (
+              <div className="dashboard-contact-empty"><span>♧</span><p>No contacts saved yet.<br />Add a contact to get started.</p></div>
+            ) : (
+              <div className="dashboard-contact-strip">
+                {contacts.slice(0, 4).map((c) => <Link href={`/send?to=${encodeURIComponent(c.handle ? c.handle.replace(/^@/, "") : c.address)}`} key={c.id}><span><AvatarImage src={c.avatar} fallback={c.name} /></span><p>{c.name}</p></Link>)}
+              </div>
+            )}
+          </div>
         </section>
 
-        <section className="mt-7">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold">My Assets</h2><button type="button" onClick={() => setShowAssets(true)} className="text-xs text-[#8f7cff]">Manage</button></div>
-          <div className="soft-card overflow-hidden rounded-2xl">
+        <section className="dashboard-section">
+          <div className="dashboard-section-title"><h2>My Assets</h2><button type="button" onClick={() => setShowAssets(true)}>Manage</button></div>
+          <div className="dashboard-list-card asset-card">
             {[["USDC","USD Coin",visibleUsdc],["EURC","Euro Coin",visibleEurc]].map(([s,n,b], i) => (
-              <div key={s} className={`flex items-center justify-between px-4 py-3 ${i ? 'border-t' : ''}`}><div className="flex items-center gap-3"><TokenLogo symbol={s} size={36} /><div><p className="text-sm font-bold">{s}</p><p className="text-xs text-[#9a94a3]">{n}</p></div></div><p className="text-sm font-semibold">{b}</p></div>
+              <div key={s} className={`dashboard-asset-row ${i ? 'with-border' : ''}`}><div><TokenLogo symbol={s} size={38} /><div><p>{s}</p><small>{n}</small></div></div><div><p>{b}</p><small>${Number(String(b).replace(/,/g, "") || 0).toFixed(2)}</small></div></div>
             ))}
           </div>
         </section>
