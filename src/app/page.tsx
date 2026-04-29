@@ -51,26 +51,29 @@ function EyeIcon({ hidden }: { hidden: boolean }) {
 function LoginScreen() {
   return (
     <AppShell>
-      <div className="screen-pad flex min-h-screen flex-col justify-between pb-8 text-center">
-        <div className="flex justify-end"><ThemeToggle /></div>
-        <div className="flex flex-1 flex-col justify-center">
-          <div className="orb mx-auto mb-12 h-28 w-28 rounded-full" />
-          <h1 className="text-5xl font-semibold tracking-[-0.06em] text-[#181521]">Radius</h1>
-          <p className="mx-auto mt-4 max-w-52 text-sm leading-6 text-[#5f5a68]">P2P stablecoin payments on Arc Testnet</p>
-          <div className="mx-auto mt-5 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-[11px] font-semibold text-[#7a70d8] shadow-sm">
-            <span className="h-2 w-2 rounded-full bg-[#8f7cff]" /> Arc Testnet
+      <div className="login-reference-shell">
+        <div className="login-theme-slot"><ThemeToggle /></div>
+
+        <section className="login-hero" aria-label="Radius welcome">
+          <div className="login-planet-wrap" aria-hidden="true">
+            <span className="login-orbit login-orbit-a" />
+            <span className="login-orbit login-orbit-b" />
+            <span className="login-orbit-dot dot-a" />
+            <span className="login-orbit-dot dot-b" />
+            <span className="login-orbit-dot dot-c" />
+            <span className="login-planet" />
           </div>
 
-          <div className="mt-10 space-y-3 text-left">
-            <SocialLoginButton label="Press to Continue" />
-            <SocialLoginButton method="modal" label="Other social options" className="radius-auth-button secondary justify-center disabled:cursor-not-allowed disabled:opacity-50" />
-            <WalletLoginButton />
-          </div>
-        </div>
-        <div className="space-y-7 text-[10px] leading-5 text-[#8f8998]">
-          
-        </div>
+          <h1 className="login-title">Radius</h1>
+          <p className="login-subtitle">P2P stablecoin payments on Arc Testnet</p>
+          <div className="login-network-pill"><span /> Arc Testnet</div>
+        </section>
 
+        <div className="login-actions">
+          <SocialLoginButton label="Press to Continue" className="login-action login-action-primary disabled:cursor-not-allowed disabled:opacity-50" />
+          <SocialLoginButton method="modal" label="Other social options" className="login-action login-action-secondary login-social-action disabled:cursor-not-allowed disabled:opacity-50" />
+          <div className="login-wallet-action"><WalletLoginButton /></div>
+        </div>
       </div>
     </AppShell>
   );
