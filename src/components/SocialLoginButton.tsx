@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { hasConfiguredWeb3Auth, type SocialLoginMethod, useRadiusAuth } from "@/lib/web3auth";
+import { hasConfiguredPrivy, type SocialLoginMethod, useRadiusAuth } from "@/lib/web3auth";
 
 type LoginMode = SocialLoginMethod | "modal";
 
@@ -33,14 +33,14 @@ export function SocialLoginButton({
   }
 
   async function handleLogin() {
-    if (!hasConfiguredWeb3Auth || busy) return;
+    if (!hasConfiguredPrivy || busy) return;
     setBusy(true);
     try {
       localStorage.setItem("radius-login-pending", "true");
       await login(method === "modal" ? undefined : method);
     } catch (error) {
       localStorage.removeItem("radius-login-pending");
-      console.error("Web3Auth login failed", error);
+      console.error("Privy login failed", error);
     } finally {
       setBusy(false);
     }
@@ -59,8 +59,8 @@ export function SocialLoginButton({
       <button
         type="button"
         onClick={handleLogin}
-        disabled={!initialized || !hasConfiguredWeb3Auth || busy}
-        title={!hasConfiguredWeb3Auth ? "Web3Auth is not configured" : undefined}
+        disabled={!initialized || !hasConfiguredPrivy || busy}
+        title={!hasConfiguredPrivy ? "Privy is not configured" : undefined}
         className={className || "radius-auth-button justify-center disabled:cursor-not-allowed disabled:opacity-50"}
       >
         <span className="text-center font-semibold">{busy ? "Opening..." : label}</span>

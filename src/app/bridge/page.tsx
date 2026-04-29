@@ -12,7 +12,8 @@ import {
 } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { createWalletClient, custom, parseUnits, isAddress } from "viem";
-import type { EIP1193Provider } from "viem";
+import type { Chain, EIP1193Provider } from "viem";
+import { arbitrumSepolia, baseSepolia, sepolia } from "viem/chains";
 import { AppShell } from "@/components/AppShell";
 import { ReceiptCard } from "@/components/ReceiptCard";
 import { ProfileChip } from "@/components/ProfileChip";
@@ -50,10 +51,9 @@ type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
 export default function BridgePage() {
   const { address: wagmiAddress, isConnected: wagmiConnected, connector } = useAccount();
-  const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId } = useRadiusAuth();
+  const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId, switchChain: switchAuthChain } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
-  const isSocialWalletOnly = authenticated && !wagmiConnected;
   const wagmiChainId = useChainId();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
@@ -115,9 +115,17 @@ export default function BridgePage() {
   const sourceUsdcAddress = CHAIN_USDC_ADDRESSES[selectedRouteConfig.fromChain];
   const destinationUsdcAddress = CHAIN_USDC_ADDRESSES[selectedRouteConfig.toChain];
   const routeExplorerUrl = sourceChainMeta.explorerUrl;
+  const sourceViemChain: Chain =
+    selectedRouteConfig.fromChain === "Ethereum_Sepolia"
+      ? sepolia
+      : selectedRouteConfig.fromChain === "Base_Sepolia"
+        ? baseSepolia
+        : selectedRouteConfig.fromChain === "Arbitrum_Sepolia"
+          ? arbitrumSepolia
+          : arcTestnet;
   const activeChainId = wagmiConnected ? wagmiChainId : authChainId;
   const isOnExpectedSourceChain = activeChainId === expectedSourceChainId;
-  const canSwitchSourceChain = !isOnExpectedSourceChain && !!switchChainAsync;
+  const canSwitchSourceChain = !isOnExpectedSourceChain && (wagmiConnected ? !!switchChainAsync : authenticated);
 
   const { data: balances } = useReadContracts({
     contracts: address
@@ -190,7 +198,6 @@ export default function BridgePage() {
     status !== "sending" &&
     status !== "confirming" &&
     isOnExpectedSourceChain &&
-    !isSocialWalletOnly &&
     (!isBridgeRoute || token === "USDC");
   // ETAs prefer the live estimate when the SDK provides one; otherwise fall
   // back to coarse defaults based on testnet observations.
@@ -219,7 +226,7 @@ export default function BridgePage() {
     if (!authProvider || !address) return null;
     return createWalletClient({
       account: address,
-      chain: arcTestnet,
+      chain: sourceViemChain,
       transport: custom(authProvider),
     });
   }
@@ -245,11 +252,6 @@ export default function BridgePage() {
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!publicClient || !address) return;
-    if (isSocialWalletOnly) {
-      setStatus("error");
-      setError("Bridge currently requires an external wallet. Web3Auth social wallets can still send Arc → Arc, but Arc App Kit bridge is not stable with the embedded social provider yet.");
-      return;
-    }
 
     const activeWalletClient = await getActiveWalletClient();
     if (!activeWalletClient) {
@@ -727,7 +729,10 @@ export default function BridgePage() {
                       type="button"
                       onClick={() => {
                         resetBridgeFeedback();
-                        switchChainAsync({ chainId: expectedSourceChainId }).catch((err) => {
+                        const switcher = wagmiConnected
+                          ? switchChainAsync({ chainId: expectedSourceChainId })
+                          : switchAuthChain(expectedSourceChainId);
+                        switcher.catch((err) => {
                           setError(err instanceof Error ? err.message.slice(0, 160) : "Failed to switch network");
                         });
                       }}
@@ -806,12 +811,6 @@ export default function BridgePage() {
                 {recipient && !validRecipient && (
                   <p className="mt-2 text-xs text-red-400">Enter a valid address or a saved @username</p>
                 )}
-                {isSocialWalletOnly && (
-                  <div className="mt-3 rounded-2xl border border-amber-300/30 bg-amber-500/10 p-4 text-sm text-amber-600">
-                    Bridge currently requires an external wallet. Social wallets can still use Send on Arc.
-                  </div>
-                )}
-
                 {isBridgeRoute && token !== "USDC" && (
                   <p className="mt-2 text-xs text-amber-400">Crosschain route currently supports USDC only.</p>
                 )}

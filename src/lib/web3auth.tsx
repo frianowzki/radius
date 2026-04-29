@@ -9,12 +9,29 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Web3Auth, AUTH_CONNECTION, CHAIN_NAMESPACES, UX_MODE, WEB3AUTH_NETWORK } from "@web3auth/modal";
-import type { IProvider, UserInfo } from "@web3auth/base";
+import {
+  PrivyProvider,
+  getEmbeddedConnectedWallet,
+  useLogin,
+  useLogout,
+  usePrivy,
+  useWallets,
+  type ConnectedWallet,
+  type LoginModalOptions,
+  type User,
+} from "@privy-io/react-auth";
 import type { EIP1193Provider } from "viem";
+import { arbitrumSepolia, baseSepolia, sepolia } from "viem/chains";
 import { arcTestnet } from "@/config/wagmi";
 
 export type SocialLoginMethod = "email" | "google" | "github" | "twitter" | "apple";
+
+type RadiusUser = {
+  id?: string;
+  name?: string;
+  email?: string;
+  raw?: User;
+};
 
 type RadiusAuthContextValue = {
   initialized: boolean;
@@ -22,171 +39,186 @@ type RadiusAuthContextValue = {
   address?: `0x${string}`;
   chainId?: number;
   provider: EIP1193Provider | null;
-  user: Partial<UserInfo> | null;
+  user: RadiusUser | null;
   login: (method?: SocialLoginMethod) => Promise<void>;
   logout: () => Promise<void>;
+  switchChain: (chainId: number) => Promise<void>;
 };
 
 const RadiusAuthContext = createContext<RadiusAuthContextValue | null>(null);
 
-const clientId = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID?.trim() ?? "";
-const hasConfiguredWeb3Auth = Boolean(clientId);
+const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID?.trim() ?? "";
+const privyClientId = process.env.NEXT_PUBLIC_PRIVY_CLIENT_ID?.trim() ?? "";
+const hasConfiguredPrivy = Boolean(privyAppId);
 
-const chainIdHex = `0x${arcTestnet.id.toString(16)}`;
-
-function createWeb3Auth() {
-  if (!hasConfiguredWeb3Auth) return null;
-
-  return new Web3Auth({
-    clientId,
-    web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-    defaultChainId: chainIdHex,
-    chains: [
-      {
-        chainNamespace: CHAIN_NAMESPACES.EIP155,
-        chainId: chainIdHex,
-        rpcTarget: arcTestnet.rpcUrls.default.http[0],
-        displayName: arcTestnet.name,
-        blockExplorerUrl: arcTestnet.blockExplorers.default.url,
-        logo: "https://radius-gules.vercel.app/icon.png",
-        ticker: arcTestnet.nativeCurrency.symbol,
-        tickerName: arcTestnet.nativeCurrency.name,
-      },
-    ],
-    storageType: "local",
-    sessionTime: 30 * 24 * 60 * 60,
-    uiConfig: {
-      appName: "Radius",
-      mode: "light",
-      logoLight: "https://radius-gules.vercel.app/icon.png",
-      logoDark: "https://radius-gules.vercel.app/icon.png",
-      theme: { primary: "#8f7cff" },
-      primaryButton: "socialLogin",
-      uxMode: UX_MODE.REDIRECT,
-      loginMethodsOrder: ["google", "email_passwordless", "github", "twitter", "apple"],
-    },
-    modalConfig: {
-      connectors: {
-        auth: {
-          label: "Social login",
-          loginMethods: {
-            google: { showOnModal: true, mainOption: true },
-            email_passwordless: { showOnModal: true, mainOption: true },
-            github: { showOnModal: true },
-            twitter: { showOnModal: true },
-            apple: { showOnModal: true },
-          },
-        },
-      },
-    },
-  });
+function parsePrivyChainId(chainId?: string) {
+  if (!chainId) return undefined;
+  const raw = chainId.includes(":") ? chainId.split(":").at(-1) : chainId;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function authConnectionFor(method?: SocialLoginMethod) {
-  if (method === "google") return AUTH_CONNECTION.GOOGLE;
-  if (method === "github") return AUTH_CONNECTION.GITHUB;
-  if (method === "twitter") return AUTH_CONNECTION.TWITTER;
-  if (method === "apple") return AUTH_CONNECTION.APPLE;
-  return undefined;
+function pickWallet(wallets: ConnectedWallet[]) {
+  return getEmbeddedConnectedWallet(wallets) ?? wallets.find((wallet) => wallet.type === "ethereum") ?? null;
 }
 
-async function getProviderAddress(provider: IProvider | null): Promise<`0x${string}` | undefined> {
-  if (!provider) return undefined;
-  const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
-  return accounts?.[0] as `0x${string}` | undefined;
+function normalizeUser(user: User | null | undefined): RadiusUser | null {
+  if (!user) return null;
+  const name =
+    user.google?.name ||
+    user.twitter?.name ||
+    user.twitter?.username ||
+    user.github?.name ||
+    user.github?.username ||
+    user.email?.address ||
+    user.apple?.email ||
+    undefined;
+  const email = user.email?.address || user.google?.email || user.github?.email || user.apple?.email || undefined;
+  return { id: user.id, name, email, raw: user };
 }
 
-async function getProviderChainId(provider: IProvider | null): Promise<number | undefined> {
-  if (!provider) return undefined;
-  const raw = (await provider.request({ method: "eth_chainId" })) as string | undefined;
-  return raw ? Number.parseInt(raw, 16) : undefined;
-}
-
-export function RadiusAuthProvider({ children }: { children: ReactNode }) {
-  const [web3auth] = useState(() => createWeb3Auth());
-  const [initialized, setInitialized] = useState(!hasConfiguredWeb3Auth);
-  const [provider, setProvider] = useState<IProvider | null>(null);
+function RadiusPrivyBridgeProvider({ children }: { children: ReactNode }) {
+  const { ready, authenticated, user } = usePrivy();
+  const { wallets } = useWallets();
+  const { logout: privyLogout } = useLogout();
+  const [provider, setProvider] = useState<EIP1193Provider | null>(null);
   const [address, setAddress] = useState<`0x${string}` | undefined>();
   const [chainId, setChainId] = useState<number | undefined>();
-  const [user, setUser] = useState<Partial<UserInfo> | null>(null);
+  const wallet = useMemo(() => pickWallet(wallets), [wallets]);
 
-  const refresh = useCallback(
-    async (nextProvider = web3auth?.provider ?? provider) => {
-      setProvider(nextProvider ?? null);
-      const nextAddress = await getProviderAddress(nextProvider ?? null);
-      setAddress(nextAddress);
-      setChainId(await getProviderChainId(nextProvider ?? null));
-      try {
-        setUser(web3auth?.connected ? await web3auth.getUserInfo() : null);
-      } catch {
-        setUser(null);
-      }
-      return nextAddress;
-    },
-    [provider, web3auth]
-  );
+  const refreshWallet = useCallback(async () => {
+    if (!ready || !authenticated || !wallet) {
+      setProvider(null);
+      setAddress(undefined);
+      setChainId(undefined);
+      return;
+    }
 
+    try {
+      const nextProvider = (await wallet.getEthereumProvider()) as unknown as EIP1193Provider;
+      setProvider(nextProvider);
+      setAddress(wallet.address as `0x${string}`);
+      setChainId(parsePrivyChainId(wallet.chainId));
+    } catch (error) {
+      console.error("Privy provider unavailable", error);
+      setProvider(null);
+      setAddress(undefined);
+      setChainId(undefined);
+    }
+  }, [authenticated, ready, wallet]);
+
+  /* eslint-disable react-hooks/set-state-in-effect -- hydrate Privy wallet/provider state from SDK callbacks */
   useEffect(() => {
-    if (!web3auth) return;
-    let cancelled = false;
+    void refreshWallet();
+  }, [refreshWallet]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
-    web3auth
-      .init()
-      .then(async () => {
-        if (cancelled) return;
-        setInitialized(true);
-        const nextAddress = await refresh(web3auth.provider);
-        if (nextAddress && localStorage.getItem("radius-login-pending") === "true") {
-          localStorage.removeItem("radius-login-pending");
-          window.location.replace("/");
-        }
-      })
-      .catch((error) => {
-        console.error("Web3Auth init failed", error);
-        if (!cancelled) setInitialized(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [refresh, web3auth]);
+  const { login: openPrivyLogin } = useLogin({
+    onComplete: () => {
+      if (typeof window !== "undefined" && localStorage.getItem("radius-login-pending") === "true") {
+        localStorage.removeItem("radius-login-pending");
+        window.location.replace("/");
+      }
+    },
+    onError: (error) => {
+      console.error("Privy login failed", error);
+      if (typeof window !== "undefined") localStorage.removeItem("radius-login-pending");
+    },
+  });
 
   const login = useCallback(
     async (method?: SocialLoginMethod) => {
-      if (!web3auth) throw new Error("Web3Auth is not configured");
-      const authConnection = authConnectionFor(method);
-      const nextProvider = authConnection
-        ? await web3auth.connectTo("auth", { authConnection })
-        : await web3auth.connect();
-      await refresh(nextProvider);
+      if (!hasConfiguredPrivy) throw new Error("Privy is not configured");
+      const options: LoginModalOptions | undefined = method ? { loginMethods: [method] } : undefined;
+      openPrivyLogin(options);
     },
-    [refresh, web3auth]
+    [openPrivyLogin]
   );
 
   const logout = useCallback(async () => {
-    if (!web3auth) return;
-    await web3auth.logout({ cleanup: true });
+    await privyLogout();
     setProvider(null);
     setAddress(undefined);
     setChainId(undefined);
-    setUser(null);
-  }, [web3auth]);
+  }, [privyLogout]);
+
+  const switchChain = useCallback(
+    async (targetChainId: number) => {
+      if (!wallet) throw new Error("Privy wallet unavailable");
+      await wallet.switchChain(targetChainId);
+      const nextProvider = (await wallet.getEthereumProvider()) as unknown as EIP1193Provider;
+      setProvider(nextProvider);
+      setChainId(targetChainId);
+    },
+    [wallet]
+  );
 
   const value = useMemo<RadiusAuthContextValue>(
     () => ({
-      initialized,
-      authenticated: Boolean(address),
+      initialized: ready,
+      authenticated: authenticated && Boolean(address),
       address,
       chainId,
-      provider: provider as EIP1193Provider | null,
-      user,
+      provider,
+      user: normalizeUser(user),
       login,
       logout,
+      switchChain,
     }),
-    [address, chainId, initialized, login, logout, provider, user]
+    [address, authenticated, chainId, login, logout, provider, ready, switchChain, user]
   );
 
   return <RadiusAuthContext.Provider value={value}>{children}</RadiusAuthContext.Provider>;
+}
+
+export function RadiusAuthProvider({ children }: { children: ReactNode }) {
+  if (!hasConfiguredPrivy) {
+    return (
+      <RadiusAuthContext.Provider
+        value={{
+          initialized: true,
+          authenticated: false,
+          provider: null,
+          user: null,
+          login: async () => {
+            throw new Error("Privy is not configured");
+          },
+          logout: async () => undefined,
+          switchChain: async () => {
+            throw new Error("Privy is not configured");
+          },
+        }}
+      >
+        {children}
+      </RadiusAuthContext.Provider>
+    );
+  }
+
+  return (
+    <PrivyProvider
+      appId={privyAppId}
+      clientId={privyClientId || undefined}
+      config={{
+        appearance: {
+          theme: "dark",
+          accentColor: "#8f7cff",
+          logo: "https://radius-gules.vercel.app/icon.png",
+          landingHeader: "Continue to Radius",
+          loginMessage: "Create an embedded wallet that can bridge across Arc routes.",
+          showWalletLoginFirst: false,
+          walletChainType: "ethereum-only",
+        },
+        loginMethods: ["google", "email", "github", "twitter", "apple"],
+        supportedChains: [arcTestnet, sepolia, baseSepolia, arbitrumSepolia],
+        defaultChain: arcTestnet,
+        embeddedWallets: {
+          ethereum: { createOnLogin: "users-without-wallets" },
+        },
+      }}
+    >
+      <RadiusPrivyBridgeProvider>{children}</RadiusPrivyBridgeProvider>
+    </PrivyProvider>
+  );
 }
 
 export function useRadiusAuth() {
@@ -195,4 +227,4 @@ export function useRadiusAuth() {
   return ctx;
 }
 
-export { hasConfiguredWeb3Auth };
+export { hasConfiguredPrivy, hasConfiguredPrivy as hasConfiguredWeb3Auth };
