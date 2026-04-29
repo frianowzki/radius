@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useDisconnect } from "wagmi";
-import { QRCodeSVG } from "qrcode.react";
 import { AppShell } from "@/components/AppShell";
 import { AvatarImage } from "@/components/AvatarImage";
 import { ProfilePfpUpload } from "@/components/ProfilePfpUpload";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { clearRadiusLocalSession, formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
 import { fetchRegistryProfile, registryProfileToIdentity, saveRegistryProfile } from "@/lib/registry-client";
-import { useMounted } from "@/lib/useMounted";
 
 export default function ProfilePage() {
   const { isConnected: wagmiConnected, address: wagmiAddress } = useAccount();
@@ -35,31 +33,6 @@ export default function ProfilePage() {
   const [registryStatus, setRegistryStatus] = useState("");
 
   const normalizedHandle = handle.trim().replace(/^@+/, "").toLowerCase();
-  const mounted = useMounted();
-  const [copiedLink, setCopiedLink] = useState(false);
-  const payTarget = (profile.handle && `@${profile.handle.replace(/^@+/, "")}`) || address || "";
-  const payLink = useMemo(() => {
-    if (!mounted || !payTarget) return "";
-    return `${window.location.origin}/send?to=${encodeURIComponent(payTarget)}`;
-  }, [mounted, payTarget]);
-
-  async function copyPayLink() {
-    if (!payLink) return;
-    try {
-      await navigator.clipboard.writeText(payLink);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 1500);
-    } catch { /* noop */ }
-  }
-  async function sharePayLink() {
-    if (!payLink) return;
-    const text = `Pay me on Radius${profile.handle ? ` (@${profile.handle})` : ""}`;
-    if (typeof navigator !== "undefined" && "share" in navigator) {
-      try { await (navigator as Navigator).share({ title: "Radius", text, url: payLink }); return; } catch { /* user cancel */ }
-    }
-    await copyPayLink();
-  }
-
   useEffect(() => {
     if (!address) return;
     let cancelled = false;
@@ -132,52 +105,31 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <div className="screen-pad space-y-5">
-        <section className="gradient-card rounded-[30px] p-6 text-center">
-          <div className="mx-auto grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-white/20 text-3xl font-black text-white shadow-lg">
+      <div className="profile-reference-screen">
+        <section className="profile-hero-card">
+          <div className="profile-stars" aria-hidden="true" />
+          <div className="profile-orbit-line" aria-hidden="true" />
+          <div className="profile-hero-avatar">
             <AvatarImage src={profile.avatar} fallback={profile.handle || profile.displayName || user?.name || "R"} />
+            <span className="profile-verified" aria-hidden="true">✦</span>
           </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-[-0.04em]">{profile.displayName || "Radius user"}</h1>
-          <p className="mt-1 text-sm text-white/78">{profile.handle ? `@${profile.handle}` : "Claim a username below"}</p>
-          <p className="mx-auto mt-3 max-w-64 text-xs leading-5 text-white/72">{profile.bio || "Your Radius profile is used for requests, receipts, and username sending on this device."}</p>
-          <div className="mt-4 rounded-2xl bg-white/16 px-3 py-2 font-mono text-[11px] text-white/82">
-            {address ? formatAddress(address) : "No wallet connected"}
-          </div>
+          <h1>{profile.displayName || "Radius user"}</h1>
+          <p className="profile-handle">{profile.handle ? `@${profile.handle}` : "Claim a username below"}</p>
+          <p className="profile-bio">{profile.bio || "Hello World"}</p>
+          <div className="profile-address-pill">{address ? formatAddress(address) : "No wallet connected"}</div>
           {address && (
-            <div className="mt-3 grid grid-cols-2 gap-3 text-xs font-semibold">
-              <button type="button" onClick={copyAddress} className="rounded-2xl bg-white/16 py-3 text-white/90">{copiedAddress ? "Copied" : "Copy address"}</button>
-              <button type="button" onClick={disconnectAll} className="rounded-2xl bg-white/16 py-3 text-white/90">Disconnect</button>
+            <div className="profile-hero-actions">
+              <button type="button" onClick={copyAddress}>⧉ {copiedAddress ? "Copied" : "Copy address"}</button>
+              <button type="button" onClick={disconnectAll}>↻ Disconnect</button>
             </div>
           )}
         </section>
 
-        {address && (
-          <section className="soft-card rounded-[28px] p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-bold">My pay QR</p>
-              <span className="text-[11px] text-[#8b8795]">{profile.handle ? `@${profile.handle}` : "address-based"}</span>
-            </div>
-            <div className="mx-auto w-fit rounded-2xl bg-white p-3 shadow-[0_10px_28px_rgba(143,124,255,.18)]">
-              {payLink ? (
-                <QRCodeSVG value={payLink} size={196} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
-              ) : (
-                <div className="h-[196px] w-[196px] rounded-xl bg-[#f7f5fb]" />
-              )}
-            </div>
-            <p className="mt-3 break-all text-center text-[11px] text-[#9a94a3]">{payLink || ""}</p>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-xs font-semibold">
-              <button type="button" onClick={copyPayLink} disabled={!payLink} className="ghost-btn py-3 disabled:opacity-40">{copiedLink ? "Copied" : "Copy link"}</button>
-              <button type="button" onClick={sharePayLink} disabled={!payLink} className="primary-btn py-3 disabled:opacity-40">Share</button>
-            </div>
-          </section>
-        )}
-
-        <section className="soft-card rounded-[28px] p-5">
-          <p className="mb-3 text-sm font-bold">Profile picture</p>
-          <ProfilePfpUpload initialUrl={profile.avatar} onUploaded={handleAvatarUploaded} />
-        </section>
-
-        <form onSubmit={handleSave} className="soft-card rounded-[28px] p-5 space-y-3">
+        <form onSubmit={handleSave} className="profile-form-card">
+          <div>
+            <p className="mb-2 text-xs font-bold text-[#8b8795]">Profile picture</p>
+            <ProfilePfpUpload initialUrl={profile.avatar} onUploaded={handleAvatarUploaded} />
+          </div>
           <div>
             <label className="mb-2 block text-xs font-bold text-[#8b8795]">Display name</label>
             <input className="radius-input text-sm" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" />

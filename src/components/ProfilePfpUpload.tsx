@@ -56,14 +56,15 @@ export function ProfilePfpUpload({ initialUrl, onUploaded }: { initialUrl?: stri
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-white/60 text-2xl font-black text-[#8f7cff] shadow-sm">
-        <AvatarImage src={pfpUrl || undefined} fallback="R" className="h-20 w-20 object-cover" />
+    <div className="profile-upload-row">
+      <div className="profile-upload-avatar">
+        <AvatarImage src={pfpUrl || undefined} fallback="R" className="h-full w-full object-cover" />
+        <span className="profile-upload-edit" aria-hidden="true">✎</span>
       </div>
       <div className="min-w-0 flex-1">
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadPfp(file); }} />
-        <button type="button" onClick={() => inputRef.current?.click()} className="ghost-btn w-full text-sm">Choose profile picture</button>
-        <p className="mt-2 truncate text-xs text-[#8b8795]">{fileName || status || "PNG/JPG supported"}</p>
+        <button type="button" onClick={() => inputRef.current?.click()} className="profile-upload-button">▧ Choose profile picture</button>
+        <p className="mt-1 truncate text-[11px] text-[#8b8795]">{fileName || status || "PNG/JPG supported"}</p>
       </div>
     </div>
   );
