@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAccount, useDisconnect } from "wagmi";
+import { QRCodeSVG } from "qrcode.react";
 import { AppShell } from "@/components/AppShell";
 import { AvatarImage } from "@/components/AvatarImage";
 import { ProfilePfpUpload } from "@/components/ProfilePfpUpload";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { clearRadiusLocalSession, formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
 import { fetchRegistryProfile, registryProfileToIdentity, saveRegistryProfile } from "@/lib/registry-client";
+import { useMounted } from "@/lib/useMounted";
 
 export default function ProfilePage() {
   const { isConnected: wagmiConnected, address: wagmiAddress } = useAccount();
@@ -31,6 +33,13 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [registryStatus, setRegistryStatus] = useState("");
+
+  const mounted = useMounted();
+  const payTarget = (profile.handle && `@${profile.handle.replace(/^@+/, "")}`) || address || "";
+  const payLink = useMemo(() => {
+    if (!mounted || !payTarget) return "";
+    return `${window.location.origin}/send?to=${encodeURIComponent(payTarget)}`;
+  }, [mounted, payTarget]);
 
   const normalizedHandle = handle.trim().replace(/^@+/, "").toLowerCase();
   useEffect(() => {
@@ -124,6 +133,23 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+
+
+        {address && (
+          <section className="profile-qr-card">
+            <div className="profile-qr-header">
+              <h2>My pay QR</h2>
+              <span>{profile.handle ? `@${profile.handle}` : "address-based"}</span>
+            </div>
+            <div className="profile-qr-frame">
+              {payLink ? (
+                <QRCodeSVG value={payLink} size={224} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
+              ) : (
+                <div className="profile-qr-placeholder" />
+              )}
+            </div>
+          </section>
+        )}
 
         <form onSubmit={handleSave} className="profile-form-card">
           <div>

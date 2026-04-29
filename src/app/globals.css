@@ -2132,3 +2132,62 @@ html[data-theme="dark"] .history-counterparty-chip {
   border-color: rgba(255,255,255,.08);
 }
 html[data-theme="dark"] .history-token-orb > span { border-color: #0b1221; }
+
+/* Profile QR card */
+.profile-qr-card {
+  border-radius: 24px;
+  padding: 20px 20px 24px;
+  background: rgba(255,255,255,.82);
+  border: 1px solid rgba(255,255,255,.80);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.86), 0 18px 42px rgba(55,46,88,.10);
+  backdrop-filter: blur(20px) saturate(1.15);
+}
+.profile-qr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.profile-qr-header h2 {
+  color: #101828;
+  font-size: 25px;
+  line-height: 1;
+  font-weight: 880;
+  letter-spacing: -.045em;
+}
+.profile-qr-header span {
+  min-width: 0;
+  color: #8b8795;
+  font-size: 18px;
+  font-weight: 560;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-qr-frame {
+  width: fit-content;
+  margin: 0 auto;
+  border-radius: 28px;
+  padding: 24px;
+  background: #fff;
+  box-shadow: 0 24px 58px rgba(139,92,246,.11), 0 8px 24px rgba(30,41,59,.05);
+}
+.profile-qr-frame svg { display: block; }
+.profile-qr-placeholder {
+  width: 224px;
+  height: 224px;
+  border-radius: 20px;
+  background: #f7f5fb;
+}
+html[data-theme="dark"] .profile-qr-card {
+  background: rgba(12,18,34,.78);
+  border-color: rgba(255,255,255,.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 18px 42px rgba(0,0,0,.36);
+}
+html[data-theme="dark"] .profile-qr-header h2 { color: #f8fafc !important; }
+html[data-theme="dark"] .profile-qr-header span { color: #94a3b8; }
+html[data-theme="dark"] .profile-qr-frame {
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0,0,0,.28), 0 0 0 1px rgba(255,255,255,.04);
+}
