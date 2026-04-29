@@ -6,6 +6,7 @@ import { useAccount, useReadContracts } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { AppShell } from "@/components/AppShell";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
@@ -15,6 +16,7 @@ import { QuickActionIcon } from "@/components/QuickActionIcon";
 import { arcTestnet } from "@/config/wagmi";
 import { showRadiusNotification } from "@/lib/notifications";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel, markMatchingPaymentRequestPaid, saveLocalTransfer } from "@/lib/utils";
+import { dueSchedules, type ScheduledPaymentRecord } from "@/lib/scheduled-payments";
 
 
 function WalletLoginButton() {
@@ -79,9 +81,24 @@ export default function DashboardPage() {
   const { initialized, authenticated, address: authAddress } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
-  const identity = getIdentityProfile();
   const [hideBalance, setHideBalance] = useState(false);
   const [showAssets, setShowAssets] = useState(false);
+  const [identity, setIdentity] = useState<{ displayName?: string; authMode?: string }>({ displayName: "Arc user", authMode: "wallet" });
+  const [contacts, setContacts] = useState<{ id: string; name: string; handle?: string; address: string; avatar?: string }[]>([]);
+  const [recentTransfers, setRecentTransfers] = useState<ReturnType<typeof getLocalTransfers>>([]);
+
+  /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage on mount (client-only) to avoid SSR mismatch */
+  useEffect(() => {
+    setIdentity(getIdentityProfile());
+    setContacts(getContacts().slice(0, 5));
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  /* eslint-disable react-hooks/set-state-in-effect -- hydrate recentTransfers on address change (client-only) */
+  useEffect(() => {
+    if (address) setRecentTransfers(getLocalTransfers(address).slice(0, 3));
+  }, [address]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const { data: balances } = useReadContracts({
     contracts: address ? (["USDC", "EURC"] as const).map((key) => ({
@@ -99,13 +116,19 @@ export default function DashboardPage() {
   const usdcDisplay = usdcBalance !== undefined ? formatAmount(usdcBalance, TOKENS.USDC.decimals) : "0.00";
   const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance, TOKENS.EURC.decimals) : "0.00";
   const totalDisplay = (Number(usdcDisplay.replace(/,/g, "")) + Number(eurcDisplay.replace(/,/g, ""))).toLocaleString(undefined, { maximumFractionDigits: 2 });
-  const contacts = getContacts().slice(0, 5);
-  const recentTransfers = address ? getLocalTransfers(address).slice(0, 3) : [];
   const profileName = identity.displayName || "Arc user";
   const visibleTotal = hideBalance ? "••••••" : totalDisplay;
   const visibleUsdc = hideBalance ? "••••••" : usdcDisplay;
   const visibleEurc = hideBalance ? "••••••" : eurcDisplay;
   const [activityNotice, setActivityNotice] = useState("");
+  const [dueScheduleList, setDueScheduleList] = useState<ScheduledPaymentRecord[]>([]);
+  useEffect(() => {
+    if (!isConnected) return;
+    const update = () => setDueScheduleList(dueSchedules());
+    update();
+    const t = window.setInterval(update, 60_000);
+    return () => window.clearInterval(t);
+  }, [isConnected]);
   const balanceSnapshot = useMemo(() => {
     if (!address || usdcBalance === undefined || eurcBalance === undefined) return null;
     return { USDC: usdcBalance, EURC: eurcBalance };
@@ -163,6 +186,7 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
+      <OnboardingWizard />
       <div className="screen-pad">
         <header className="mb-5 flex items-center justify-between">
           <div>
@@ -176,6 +200,20 @@ export default function DashboardPage() {
           <div className="mb-4 rounded-2xl border border-emerald-300/40 bg-emerald-500/12 px-4 py-3 text-sm font-semibold text-emerald-700">
             {activityNotice}
           </div>
+        )}
+
+        {dueScheduleList.length > 0 && (
+          <Link
+            href="/scheduled"
+            className="mb-4 flex items-center justify-between rounded-2xl border border-amber-300/40 bg-amber-500/12 px-4 py-3 text-sm font-semibold text-amber-700"
+          >
+            <span>
+              {dueScheduleList.length === 1
+                ? `1 scheduled payment is due`
+                : `${dueScheduleList.length} scheduled payments are due`}
+            </span>
+            <span className="text-xs">Review →</span>
+          </Link>
         )}
 
         <section className="gradient-card rounded-[24px] p-5">

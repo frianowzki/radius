@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PaymentRequestNotifier } from "@/components/PaymentRequestNotifier";
 
 type NavIconName = "home" | "request" | "history" | "profile";
 
@@ -74,6 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="phone-shell">
+      <PaymentRequestNotifier />
       <main>{children}</main>
       <nav className="bottom-nav" aria-label="Primary navigation">
         <div className="bottom-nav-grid">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useMounted } from "@/lib/useMounted";
 import {
   useAccount,
   usePublicClient,
@@ -29,6 +30,7 @@ import {
   executeBridgeTransfer,
   getBridgeErrorMessage,
   summarizeBridgeEstimate,
+  formatEtaSeconds,
   type BridgeSpeed,
 } from "@/lib/appkit";
 import {
@@ -63,8 +65,8 @@ export default function BridgePage() {
   const [status, setStatus] = useState<SendStatus>("idle");
   const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
-  const identity = getIdentityProfile();
-  const senderLabel = getIdentityLabel(identity);
+  const mounted = useMounted();
+  const senderLabel = mounted ? getIdentityLabel(getIdentityProfile()) : "Connected wallet";
   const [directoryQuery, setDirectoryQuery] = useState("");
   const [showDirectory, setShowDirectory] = useState(true);
   const [showSaveRecipient, setShowSaveRecipient] = useState(false);
@@ -77,8 +79,28 @@ export default function BridgePage() {
   );
   const [bridgeEstimateText, setBridgeEstimateText] = useState("");
   const [bridgeDetails, setBridgeDetails] = useState<string[]>([]);
+  const [liveEta, setLiveEta] = useState<{ total?: number; attestation?: number }>({});
   const [bridgeSpeed, setBridgeSpeed] = useState<BridgeSpeed>("FAST");
+  const [useForwarder, setUseForwarder] = useState(true);
+  /* eslint-disable react-hooks/set-state-in-effect -- hydrate persisted bridge prefs on mount */
+  useEffect(() => {
+    const speed = localStorage.getItem("radius-bridge-speed");
+    if (speed === "FAST" || speed === "FAST_FINALITY" || speed === "STANDARD") setBridgeSpeed(speed as BridgeSpeed);
+    const fwd = localStorage.getItem("radius-bridge-forwarder");
+    if (fwd === "false") setUseForwarder(false);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+  useEffect(() => { localStorage.setItem("radius-bridge-speed", bridgeSpeed); }, [bridgeSpeed]);
+  useEffect(() => { localStorage.setItem("radius-bridge-forwarder", String(useForwarder)); }, [useForwarder]);
   const [bridgeProgress, setBridgeProgress] = useState("");
+  type BridgeStepKey = "approve" | "burn" | "fetchAttestation" | "mint";
+  type BridgeStepStatus = "pending" | "active" | "done" | "error";
+  const [bridgeSteps, setBridgeSteps] = useState<Record<BridgeStepKey, BridgeStepStatus>>({
+    approve: "pending",
+    burn: "pending",
+    fetchAttestation: "pending",
+    mint: "pending",
+  });
   void bridgeEstimateText;
   void bridgeDetails;
 
@@ -126,6 +148,7 @@ export default function BridgePage() {
 
   const directoryEntries = useMemo(() => {
     const query = directoryQuery.trim().toLowerCase();
+    if (!mounted) return [] as DirectoryEntry[];
     return getDirectoryEntries(address).filter((entry) => {
       if (!query) return entry.kind === "contact";
       return [
@@ -136,7 +159,7 @@ export default function BridgePage() {
         entry.bio?.toLowerCase(),
       ].some((value) => value?.includes(query));
     });
-  }, [address, directoryQuery]);
+  }, [mounted, address, directoryQuery]);
 
   const resolvedRecipient = resolveRecipientInput(recipient);
   const resolvedRecipientAddress = resolvedRecipient.address;
@@ -169,10 +192,17 @@ export default function BridgePage() {
     isOnExpectedSourceChain &&
     !isSocialWalletOnly &&
     (!isBridgeRoute || token === "USDC");
-  const bridgeTimeline = [
-    { label: "Source confirmed", done: status === "confirming" || status === "success", active: status === "sending" },
-    { label: "Relaying", done: status === "success", active: status === "confirming" && !!bridgeProgress },
-    { label: "Destination received", done: status === "success", active: false },
+  // ETAs prefer the live estimate when the SDK provides one; otherwise fall
+  // back to coarse defaults based on testnet observations.
+  const isFast = bridgeSpeed === "FAST";
+  const attestationEta = liveEta.attestation
+    ? formatEtaSeconds(liveEta.attestation)
+    : isFast ? "~30s" : "~3-5 min";
+  const bridgeStepDefs: { key: BridgeStepKey; label: string; eta: string }[] = [
+    { key: "approve", label: "Approve USDC spend", eta: "~10s" },
+    { key: "burn", label: "Burn on source chain", eta: "~15s" },
+    { key: "fetchAttestation", label: "Wait for Circle attestation", eta: attestationEta },
+    { key: "mint", label: useForwarder ? "Forwarder mints on destination" : "Mint on destination chain", eta: useForwarder ? "auto" : "~15s" },
   ];
 
   function resetBridgeFeedback() {
@@ -180,6 +210,8 @@ export default function BridgePage() {
     setBridgeDetails([]);
     setBridgeProgress("");
     setError("");
+    setLiveEta({});
+    setBridgeSteps({ approve: "pending", burn: "pending", fetchAttestation: "pending", mint: "pending" });
   }
 
   async function getActiveWalletClient() {
@@ -250,7 +282,8 @@ export default function BridgePage() {
           selectedRouteConfig,
           resolvedRecipientAddress,
           amount,
-          bridgeSpeed
+          bridgeSpeed,
+          useForwarder
         );
         const estimateSummary = summarizeBridgeEstimate(estimate);
         setBridgeEstimateText(
@@ -259,6 +292,7 @@ export default function BridgePage() {
             : "Estimate ready"
         );
         setBridgeDetails([...estimateSummary.feeLabels, ...estimateSummary.gasLabels]);
+        setLiveEta({ total: estimateSummary.totalEtaSeconds, attestation: estimateSummary.attestationEtaSeconds });
         setBridgeProgress("Waiting for wallet confirmation");
         setStatus("confirming");
 
@@ -271,7 +305,22 @@ export default function BridgePage() {
           (event) => {
             setBridgeProgress(event.state ? `${event.label} • ${event.state}` : event.label);
             if (event.txHash) setTxHash(event.txHash);
-          }
+            const key = event.method as BridgeStepKey;
+            const order: BridgeStepKey[] = ["approve", "burn", "fetchAttestation", "mint"];
+            const idx = order.indexOf(key);
+            if (idx >= 0) {
+              const isDone = event.state === "completed" || event.state === "success";
+              const hasError = event.state === "error" || event.state === "failed";
+              setBridgeSteps((prev) => {
+                const next = { ...prev };
+                // Mark all earlier steps done.
+                for (let i = 0; i < idx; i++) next[order[i]] = next[order[i]] === "pending" ? "done" : next[order[i]];
+                next[key] = hasError ? "error" : isDone ? "done" : "active";
+                return next;
+              });
+            }
+          },
+          useForwarder
         );
 
         const lastStepWithHash = [...(result.steps || [])]
@@ -390,14 +439,23 @@ export default function BridgePage() {
                 <div className="mt-8 rounded-[28px] border border-white/8 bg-white/[0.05] p-6">
                   <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Bridge timeline</p>
                   <div className="space-y-3">
-                    {bridgeTimeline.map((step, index) => (
-                      <div key={step.label} className="flex items-center gap-3 text-sm">
-                        <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${step.done ? "bg-emerald-500 text-white" : step.active ? "bg-indigo-500 text-white" : "bg-white/10 text-zinc-500"}`}>
-                          {step.done ? "✓" : index + 1}
-                        </span>
-                        <span className={step.done ? "text-emerald-400" : step.active ? "text-indigo-300" : "text-zinc-500"}>{step.label}</span>
-                      </div>
-                    ))}
+                    {bridgeStepDefs.map((step, index) => {
+                      const s = bridgeSteps[step.key];
+                      const done = s === "done";
+                      const active = s === "active";
+                      const errored = s === "error";
+                      return (
+                        <div key={step.key} className="flex items-center justify-between gap-3 text-sm">
+                          <div className="flex items-center gap-3">
+                            <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${errored ? "bg-red-500 text-white" : done ? "bg-emerald-500 text-white" : active ? "bg-indigo-500 text-white animate-pulse" : "bg-white/10 text-zinc-500"}`}>
+                              {errored ? "!" : done ? "✓" : index + 1}
+                            </span>
+                            <span className={errored ? "text-red-300" : done ? "text-emerald-400" : active ? "text-indigo-300" : "text-zinc-500"}>{step.label}</span>
+                          </div>
+                          <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">{done ? "done" : step.eta}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -482,7 +540,7 @@ export default function BridgePage() {
                     href={`${routeExplorerUrl}/tx/${txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-500/20"
+                    className="primary-btn rounded-2xl px-4 py-3 text-center text-sm font-semibold text-white"
                   >
                     View transaction
                   </a>
@@ -523,8 +581,13 @@ export default function BridgePage() {
           <div>
             <form onSubmit={handleSend} className="space-y-5">
               <div className="glass-panel-strong rounded-[32px] p-8">
-<h2 className="text-3xl font-black tracking-tight text-glow">Crosschains Bridge</h2>
-                <p className="mt-3 max-w-xs text-sm leading-6 text-zinc-400">Move USDC between supported testnets without mixing it into your simple Arc sends.</p>
+                <div className="flex items-start gap-4">
+                  <div className="bridge-header-icon shrink-0">A</div>
+                  <div>
+                    <h2 className="text-3xl font-black tracking-tight text-glow">Crosschains Bridge</h2>
+                    <p className="mt-3 max-w-xs text-sm leading-6 text-zinc-400">Move USDC between supported testnets without mixing it into your simple Arc sends.</p>
+                  </div>
+                </div>
               </div>
 
               <div className="glass-panel rounded-[28px] p-5">
@@ -538,12 +601,13 @@ export default function BridgePage() {
                         setToken(key);
                         resetBridgeFeedback();
                       }}
-                      className={`bridge-choice rounded-2xl px-4 py-4 text-sm font-medium transition-all ${
+                      className={`bridge-choice relative rounded-2xl px-4 py-4 text-sm font-medium transition-all ${
                         token === key
                           ? "border border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
                           : "border border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
                       }`}
                     >
+                      {token === key && <span className="card-check">✓</span>}
                       <div className="flex items-center gap-2 font-semibold"><TokenLogo symbol={key} size={26} />{TOKENS[key].symbol}</div>
                       {currentBalance !== undefined && token === key && (
                         <div className="mt-1 text-xs opacity-70">
@@ -569,12 +633,13 @@ export default function BridgePage() {
                         setSelectedRoute(route.id);
                         resetBridgeFeedback();
                       }}
-                      className={`bridge-choice rounded-2xl border px-4 py-3 text-left text-sm transition-all ${
+                      className={`bridge-choice relative rounded-2xl border px-4 py-3 text-left text-sm transition-all ${
                         selectedRoute === route.id
                           ? "border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
                           : "border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
                       }`}
                     >
+                      {selectedRoute === route.id && <span className="card-check">✓</span>}
                       <div className="font-medium">{route.label}</div>
                       <div className="mt-1 text-xs text-zinc-500">{route.token} • {route.mode}</div>
                     </button>
@@ -593,16 +658,47 @@ export default function BridgePage() {
                               setBridgeSpeed(speed);
                               resetBridgeFeedback();
                             }}
-                            className={`bridge-choice rounded-2xl border px-4 py-3 text-left text-xs transition-all ${
+                            className={`bridge-choice relative rounded-2xl border px-4 py-3 text-left text-xs transition-all ${
                               bridgeSpeed === speed
                                 ? "border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
                                 : "border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
                             }`}
                           >
+                            {bridgeSpeed === speed && <span className="card-check">✓</span>}
                             <span className="block font-semibold">{speed === "FAST" ? "Fast" : "Standard"}</span>
                             <span className="mt-1 block text-zinc-500">
                               {speed === "FAST" ? "Faster relay, may be less wallet-friendly" : "Slower, usually more reliable"}
                             </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-2 text-xs font-medium text-zinc-500">Mint mode</p>
+                      <p className="mb-2 text-[11px] leading-snug text-zinc-500">
+                        Tip: pick <span className="text-zinc-300">Manual</span> if your wallet shows a &ldquo;risky signature&rdquo; warning &mdash; you&rsquo;ll pay a tiny gas fee on the destination chain instead of signing a permit.
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {[
+                          { id: true, label: "Auto (Forwarder)", desc: "Circle handles the destination mint. Requires a permit signature." },
+                          { id: false, label: "Manual", desc: "You sign the mint on the destination chain. Use this if your wallet blocks permit signatures." },
+                        ].map((option) => (
+                          <button
+                            key={String(option.id)}
+                            type="button"
+                            onClick={() => {
+                              setUseForwarder(option.id);
+                              resetBridgeFeedback();
+                            }}
+                            className={`bridge-choice relative rounded-2xl border px-4 py-3 text-left text-xs transition-all ${
+                              useForwarder === option.id
+                                ? "border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
+                                : "border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
+                            }`}
+                          >
+                            {useForwarder === option.id && <span className="card-check">✓</span>}
+                            <span className="block font-semibold">{option.label}</span>
+                            <span className="mt-1 block text-zinc-500">{option.desc}</span>
                           </button>
                         ))}
                       </div>
@@ -747,23 +843,35 @@ export default function BridgePage() {
                 <div className="glass-panel rounded-[28px] p-5">
                   <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Bridge timeline</p>
                   <div className="space-y-3">
-                    {bridgeTimeline.map((step, index) => (
-                      <div key={step.label} className="flex items-center gap-3 text-sm">
-                        <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${step.done ? "bg-emerald-500 text-white" : step.active ? "bg-indigo-500 text-white" : "bg-white/10 text-zinc-500"}`}>
-                          {step.done ? "✓" : index + 1}
-                        </span>
-                        <span className={step.done ? "text-emerald-400" : step.active ? "text-indigo-300" : "text-zinc-500"}>{step.label}</span>
-                      </div>
-                    ))}
+                    {bridgeStepDefs.map((step, index) => {
+                      const s = bridgeSteps[step.key];
+                      const done = s === "done";
+                      const active = s === "active";
+                      const errored = s === "error";
+                      return (
+                        <div key={step.key} className="flex items-center justify-between gap-3 text-sm">
+                          <div className="flex items-center gap-3">
+                            <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${errored ? "bg-red-500 text-white" : done ? "bg-emerald-500 text-white" : active ? "bg-indigo-500 text-white animate-pulse" : "bg-white/10 text-zinc-500"}`}>
+                              {errored ? "!" : done ? "✓" : index + 1}
+                            </span>
+                            <span className={errored ? "text-red-300" : done ? "text-emerald-400" : active ? "text-indigo-300" : "text-zinc-500"}>{step.label}</span>
+                          </div>
+                          <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">{done ? "done" : step.eta}</span>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="mt-4 text-xs text-zinc-500">{bridgeProgress || "Timeline updates once the bridge starts."}</p>
+                  <p className="mt-4 text-xs text-zinc-500">
+                    {bridgeProgress || "Timeline updates once the bridge starts."}
+                    {liveEta.total ? ` · Total ${formatEtaSeconds(liveEta.total)}` : ""}
+                  </p>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={!canSend}
-                className="w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-4 font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all hover:shadow-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                className="primary-btn w-full rounded-2xl px-4 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
               >
                 {status === "sending" || status === "confirming" ? (
                   <span className="flex items-center justify-center gap-2">

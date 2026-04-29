@@ -35,6 +35,15 @@ export interface PaymentRequestRecord {
   status: PaymentRequestStatus;
   createdAt: number;
   paidAt?: number;
+  /** When set, this is a split-bill request that aggregates partial payments until paidUnits >= targetUnits. */
+  split?: {
+    /** Total target in raw token units (string for bigint serialization). */
+    targetUnits: string;
+    /** Cumulative paid in raw token units. */
+    paidUnits: string;
+    /** Optional headcount for display. */
+    participants?: number;
+  };
 }
 
 export interface LocalTransferRecord {
@@ -359,16 +368,35 @@ export function markMatchingPaymentRequestPaid(
     if (request.status !== "pending" || request.token !== token) return false;
     if (requestId && request.id !== requestId) return false;
     if (normalizedRecipient && request.recipient.toLowerCase() !== normalizedRecipient) return false;
+    if (request.split) {
+      // Any non-zero contribution counts toward a split request.
+      return receivedRaw > BigInt(0);
+    }
     return receivedRaw >= decimalToUnits(request.amount, decimals);
   });
 
   if (!match) return undefined;
 
-  const updated = requests.map((request) =>
-    request.id === match.id ? { ...request, status: "paid" as const, paidAt: Date.now() } : request
-  );
+  let updatedRecord: PaymentRequestRecord = match;
+  const updated = requests.map((request) => {
+    if (request.id !== match.id) return request;
+    if (request.split) {
+      const target = BigInt(request.split.targetUnits);
+      const paid = BigInt(request.split.paidUnits) + receivedRaw;
+      const reached = paid >= target;
+      updatedRecord = {
+        ...request,
+        split: { ...request.split, paidUnits: paid.toString() },
+        status: reached ? "paid" : request.status,
+        paidAt: reached ? Date.now() : request.paidAt,
+      };
+      return updatedRecord;
+    }
+    updatedRecord = { ...request, status: "paid" as const, paidAt: Date.now() };
+    return updatedRecord;
+  });
   localStorage.setItem(PAYMENT_REQUESTS_KEY, JSON.stringify(updated));
-  return updated.find((request) => request.id === match.id);
+  return updatedRecord;
 }
 
 export function expirePaymentRequest(id: string): PaymentRequestRecord | undefined {

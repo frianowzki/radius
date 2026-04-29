@@ -12,8 +12,6 @@ import { arcTestnet } from "@/config/wagmi";
 import {
   formatContactLabel,
   findContactByAddress,
-  getIdentityLabel,
-  getIdentityProfile,
   resolveRecipientInput,
   markMatchingPaymentRequestPaid,
   saveLocalTransfer,
@@ -48,9 +46,6 @@ function PayContent() {
   const resolvedRecipient = resolveRecipientInput(recipient);
   const recipientAddress = resolvedRecipient.address || "";
   const matchedRecipient = recipientAddress ? findContactByAddress(recipientAddress) : undefined;
-  const identity = getIdentityProfile();
-  const payerLabel = getIdentityLabel(identity);
-  void payerLabel;
 
   const validRequest =
     isAddress(recipientAddress) &&

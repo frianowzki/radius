@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Playwright tests run under a different runtime and don't follow React rules.
+    "tests/**",
+    "playwright.config.ts",
   ]),
 ]);
 

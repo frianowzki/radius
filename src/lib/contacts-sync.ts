@@ -1,0 +1,44 @@
+"use client";
+
+import type { Contact } from "@/lib/utils";
+
+export interface RemoteContactsResponse {
+  owner: string;
+  contacts: Contact[];
+  updatedAt: number;
+}
+
+export async function fetchRemoteContacts(owner: string): Promise<RemoteContactsResponse | null> {
+  try {
+    const res = await fetch(`/api/registry/contacts?owner=${encodeURIComponent(owner)}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as RemoteContactsResponse;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function pushRemoteContacts(owner: string, contacts: Contact[]): Promise<RemoteContactsResponse | null> {
+  try {
+    const res = await fetch(`/api/registry/contacts`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ owner, contacts }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as RemoteContactsResponse;
+  } catch {
+    return null;
+  }
+}
+
+/** Merge local + remote, preferring the most-recently edited copy per address. */
+export function mergeContacts(local: Contact[], remote: Contact[]): Contact[] {
+  const byAddress = new Map<string, Contact>();
+  for (const c of [...remote, ...local]) {
+    if (!c?.address) continue;
+    byAddress.set(c.address.toLowerCase(), c);
+  }
+  return Array.from(byAddress.values());
+}

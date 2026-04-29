@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAccount, useDisconnect } from "wagmi";
+import { QRCodeSVG } from "qrcode.react";
 import { AppShell } from "@/components/AppShell";
 import { AvatarImage } from "@/components/AvatarImage";
 import { ProfilePfpUpload } from "@/components/ProfilePfpUpload";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { clearRadiusLocalSession, formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
 import { fetchRegistryProfile, registryProfileToIdentity, saveRegistryProfile } from "@/lib/registry-client";
+import { useMounted } from "@/lib/useMounted";
 
 export default function ProfilePage() {
   const { isConnected: wagmiConnected, address: wagmiAddress } = useAccount();
@@ -15,15 +17,48 @@ export default function ProfilePage() {
   const { authenticated, address: authAddress, user, logout } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
-  const [profile, setProfile] = useState(() => getIdentityProfile());
-  const [displayName, setDisplayName] = useState(profile.displayName);
-  const [handle, setHandle] = useState(profile.handle || "");
-  const [bio, setBio] = useState(profile.bio || "");
+  const [profile, setProfile] = useState<ReturnType<typeof getIdentityProfile>>({ displayName: "Arc user", authMode: "wallet" });
+  const [displayName, setDisplayName] = useState("");
+  const [handle, setHandle] = useState("");
+  const [bio, setBio] = useState("");
+  /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage on mount to avoid SSR mismatch */
+  useEffect(() => {
+    const p = getIdentityProfile();
+    setProfile(p);
+    setDisplayName(p.displayName);
+    setHandle(p.handle || "");
+    setBio(p.bio || "");
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
   const [saved, setSaved] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [registryStatus, setRegistryStatus] = useState("");
 
   const normalizedHandle = handle.trim().replace(/^@+/, "").toLowerCase();
+  const mounted = useMounted();
+  const [copiedLink, setCopiedLink] = useState(false);
+  const payTarget = (profile.handle && `@${profile.handle.replace(/^@+/, "")}`) || address || "";
+  const payLink = useMemo(() => {
+    if (!mounted || !payTarget) return "";
+    return `${window.location.origin}/send?to=${encodeURIComponent(payTarget)}`;
+  }, [mounted, payTarget]);
+
+  async function copyPayLink() {
+    if (!payLink) return;
+    try {
+      await navigator.clipboard.writeText(payLink);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 1500);
+    } catch { /* noop */ }
+  }
+  async function sharePayLink() {
+    if (!payLink) return;
+    const text = `Pay me on Radius${profile.handle ? ` (@${profile.handle})` : ""}`;
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try { await (navigator as Navigator).share({ title: "Radius", text, url: payLink }); return; } catch { /* user cancel */ }
+    }
+    await copyPayLink();
+  }
 
   useEffect(() => {
     if (!address) return;
@@ -115,6 +150,27 @@ export default function ProfilePage() {
             </div>
           )}
         </section>
+
+        {address && (
+          <section className="soft-card rounded-[28px] p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-bold">My pay QR</p>
+              <span className="text-[11px] text-[#8b8795]">{profile.handle ? `@${profile.handle}` : "address-based"}</span>
+            </div>
+            <div className="mx-auto w-fit rounded-2xl bg-white p-3 shadow-[0_10px_28px_rgba(143,124,255,.18)]">
+              {payLink ? (
+                <QRCodeSVG value={payLink} size={196} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
+              ) : (
+                <div className="h-[196px] w-[196px] rounded-xl bg-[#f7f5fb]" />
+              )}
+            </div>
+            <p className="mt-3 break-all text-center text-[11px] text-[#9a94a3]">{payLink || ""}</p>
+            <div className="mt-3 grid grid-cols-2 gap-3 text-xs font-semibold">
+              <button type="button" onClick={copyPayLink} disabled={!payLink} className="ghost-btn py-3 disabled:opacity-40">{copiedLink ? "Copied" : "Copy link"}</button>
+              <button type="button" onClick={sharePayLink} disabled={!payLink} className="primary-btn py-3 disabled:opacity-40">Share</button>
+            </div>
+          </section>
+        )}
 
         <section className="soft-card rounded-[28px] p-5">
           <p className="mb-3 text-sm font-bold">Profile picture</p>

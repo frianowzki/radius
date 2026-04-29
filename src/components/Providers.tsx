@@ -11,7 +11,12 @@ import { RadiusAuthProvider } from "@/lib/web3auth";
 import { installCircleFetchProxy } from "@/lib/install-circle-fetch-proxy";
 
 if (typeof window !== "undefined") {
-  installCircleFetchProxy();
+  try {
+    installCircleFetchProxy();
+  } catch (err) {
+    // Never let proxy install failures blank the app on mobile browsers.
+    console.warn("[providers] installCircleFetchProxy failed", err);
+  }
 }
 
 function WalletProviders({ children }: { children: ReactNode }) {

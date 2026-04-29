@@ -32,6 +32,7 @@ interface TransferEvent {
   createdAt?: number;
   direction: "sent" | "received";
   source: "chain" | "local";
+  localId?: string;
 }
 
 export default function HistoryPage() {
@@ -57,6 +58,7 @@ export default function HistoryPage() {
       direction: transfer.direction,
       createdAt: transfer.createdAt,
       source: "local",
+      localId: transfer.id,
     }));
 
     if (!publicClient) {
@@ -177,7 +179,7 @@ export default function HistoryPage() {
       <div className="screen-pad">
         <div className="space-y-6">
             <div className="glass-panel-strong rounded-[32px] p-8">
-              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">History</p>
+              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">History</p>
               <h2 className="text-4xl font-semibold tracking-tight text-glow">
                 Every transfer should read like a receipt feed.
               </h2>
@@ -282,6 +284,14 @@ export default function HistoryPage() {
                             {formatAmount(tx.value, tokenInfo.decimals)} {tx.token}
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2 sm:justify-end">
+                            {tx.localId && (
+                              <Link
+                                href={`/receipt/${tx.localId}`}
+                                className="history-link inline-block rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-500 transition-colors hover:text-indigo-300"
+                              >
+                                Receipt
+                              </Link>
+                            )}
                             <Link
                               href={`/send?to=${encodeURIComponent(counterparty)}&amount=${encodeURIComponent(formatAmount(tx.value, tokenInfo.decimals).replace(/,/g, ""))}&token=${tx.token}`}
                               className="history-link inline-block rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-500 transition-colors hover:text-indigo-300"

@@ -22,6 +22,10 @@ export async function createBrowserAppKitAdapter(provider: EIP1193Provider) {
 export type BridgeSpeed = "FAST" | "SLOW";
 
 export interface BridgeEstimateSummary {
+  /** Best-effort total bridge ETA in seconds, when the SDK provides one. */
+  totalEtaSeconds?: number;
+  /** Best-effort attestation-only ETA in seconds (the dominant CCTP wait). */
+  attestationEtaSeconds?: number;
   feeCount: number;
   gasFeeCount: number;
   feeLabels: string[];
@@ -71,39 +75,87 @@ export async function estimateBridgeTransfer(
   route: CrosschainRoute,
   recipient: string,
   amount: string,
-  speed: BridgeSpeed
+  speed: BridgeSpeed,
+  useForwarder = true
 ) {
   const adapter = await createBrowserAppKitAdapter(provider);
   const kit = await getAppKit();
 
+  const destination = useForwarder
+    ? { chain: route.toChain, recipientAddress: recipient, useForwarder: true as const }
+    : { adapter, chain: route.toChain, recipientAddress: recipient };
+
   return kit.estimateBridge({
     from: { adapter, chain: route.fromChain },
-    to: {
-      chain: route.toChain,
-      recipientAddress: recipient,
-      useForwarder: true,
-    },
+    to: destination,
     amount,
     token: "USDC",
     config: getBridgeConfig(speed),
   });
 }
 
+/**
+ * Pluck a number from a candidate field on an SDK response. The Circle SDK has
+ * shipped time fields under several names across versions, so probe defensively.
+ */
+function pickSeconds(source: Record<string, unknown> | undefined, keys: string[]): number | undefined {
+  if (!source) return undefined;
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
+    if (typeof value === "string") {
+      const num = Number(value);
+      if (Number.isFinite(num) && num > 0) return num;
+    }
+  }
+  return undefined;
+}
+
 export function summarizeBridgeEstimate(estimate: unknown): BridgeEstimateSummary {
   const estimateRecord = estimate as {
     fees?: Array<{ type?: string; amount?: string; token?: string; symbol?: string }>;
     gasFees?: Array<{ chain?: string; amount?: string; token?: string; symbol?: string }>;
+    estimatedTime?: number | string;
+    eta?: number | string;
+    durationSeconds?: number | string;
+    attestation?: Record<string, unknown>;
+    timing?: Record<string, unknown>;
   };
 
   const fees = Array.isArray(estimateRecord.fees) ? estimateRecord.fees : [];
   const gasFees = Array.isArray(estimateRecord.gasFees) ? estimateRecord.gasFees : [];
 
+  // Total ETA: top-level estimatedTime / eta / durationSeconds, or timing.totalSeconds.
+  const totalEtaSeconds =
+    pickSeconds(estimateRecord as unknown as Record<string, unknown>, ["estimatedTime", "eta", "durationSeconds"]) ||
+    pickSeconds(estimateRecord.timing, ["totalSeconds", "total", "eta"]);
+
+  // Attestation ETA: attestation.estimatedSeconds / timing.attestationSeconds.
+  const attestationEtaSeconds =
+    pickSeconds(estimateRecord.attestation, ["estimatedSeconds", "eta", "seconds"]) ||
+    pickSeconds(estimateRecord.timing, ["attestationSeconds", "attestation"]);
+
   return {
+    totalEtaSeconds,
+    attestationEtaSeconds,
     feeCount: fees.length,
     gasFeeCount: gasFees.length,
     feeLabels: fees.map((fee) => [fee.type || "Fee", fee.amount, fee.token || fee.symbol].filter(Boolean).join(" • ")),
     gasLabels: gasFees.map((fee) => [fee.chain || "Gas", fee.amount, fee.token || fee.symbol].filter(Boolean).join(" • ")),
   };
+}
+
+/** Render a seconds value as "12s" / "3m 20s" / "1h 5m". */
+export function formatEtaSeconds(seconds: number): string {
+  if (seconds < 60) return `~${Math.round(seconds)}s`;
+  if (seconds < 3600) {
+    const m = Math.floor(seconds / 60);
+    const s = Math.round(seconds % 60);
+    return s ? `~${m}m ${s}s` : `~${m}m`;
+  }
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  return m ? `~${h}h ${m}m` : `~${h}h`;
 }
 
 export async function executeBridgeTransfer(
@@ -112,21 +164,22 @@ export async function executeBridgeTransfer(
   recipient: string,
   amount: string,
   speed: BridgeSpeed,
-  onProgress?: (event: BridgeProgressEvent) => void
+  onProgress?: (event: BridgeProgressEvent) => void,
+  useForwarder = true
 ) {
   const adapter = await createBrowserAppKitAdapter(provider);
   const kit = await getAppKit();
   const handler = onProgress ? (payload: unknown) => onProgress(parseBridgeProgress(payload)) : undefined;
 
+  const destination = useForwarder
+    ? { chain: route.toChain, recipientAddress: recipient, useForwarder: true as const }
+    : { adapter, chain: route.toChain, recipientAddress: recipient };
+
   if (handler) kit.on("*", handler);
   try {
     return await kit.bridge({
       from: { adapter, chain: route.fromChain },
-      to: {
-        chain: route.toChain,
-        recipientAddress: recipient,
-        useForwarder: true,
-      },
+      to: destination,
       amount,
       token: "USDC",
       config: getBridgeConfig(speed),

@@ -13,6 +13,8 @@ import { arcTestnet } from "@/config/wagmi";
 import { formatAmount, formatContactLabel, getDirectoryEntries, getIdentityLabel, getIdentityProfile, resolveRecipientInput, saveLocalTransfer, upsertContactByAddress } from "@/lib/utils";
 import type { DirectoryEntry } from "@/lib/utils";
 import { fetchRegistryProfile, type RegistryProfile } from "@/lib/registry-client";
+import { useMounted } from "@/lib/useMounted";
+import { advanceSchedule } from "@/lib/scheduled-payments";
 
 type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
@@ -27,13 +29,26 @@ export default function SendPage() {
   const { data: walletClient } = useWalletClient();
   const { switchChainAsync } = useSwitchChain();
 
-  const [token, setToken] = useState<TokenKey>(() => {
-    if (typeof window === "undefined") return "USDC";
-    const value = new URLSearchParams(window.location.search).get("token") as TokenKey | null;
-    return value && value in TOKENS ? value : "USDC";
-  });
-  const [recipient, setRecipient] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("to") || "" : "");
-  const [amount, setAmount] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("amount") || "" : "");
+  const mounted = useMounted();
+  const [token, setToken] = useState<TokenKey>("USDC");
+  const [recipient, setRecipient] = useState("");
+  const [amount, setAmount] = useState("");
+  const [scheduleId, setScheduleId] = useState<string | null>(null);
+  const [autorunRequested, setAutorunRequested] = useState(false);
+  /* eslint-disable react-hooks/set-state-in-effect -- hydrate URL params on mount to avoid SSR mismatch */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("token") as TokenKey | null;
+    if (t && t in TOKENS) setToken(t);
+    const to = params.get("to");
+    if (to) setRecipient(to);
+    const amt = params.get("amount");
+    if (amt) setAmount(amt);
+    const sid = params.get("schedule");
+    if (sid) setScheduleId(sid);
+    if (params.get("autorun") === "1") setAutorunRequested(true);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
   const [status, setStatus] = useState<SendStatus>("idle");
   const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
@@ -45,8 +60,7 @@ export default function SendPage() {
   const [saveAvatar, setSaveAvatar] = useState("");
   const [registryRecipient, setRegistryRecipient] = useState<RegistryProfile | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
-  const identity = getIdentityProfile();
-  const senderLabel = getIdentityLabel(identity);
+  const senderLabel = mounted ? getIdentityLabel(getIdentityProfile()) : "Connected wallet";
 
   const { data: balances } = useReadContracts({
     contracts: address ? (Object.keys(TOKENS) as TokenKey[]).map((key) => ({
@@ -64,12 +78,13 @@ export default function SendPage() {
   const canSend = isConnected && isOnArc && !!amount && Number(amount) > 0 && status !== "sending" && status !== "confirming";
 
   const directoryEntries = useMemo(() => {
+    if (!mounted) return [] as DirectoryEntry[];
     const query = directoryQuery.trim().toLowerCase();
     return getDirectoryEntries(address).filter((entry) => {
       if (!query) return entry.kind === "contact";
       return [entry.name.toLowerCase(), entry.handle?.toLowerCase(), entry.address?.toLowerCase(), entry.note?.toLowerCase(), entry.bio?.toLowerCase()].some((value) => value?.includes(query));
     });
-  }, [address, directoryQuery]);
+  }, [mounted, address, directoryQuery]);
 
   const resolvedRecipient = resolveRecipientInput(recipient);
   const registryRecipientAddress = registryRecipient?.address;
@@ -111,6 +126,19 @@ export default function SendPage() {
     setShowConfirm(true);
   }
 
+  // Auto-confirm flow: when navigated with `?autorun=1` (set by the schedule
+  // toggle), open the confirmation modal as soon as the form is hydrated and
+  // ready. The user still signs the transaction — we never sign silently.
+  /* eslint-disable react-hooks/set-state-in-effect -- effect reacts to URL-derived intent and gating state */
+  useEffect(() => {
+    if (!autorunRequested) return;
+    if (!readyToSend || !validRecipient || !resolvedRecipientAddress) return;
+    if (status !== "idle") return;
+    setAutorunRequested(false);
+    setShowConfirm(true);
+  }, [autorunRequested, readyToSend, validRecipient, resolvedRecipientAddress, status]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   async function executeSend() {
     if (!publicClient || !address || !validRecipient || !resolvedRecipientAddress) return;
     setShowConfirm(false);
@@ -136,6 +164,9 @@ export default function SendPage() {
       setStatus("confirming");
       await publicClient.waitForTransactionReceipt({ hash });
       saveLocalTransfer({ from: address, to: resolvedRecipientAddress, value: parsedAmount.toString(), token, txHash: hash, direction: "sent", routeLabel: "Arc → Arc" });
+      if (scheduleId) {
+        try { advanceSchedule(scheduleId, Date.now()); } catch { /* noop */ }
+      }
       setShowSaveRecipient(!resolvedRecipient.contact && !registryRecipient);
       setStatus("success");
     } catch (err) {

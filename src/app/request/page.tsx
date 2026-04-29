@@ -9,7 +9,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { AppShell } from "@/components/AppShell";
 import { TOKENS, type TokenKey } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
-import { buildPaymentUrl, expirePaymentRequest, formatPreferredRecipientInput, getPaymentRequests, savePaymentRequest, type PaymentRequestRecord } from "@/lib/utils";
+import { buildPaymentUrl, decimalToUnits, expirePaymentRequest, formatAmount, formatPreferredRecipientInput, getPaymentRequests, savePaymentRequest, type PaymentRequestRecord } from "@/lib/utils";
 import { usePaymentRequestWatcher } from "@/lib/usePaymentRequestWatcher";
 
 export default function RequestPage() {
@@ -26,6 +26,8 @@ export default function RequestPage() {
   const [copied, setCopied] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
   const [requests, setRequests] = useState<PaymentRequestRecord[]>([]);
+  const [splitMode, setSplitMode] = useState(false);
+  const [participants, setParticipants] = useState("2");
 
   const qrValue = useMemo(() => {
     if (paymentUrl) return paymentUrl;
@@ -45,14 +47,40 @@ export default function RequestPage() {
 
   usePaymentRequestWatcher({ address, onPaid: () => refreshRequests() });
 
+  function maybeAskNotificationPermission() {
+    if (typeof window === "undefined") return;
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "default") return;
+    if (localStorage.getItem("radius-asked-notify") === "1") return;
+    localStorage.setItem("radius-asked-notify", "1");
+    // Tied to a real user gesture (form submit), satisfying browser policies.
+    Notification.requestPermission().catch(() => undefined);
+  }
+
   function generate(e: React.FormEvent) {
     e.preventDefault();
     if (!address || !amount || Number(amount) <= 0) return;
+    const decimals = TOKENS[token].decimals;
+    const totalUnits = decimalToUnits(amount, decimals);
+    const headcount = splitMode ? Math.max(2, Math.floor(Number(participants) || 2)) : 1;
+    const perPersonUnits = splitMode ? totalUnits / BigInt(headcount) : totalUnits;
+    const perPersonDisplay = splitMode ? formatAmount(perPersonUnits, decimals) : amount;
     const requestId = crypto.randomUUID();
-    const url = buildPaymentUrl(formatPreferredRecipientInput(address), amount, token, memo, requestId);
+    const url = buildPaymentUrl(formatPreferredRecipientInput(address), perPersonDisplay, token, memo, requestId);
     setPaymentUrl(url);
-    savePaymentRequest({ id: requestId, recipient: address, amount, token, memo: memo.trim() || undefined, url });
+    savePaymentRequest({
+      id: requestId,
+      recipient: address,
+      amount,
+      token,
+      memo: memo.trim() || undefined,
+      url,
+      ...(splitMode
+        ? { split: { targetUnits: totalUnits.toString(), paidUnits: "0", participants: headcount } }
+        : {}),
+    });
     refreshRequests();
+    maybeAskNotificationPermission();
   }
 
   function expireRequest(id: string) {
@@ -135,6 +163,32 @@ export default function RequestPage() {
 
                 <input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="Note" className="request-note-input radius-input mt-3 text-sm" />
 
+                <div className="mt-3 flex items-center justify-between rounded-2xl bg-white/55 px-3 py-2 text-left">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-[#595465]">
+                    <input type="checkbox" checked={splitMode} onChange={(e) => { setSplitMode(e.target.checked); setPaymentUrl(""); }} />
+                    Split this bill
+                  </label>
+                  {splitMode && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-[#8b8795]">Among</span>
+                      <input
+                        type="number"
+                        min={2}
+                        max={50}
+                        value={participants}
+                        onChange={(e) => { setParticipants(e.target.value); setPaymentUrl(""); }}
+                        className="w-14 rounded-lg bg-white px-2 py-1 text-center text-xs"
+                      />
+                      <span className="text-[#8b8795]">people</span>
+                    </div>
+                  )}
+                </div>
+                {splitMode && amount && Number(amount) > 0 && (
+                  <p className="mt-2 text-left text-[11px] text-[#8b8795]">
+                    Each person pays ≈ {formatAmount(decimalToUnits(amount, TOKENS[token].decimals) / BigInt(Math.max(2, Math.floor(Number(participants) || 2))), TOKENS[token].decimals)} {token}
+                  </p>
+                )}
+
                 <div className="request-action-grid mt-4 grid grid-cols-3 gap-3">
                   <button type="button" aria-label="Share link" onClick={shareLink} className="ghost-btn text-lg">⇧</button>
                   <button type="button" aria-label="Copy link" onClick={copyLink} className="ghost-btn text-lg">{copied ? "✓" : "⧉"}</button>
@@ -156,26 +210,43 @@ export default function RequestPage() {
                 <p className="rounded-2xl bg-white/50 p-4 text-sm text-[#8b8795]">No requests created yet.</p>
               ) : (
                 <div className="space-y-3">
-                  {requests.map((request) => (
-                    <div key={request.id} className="rounded-2xl bg-white/55 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <TokenLogo symbol={request.token} size={30} />
-                          <div>
-                            <p className="text-sm font-bold">{request.amount} {request.token}</p>
-                            <p className="text-xs text-[#8b8795]">{request.memo || "Payment request"}</p>
+                  {requests.map((request) => {
+                    const decimals = TOKENS[request.token].decimals;
+                    const split = request.split;
+                    const targetUnits = split ? BigInt(split.targetUnits) : decimalToUnits(request.amount, decimals);
+                    const paidUnits = split ? BigInt(split.paidUnits) : (request.status === "paid" ? targetUnits : BigInt(0));
+                    const pct = targetUnits > BigInt(0) ? Math.min(100, Number((paidUnits * BigInt(1000)) / targetUnits) / 10) : 0;
+                    return (
+                      <div key={request.id} className="rounded-2xl bg-white/55 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <TokenLogo symbol={request.token} size={30} />
+                            <div>
+                              <p className="text-sm font-bold">{request.amount} {request.token}{split ? ` · split ${split.participants ?? ""}` : ""}</p>
+                              <p className="text-xs text-[#8b8795]">{request.memo || "Payment request"}</p>
+                            </div>
                           </div>
+                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${request.status === "paid" ? "bg-emerald-500/12 text-emerald-600" : request.status === "expired" ? "bg-zinc-500/10 text-zinc-500" : "bg-amber-500/12 text-amber-600"}`}>
+                            {request.status}
+                          </span>
                         </div>
-                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${request.status === "paid" ? "bg-emerald-500/12 text-emerald-600" : request.status === "expired" ? "bg-zinc-500/10 text-zinc-500" : "bg-amber-500/12 text-amber-600"}`}>
-                          {request.status}
-                        </span>
+                        {split && (
+                          <div className="mt-3">
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-[#ece9f3]">
+                              <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+                            </div>
+                            <p className="mt-1 text-[11px] text-[#8b8795]">
+                              {formatAmount(paidUnits, decimals)} / {formatAmount(targetUnits, decimals)} {request.token} ({pct.toFixed(0)}%)
+                            </p>
+                          </div>
+                        )}
+                        <div className="mt-3 flex gap-2">
+                          <button type="button" onClick={() => navigator.clipboard.writeText(request.url)} className="ghost-btn flex-1 px-3 py-2 text-xs">Copy link</button>
+                          {request.status === "pending" && <button type="button" onClick={() => expireRequest(request.id)} className="ghost-btn px-3 py-2 text-xs">Expire</button>}
+                        </div>
                       </div>
-                      <div className="mt-3 flex gap-2">
-                        <button type="button" onClick={() => navigator.clipboard.writeText(request.url)} className="ghost-btn flex-1 px-3 py-2 text-xs">Copy link</button>
-                        {request.status === "pending" && <button type="button" onClick={() => expireRequest(request.id)} className="ghost-btn px-3 py-2 text-xs">Expire</button>}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>
