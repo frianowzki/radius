@@ -145,11 +145,6 @@ export default function DashboardPage() {
     localStorage.setItem("radius-hide-balance", String(hideBalance));
   }, [hideBalance]);
 
-  async function enableNotifications() {
-    await showRadiusNotification("Radius notifications", { body: "Notifications are enabled." });
-  }
-
-
   useEffect(() => {
     if (!address || !balanceSnapshot) return;
     (["USDC", "EURC"] as const).forEach((symbol) => {
@@ -200,7 +195,7 @@ export default function DashboardPage() {
             <div className="dashboard-logo">Radius</div>
             <h1>Hello, {profileName} 👋</h1>
           </div>
-          <button type="button" onClick={enableNotifications} className="dashboard-bell" aria-label="Enable notifications">♧</button>
+          <ThemeToggle className="dashboard-theme-toggle" />
         </header>
 
         {activityNotice && (
