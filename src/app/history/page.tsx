@@ -176,150 +176,79 @@ export default function HistoryPage() {
 
   return (
     <AppShell>
-      <div className="screen-pad">
-        <div className="space-y-6">
-            <div className="glass-panel-strong rounded-[32px] p-8">
-              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">History</p>
-              <h2 className="text-4xl font-semibold tracking-tight text-glow">
-                Every transfer should read like a receipt feed.
-              </h2>
-              <p className="mt-4 text-base leading-7 text-zinc-400">
-                Not charts, not noise, just clear sent and received payment moments across your Arc stablecoin activity.
-              </p>
-            </div>
-
-            <div className="history-filter frosted-segment w-fit">
-              {(["all", "sent", "received"] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`rounded-2xl px-4 py-2.5 text-sm font-medium capitalize transition-all ${
-                    filter === f
-                      ? "history-filter-active bg-white/70 text-[#17151f] shadow"
-                      : "history-filter-idle text-[#8b8795] hover:text-[#17151f]"
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-
-            {!isConnected ? (
-              <div className="glass-panel rounded-[28px] p-12 text-center text-zinc-500">
-                Connect your wallet to view transaction history.
-              </div>
-            ) : loading && filtered.length === 0 ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="glass-panel rounded-[28px] p-5 animate-pulse">
-                    <div className="mb-2 h-5 w-40 rounded bg-white/8" />
-                    <div className="h-4 w-64 rounded bg-white/8" />
-                  </div>
-                ))}
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="glass-panel rounded-[28px] p-12 text-center text-zinc-500">
-                {transfers.length === 0
-                  ? "No transactions found"
-                  : `No ${filter} transactions`}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filtered.map((tx) => {
-                  const tokenInfo = TOKENS[tx.token as TokenKey];
-                  const isSent = tx.direction === "sent";
-                  const counterparty = isSent ? tx.to : tx.from;
-                  const matchedContact = findContactByAddress(counterparty);
-                  return (
-                    <div
-                      key={`${tx.txHash}-${tx.direction}`}
-                      className="history-card glass-panel group rounded-[28px] p-5 transition-all hover:border-white/14"
-                    >
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="relative shrink-0">
-                            <TokenLogo symbol={tx.token} size={48} />
-                            <span
-                              className={`absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full text-[10px] shadow-sm ${
-                                isSent
-                                  ? "bg-red-500 text-white"
-                                  : "bg-emerald-500 text-white"
-                              }`}
-                              aria-hidden="true"
-                            >
-                              {isSent ? "↗" : "↙"}
-                            </span>
-                          </div>
-                          <div className="space-y-3">
-                            <div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className="history-title text-base font-semibold text-zinc-100">
-                                  {isSent ? "Sent" : "Received"} <span className="history-token text-zinc-500">{tx.token}</span>
-                                </p>
-                                {tx.source === "local" && (
-                                  <span className="history-saved rounded-full border border-indigo-400/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-indigo-300">
-                                    Saved
-                                  </span>
-                                )}
-                              </div>
-                              <p className="history-counterparty mt-1 font-mono text-xs text-zinc-500">
-                                {isSent ? "To " : "From "}
-                                {formatContactLabel(counterparty)}
-                              </p>
-                            </div>
-                            <ProfileChip
-                              contact={matchedContact}
-                              address={counterparty}
-                              fallbackLabel={formatContactLabel(counterparty)}
-                            />
-                          </div>
-                        </div>
-                        <div className="text-left sm:text-right">
-                          <p
-                            className={`text-base font-semibold ${
-                              isSent ? "text-red-300" : "text-emerald-300"
-                            }`}
-                          >
-                            {isSent ? "−" : "+"}
-                            {formatAmount(tx.value, tokenInfo.decimals)} {tx.token}
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2 sm:justify-end">
-                            {tx.localId && (
-                              <Link
-                                href={`/receipt/${tx.localId}`}
-                                className="history-link inline-block rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-500 transition-colors hover:text-indigo-300"
-                              >
-                                Receipt
-                              </Link>
-                            )}
-                            <Link
-                              href={`/send?to=${encodeURIComponent(counterparty)}&amount=${encodeURIComponent(formatAmount(tx.value, tokenInfo.decimals).replace(/,/g, ""))}&token=${tx.token}`}
-                              className="history-link inline-block rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-500 transition-colors hover:text-indigo-300"
-                            >
-                              Send again
-                            </Link>
-                            {tx.txHash.startsWith("0x") ? (
-                              <a
-                                href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="history-link inline-block rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-500 transition-colors hover:text-indigo-300"
-                              >
-                                View on ArcScan →
-                              </a>
-                            ) : (
-                              <span className="history-link inline-block rounded-full bg-white/10 px-3 py-1 text-xs text-zinc-500">Balance update</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+      <div className="history-reference-screen">
+        <section className="history-reference-hero">
+          <div>
+            <p>History</p>
+            <h1>Every transfer should read like a receipt feed.</h1>
+            <span>Not charts, not noise, just clear sent and received payment moments across your Arc stablecoin activity.</span>
           </div>
+          <div className="history-receipt-orb" aria-hidden="true">
+            <span>▤</span>
+          </div>
+        </section>
+
+        <div className="history-reference-filter">
+          {(["all", "sent", "received"] as const).map((f) => (
+            <button key={f} onClick={() => setFilter(f)} className={filter === f ? "active" : ""}>
+              {f}
+            </button>
+          ))}
         </div>
+
+        {!isConnected ? (
+          <div className="history-reference-empty">Connect your wallet to view transaction history.</div>
+        ) : loading && filtered.length === 0 ? (
+          <div className="history-reference-list">
+            {[1, 2, 3].map((i) => <div key={i} className="history-reference-card skeleton" />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="history-reference-empty">
+            {transfers.length === 0 ? "No transactions found" : `No ${filter} transactions`}
+          </div>
+        ) : (
+          <div className="history-reference-list">
+            {filtered.map((tx) => {
+              const tokenInfo = TOKENS[tx.token as TokenKey];
+              const isSent = tx.direction === "sent";
+              const counterparty = isSent ? tx.to : tx.from;
+              const matchedContact = findContactByAddress(counterparty);
+              const amount = formatAmount(tx.value, tokenInfo.decimals);
+              return (
+                <article key={`${tx.txHash}-${tx.direction}`} className="history-reference-card">
+                  <div className="history-token-orb">
+                    <TokenLogo symbol={tx.token} size={54} />
+                    <span className={isSent ? "sent" : "received"}>{isSent ? "↗" : "✓"}</span>
+                  </div>
+
+                  <div className="history-card-main">
+                    <div className="history-card-title-row">
+                      <h2>{isSent ? "Sent" : "Received"} <span>{tx.token}</span></h2>
+                      {tx.source === "local" && <em>Saved</em>}
+                    </div>
+                    <p className="history-from">{isSent ? "To" : "From"} {formatContactLabel(counterparty)}</p>
+                    <div className="history-counterparty-chip">
+                      <ProfileChip contact={matchedContact} address={counterparty} fallbackLabel={formatContactLabel(counterparty)} />
+                    </div>
+                  </div>
+
+                  <div className="history-card-side">
+                    <strong className={isSent ? "sent" : "received"}>{isSent ? "−" : "+"}{amount}<br />{tx.token}</strong>
+                    <Link href={`/send?to=${encodeURIComponent(counterparty)}&amount=${encodeURIComponent(amount.replace(/,/g, ""))}&token=${tx.token}`}>Send again</Link>
+                    {tx.localId ? (
+                      <Link href={`/receipt/${tx.localId}`}>Receipt</Link>
+                    ) : tx.txHash.startsWith("0x") ? (
+                      <a href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`} target="_blank" rel="noopener noreferrer">ArcScan</a>
+                    ) : (
+                      <span>Balance<br />update</span>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </AppShell>
   );
 }
