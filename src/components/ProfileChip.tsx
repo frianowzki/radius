@@ -22,7 +22,7 @@ export function ProfileChip({ contact, profile, address, fallbackLabel }: Profil
 
   return (
     <div className="inline-flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.05] px-3 py-2">
-      <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 text-sm font-semibold text-indigo-200">
+      <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#6366f1]/25 to-[#3b82f6]/25 text-sm font-semibold text-[#bfdbfe]">
         <AvatarImage src={avatar} fallback={label} />
       </div>
       <div className="min-w-0 text-left">

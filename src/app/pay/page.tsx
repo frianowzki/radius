@@ -133,8 +133,8 @@ function PayContent() {
       <AppShell>
         <div className="mx-auto max-w-4xl">
           <div className="glass-panel-strong rounded-[32px] p-12 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[24px] bg-red-500/12 text-2xl text-red-300">
-              !
+            <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-[24px] bg-red-500/12 text-red-400">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
             <h3 className="text-2xl font-semibold mb-2">Invalid payment request</h3>
             <p className="text-sm text-zinc-400">
@@ -152,7 +152,7 @@ function PayContent() {
         {status === "success" ? (
           <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="glass-panel-strong rounded-[32px] p-8">
-              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Payment complete</p>
+              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Payment complete</p>
               <h2 className="text-4xl font-semibold tracking-tight text-glow">
                 Clean handoff, clean receipt.
               </h2>
@@ -227,7 +227,7 @@ function PayContent() {
                   href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="pay-success-link mt-6 inline-flex rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20"
+                  className="pay-success-link primary-btn mt-6 inline-flex rounded-2xl px-4 py-3 text-sm font-semibold text-white"
                 >
                   View on ArcScan
                 </a>
@@ -236,7 +236,18 @@ function PayContent() {
           </div>
         ) : (
           <div className="space-y-5">
-
+              <div className="glass-panel-strong rounded-[32px] p-6">
+                <div className="flex items-start gap-4">
+                  <div className="bridge-header-icon shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                  </div>
+                  <div>
+                    <p className="mb-1 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Pay request</p>
+                    <h2 className="text-2xl font-black tracking-tight text-glow">Confirm payment</h2>
+                    <p className="mt-2 text-sm leading-6 text-zinc-400">Review the details, then confirm in your wallet.</p>
+                  </div>
+                </div>
+              </div>
 
               <div className="pay-request-card glass-panel rounded-[28px] p-6">
                 <div className="text-center mb-6">
@@ -281,7 +292,7 @@ function PayContent() {
                 <button
                   onClick={handlePay}
                   disabled={status === "sending" || status === "confirming"}
-                  className="pay-submit-button w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-4 font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all hover:shadow-indigo-500/30 disabled:opacity-60"
+                  className="pay-submit-button primary-btn w-full rounded-2xl px-4 py-4 font-semibold text-white disabled:opacity-60"
                 >
                   {status === "sending" || status === "confirming" ? (
                     <span className="flex items-center justify-center gap-2">
@@ -313,7 +324,7 @@ export default function PayPage() {
       fallback={
         <AppShell>
           <div className="flex items-center justify-center py-32">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-indigo-500" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--muted)]/30 border-t-[var(--brand)]" />
           </div>
         </AppShell>
       }

@@ -193,7 +193,7 @@ export default function DashboardPage() {
         <header className="dashboard-reference-header">
           <div>
             <div className="dashboard-logo">Radius</div>
-            <h1>Hello, {profileName} 👋</h1>
+            <h1>Hello, {profileName} <span className="dashboard-wave" aria-hidden="true">👋</span></h1>
           </div>
           <ThemeToggle className="dashboard-theme-toggle" />
         </header>
@@ -217,8 +217,14 @@ export default function DashboardPage() {
           <p className={`dashboard-total ${hideBalance ? "balance-hidden" : ""}`}>${visibleTotal}</p>
           <p className="dashboard-eq">≈ {visibleUsdc} USDC</p>
           <div className="dashboard-balance-actions">
-            <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">＋ Add Funds</a>
-            <Link href="/request">⇩ Receive</Link>
+            <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Funds
+            </a>
+            <Link href="/request">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+              Receive
+            </Link>
           </div>
         </section>
 
@@ -243,12 +249,22 @@ export default function DashboardPage() {
               <p className="dashboard-empty">No latest activities yet.</p>
             ) : (
               <div>
-                {recentTransfers.slice(0, 3).map((transfer) => (
-                  <Link href="/history" key={transfer.id} className="dashboard-activity-row">
-                    <div><span>↓</span><div><p>{formatAmount(BigInt(transfer.value), TOKENS[transfer.token].decimals)} {transfer.token}</p><small>{new Date(transfer.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</small></div></div>
-                    <small>{formatContactLabel(transfer.direction === "sent" ? transfer.to : transfer.from)}</small>
-                  </Link>
-                ))}
+                {recentTransfers.slice(0, 3).map((transfer) => {
+                  const isSent = transfer.direction === "sent";
+                  return (
+                    <Link href="/history" key={transfer.id} className="dashboard-activity-row">
+                      <div>
+                        <span className={`activity-pill ${isSent ? "sent" : "received"}`} aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            {isSent ? <><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></> : <><line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/></>}
+                          </svg>
+                        </span>
+                        <div><p>{isSent ? "Sent" : "Received"} {formatAmount(BigInt(transfer.value), TOKENS[transfer.token].decimals)} {transfer.token}</p><small>{new Date(transfer.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</small></div>
+                      </div>
+                      <small>{formatContactLabel(isSent ? transfer.to : transfer.from)}</small>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -258,7 +274,7 @@ export default function DashboardPage() {
           <div className="dashboard-section-title"><h2>Recent Contacts</h2><Link href="/contacts">View all</Link></div>
           <div className="dashboard-list-card">
             {contacts.length === 0 ? (
-              <div className="dashboard-contact-empty"><span>♧</span><p>No contacts saved yet.<br />Add a contact to get started.</p></div>
+              <div className="dashboard-contact-empty"><span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><p>No contacts saved yet.<br />Add a contact to get started.</p></div>
             ) : (
               <div className="dashboard-contact-strip">
                 {contacts.slice(0, 4).map((c) => <Link href={`/send?to=${encodeURIComponent(c.handle ? c.handle.replace(/^@/, "") : c.address)}`} key={c.id}><span><AvatarImage src={c.avatar} fallback={c.name} /></span><p>{c.name}</p></Link>)}

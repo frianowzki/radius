@@ -204,7 +204,7 @@ export default function SendPage() {
         {status === "success" ? (
           <div className="space-y-5">
             <div className="glass-panel-strong rounded-[32px] p-6">
-              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">Payment sent</p>
+              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Payment sent</p>
               <h2 className="text-3xl font-semibold tracking-tight text-glow">Sent on Arc.</h2>
               <p className="mt-3 text-sm leading-6 text-zinc-400">{amount} {token} sent to {recipientLabel}.</p>
               {showSaveRecipient && resolvedRecipientAddress && (
@@ -225,8 +225,16 @@ export default function SendPage() {
         ) : (
           <form onSubmit={handleSend} className="space-y-5">
             <div className="glass-panel-strong rounded-[32px] p-6">
-              <h2 className="text-2xl font-black tracking-tight text-glow">SEND ON ARC</h2>
-              <p className="mt-3 max-w-xs text-sm leading-6 text-zinc-400">Send stablecoins to a wallet, saved contact, or global Radius username in seconds.</p>
+              <div className="flex items-start gap-4">
+                <div className="bridge-header-icon shrink-0">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </div>
+                <div>
+                  <p className="mb-1 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Send</p>
+                  <h2 className="text-2xl font-black tracking-tight text-glow">Send on Arc</h2>
+                  <p className="mt-2 max-w-xs text-sm leading-6 text-zinc-400">Send stablecoins to a wallet, saved contact, or global Radius username in seconds.</p>
+                </div>
+              </div>
             </div>
 
             <div className="glass-panel rounded-[28px] p-5">
@@ -242,7 +250,13 @@ export default function SendPage() {
             </div>
 
             <div className="glass-panel rounded-[28px] p-5 text-sm">
-              <div className="flex items-center justify-between"><span className="text-zinc-500">Network</span><span className={isOnArc ? "text-emerald-500" : "text-amber-500"}>{isOnArc ? "Arc Testnet" : "Switch to Arc Testnet"}</span></div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500">Network</span>
+                <span className={`inline-flex items-center gap-2 font-medium ${isOnArc ? "text-emerald-500" : "text-amber-500"}`}>
+                  <span className={`status-dot ${isOnArc ? "ok" : "warn"}`} aria-hidden="true" />
+                  {isOnArc ? "Arc Testnet" : "Switch to Arc Testnet"}
+                </span>
+              </div>
               {!isOnArc && <button type="button" onClick={() => switchChainAsync({ chainId: arcTestnet.id }).catch(() => setError("Failed to switch network"))} className="ghost-btn mt-3 w-full text-xs">Switch to Arc</button>}
             </div>
 
@@ -264,7 +278,19 @@ export default function SendPage() {
 
             <div className="glass-panel rounded-[28px] p-5">
               <label className="mb-3 block text-sm font-medium text-zinc-400">Amount</label>
-              <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="w-full bg-transparent text-5xl font-semibold tracking-tight outline-none" />
+              <div className="flex items-center gap-3">
+                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="flex-1 bg-transparent text-5xl font-semibold tracking-tight outline-none" />
+                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--brand)]/20 bg-[var(--brand)]/8 px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
+                  <TokenLogo symbol={token} size={20} />
+                  {token}
+                </span>
+              </div>
+              {balanceByToken[token] !== undefined && (
+                <div className="mt-3 flex items-center justify-between text-xs text-zinc-500">
+                  <span>Available: {formatAmount(balanceByToken[token]!, TOKENS[token].decimals)} {token}</span>
+                  <button type="button" onClick={() => setAmount(formatAmount(balanceByToken[token]!, TOKENS[token].decimals).replace(/,/g, ""))} className="font-semibold text-[var(--brand)]">Max</button>
+                </div>
+              )}
             </div>
 
             {readyToSend && (
@@ -287,9 +313,9 @@ export default function SendPage() {
         )}
 
         {showConfirm && (
-          <div className="fixed inset-0 z-[90] grid place-items-end bg-black/35 p-4" onClick={() => setShowConfirm(false)}>
+          <div className="fixed inset-0 z-[90] grid place-items-end bg-black/35 p-4 backdrop-blur-sm" onClick={() => setShowConfirm(false)}>
             <div className="soft-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8b8795]">Confirm send</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand)]">Confirm send</p>
               <h3 className="mt-2 text-2xl font-bold">Send {amount} {token}?</h3>
               <div className="mt-5 space-y-3 rounded-2xl bg-white/55 p-4 text-sm">
                 <div className="flex justify-between gap-4"><span className="text-[#8b8795]">To</span><span className="text-right font-semibold">{recipientLabel}</span></div>

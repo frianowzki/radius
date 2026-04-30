@@ -70,9 +70,11 @@ export default function FaucetPage() {
     <AppShell>
       <div className="screen-pad">
         <header className="mb-6 flex items-center justify-between">
-          <Link href="/" className="text-2xl">‹</Link>
+          <Link href="/" aria-label="Back" className="grid h-9 w-9 place-items-center rounded-full bg-white/40 text-[var(--brand)] backdrop-blur transition-colors hover:bg-white/60">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </Link>
           <h1 className="text-sm font-bold">Add testnet funds</h1>
-          <span className="w-6" />
+          <span className="w-9" />
         </header>
 
         <form onSubmit={requestDrip} className="space-y-4">
@@ -144,8 +146,9 @@ export default function FaucetPage() {
           </button>
 
           {status === "success" && (
-            <div className="rounded-[24px] border border-emerald-300/40 bg-emerald-500/10 p-4 text-sm text-emerald-700">
-              {message}
+            <div className="flex items-start gap-3 rounded-[24px] border border-emerald-300/40 bg-emerald-500/10 p-4 text-sm text-emerald-700">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>{message}</span>
             </div>
           )}
           {status === "error" && (
@@ -161,7 +164,7 @@ export default function FaucetPage() {
 
           <p className="px-2 text-center text-xs leading-5 text-[#8b8795]">
             Routed through Circle’s testnet faucet.{" "}
-            <a href={CIRCLE_FAUCET} target="_blank" rel="noopener noreferrer" className="font-semibold text-[#6f60d5] underline">
+            <a href={CIRCLE_FAUCET} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--brand)] underline">
               Open the official faucet
             </a>
             {" "}if this app is unavailable.

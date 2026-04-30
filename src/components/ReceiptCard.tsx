@@ -34,12 +34,12 @@ function buildReceiptSvg(params: { title: string; amount: string; token: string;
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
   <defs>
-    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#756dff"/><stop offset="0.55" stop-color="#9b7cff"/><stop offset="1" stop-color="#85cfff"/></linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="26" stdDeviation="34" flood-color="#281f5f" flood-opacity="0.28"/></filter>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#1d4ed8"/><stop offset="0.55" stop-color="#2563eb"/><stop offset="1" stop-color="#60a5fa"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="26" stdDeviation="34" flood-color="#1e3a8a" flood-opacity="0.28"/></filter>
   </defs>
-  <rect width="1080" height="1350" fill="#f7f4ff"/>
-  <circle cx="130" cy="90" r="260" fill="#8f7cff" opacity="0.18"/>
-  <circle cx="930" cy="160" r="240" fill="#85cfff" opacity="0.22"/>
+  <rect width="1080" height="1350" fill="#eef2ff"/>
+  <circle cx="130" cy="90" r="260" fill="#3b82f6" opacity="0.16"/>
+  <circle cx="930" cy="160" r="240" fill="#60a5fa" opacity="0.22"/>
   <rect x="96" y="118" width="888" height="1114" rx="72" fill="white" filter="url(#shadow)"/>
   <rect x="156" y="178" width="768" height="338" rx="54" fill="url(#bg)"/>
   <text x="540" y="268" text-anchor="middle" fill="white" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800" letter-spacing="4">${escapeSvg(title)}</text>
@@ -54,7 +54,7 @@ function buildReceiptSvg(params: { title: string; amount: string; token: string;
     const y = 625 + index * 130;
     return `<text x="170" y="${y}" fill="#9a94a3" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700">${escapeSvg(label)}</text><text x="910" y="${y}" text-anchor="end" fill="#17151f" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800">${escapeSvg(value).slice(0, 44)}</text><line x1="170" y1="${y + 48}" x2="910" y2="${y + 48}" stroke="#ece8f7" stroke-width="2"/>`;
   }).join("")}
-  <text x="540" y="1160" text-anchor="middle" fill="#6f60d5" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="900">Radius</text>
+  <text x="540" y="1160" text-anchor="middle" fill="#2563eb" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="900">Radius</text>
 </svg>`.trim();
 }
 
@@ -105,14 +105,14 @@ export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, 
           <TokenLogo symbol={token} size={42} />
           <p className="text-5xl font-semibold tracking-[-0.07em]">${amount || "0.00"}</p>
         </div>
-        <p className="mt-2 text-sm font-semibold text-[#6f60d5]">{token}</p>
+        <p className="mt-2 text-sm font-semibold text-[var(--brand)]">{token}</p>
       </div>
       <div className="mt-7 space-y-3 text-sm">
         <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">From</span><span className="text-right">{fromLabel || "Connected wallet"}</span></div>
         <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">To</span><span className="text-right">{toLabel || "Recipient"}</span></div>
         <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">Date</span><span className="text-right">{dateLabel}</span></div>
-        <div className="flex justify-between"><span className="text-[#9a94a3]">Network</span><span className="text-[#6f60d5]">Arc Testnet</span></div>
-        {txHash && <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">Transaction Hash</span><a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-[#6f60d5]">{txHash.slice(0, 6)}...{txHash.slice(-4)}</a></div>}
+        <div className="flex justify-between"><span className="text-[#9a94a3]">Network</span><span className="text-[var(--brand)]">Arc Testnet</span></div>
+        {txHash && <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">Transaction Hash</span><a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-[var(--brand)]">{txHash.slice(0, 6)}...{txHash.slice(-4)}</a></div>}
         {metaLabel && metaValue && <div className="flex justify-between"><span className="text-[#9a94a3]">{metaLabel}</span><span>{metaValue}</span></div>}
       </div>
       {note && !preview && <div className="mt-5 rounded-2xl bg-white/70 p-4"><p className="text-[11px] text-[#9a94a3]">Note</p><p className="mt-1 text-sm">{note}</p></div>}

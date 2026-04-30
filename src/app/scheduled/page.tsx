@@ -92,9 +92,11 @@ export default function ScheduledPage() {
     <AppShell>
       <div className="screen-pad space-y-5">
         <header className="mb-2 flex items-center justify-between">
-          <Link href="/" className="text-2xl">‹</Link>
+          <Link href="/" aria-label="Back" className="grid h-9 w-9 place-items-center rounded-full bg-white/40 text-[var(--brand)] backdrop-blur transition-colors hover:bg-white/60">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </Link>
           <h1 className="text-sm font-bold">Scheduled payments</h1>
-          <span className="w-6" />
+          <span className="w-9" />
         </header>
 
         {!isConnected ? (
@@ -124,7 +126,7 @@ export default function ScheduledPage() {
                 <input className="radius-input text-sm" type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} />
               </div>
               <label className="flex items-center gap-2 rounded-2xl bg-white/50 px-3 py-2.5 text-xs text-[#5d5868]">
-                <input type="checkbox" checked={autoConfirm} onChange={(e) => setAutoConfirm(e.target.checked)} className="h-4 w-4 accent-[#6f60d5]" />
+                <input type="checkbox" checked={autoConfirm} onChange={(e) => setAutoConfirm(e.target.checked)} className="h-4 w-4 accent-[var(--brand)]" />
                 <span><span className="font-bold text-[#17151f]">Auto-confirm</span> when due (still signed by your wallet)</span>
               </label>
               <button type="submit" className="primary-btn w-full text-sm">Save schedule</button>
@@ -154,7 +156,7 @@ export default function ScheduledPage() {
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Link href={buildSendHref(item)} className="primary-btn px-3 py-2 text-xs">{due ? "Run now" : "Run early"}</Link>
-                        <button type="button" onClick={() => toggleAutoConfirm(item)} className={`px-3 py-2 text-xs rounded-2xl font-bold ${item.autoConfirm ? "bg-[#6f60d5]/15 text-[#6f60d5]" : "ghost-btn"}`}>
+                        <button type="button" onClick={() => toggleAutoConfirm(item)} className={`px-3 py-2 text-xs rounded-2xl font-bold ${item.autoConfirm ? "bg-[var(--brand)]/12 text-[var(--brand)]" : "ghost-btn"}`}>
                           {item.autoConfirm ? "Auto on" : "Auto off"}
                         </button>
                         <button type="button" onClick={() => { setSchedulePaused(item.id, !item.paused); refresh(); }} className="ghost-btn px-3 py-2 text-xs">{item.paused ? "Resume" : "Pause"}</button>

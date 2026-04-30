@@ -56,9 +56,11 @@ export default function ReceiptPage({ params }: { params: Promise<{ id: string }
     <AppShell>
       <div className="screen-pad space-y-5">
         <header className="flex items-center justify-between">
-          <Link href="/history" className="text-2xl">‹</Link>
+          <Link href="/history" aria-label="Back to history" className="grid h-9 w-9 place-items-center rounded-full bg-white/40 text-[var(--brand)] backdrop-blur transition-colors hover:bg-white/60">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </Link>
           <h1 className="text-sm font-bold">Receipt</h1>
-          <span className="w-6" />
+          <span className="w-9" />
         </header>
         <ReceiptCard
           title={transfer.routeLabel || (direction === "sent" ? "Payment sent" : "Payment received")}

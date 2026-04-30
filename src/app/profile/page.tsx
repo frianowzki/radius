@@ -120,7 +120,9 @@ export default function ProfilePage() {
           <div className="profile-orbit-line" aria-hidden="true" />
           <div className="profile-hero-avatar">
             <AvatarImage src={profile.avatar} fallback={profile.handle || profile.displayName || user?.name || "R"} />
-            <span className="profile-verified" aria-hidden="true">✦</span>
+            <span className="profile-verified" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l2.39 4.84L20 7l-3.5 3.41.83 4.83L12 12.93 6.67 15.24 7.5 10.41 4 7l5.61-1.16L12 1z"/></svg>
+            </span>
           </div>
           <h1>{profile.displayName || "Radius user"}</h1>
           <p className="profile-handle">{profile.handle ? `@${profile.handle}` : "Claim a username below"}</p>
@@ -128,8 +130,17 @@ export default function ProfilePage() {
           <div className="profile-address-pill">{address ? formatAddress(address) : "No wallet connected"}</div>
           {address && (
             <div className="profile-hero-actions">
-              <button type="button" onClick={copyAddress}>⧉ {copiedAddress ? "Copied" : "Copy address"}</button>
-              <button type="button" onClick={disconnectAll}>↻ Disconnect</button>
+              <button type="button" onClick={copyAddress}>
+                {copiedAddress ? (
+                  <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied</>
+                ) : (
+                  <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy address</>
+                )}
+              </button>
+              <button type="button" onClick={disconnectAll}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Disconnect
+              </button>
             </div>
           )}
         </section>
