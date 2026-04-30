@@ -295,6 +295,11 @@ export default function BridgePage() {
         );
         setBridgeDetails([...estimateSummary.feeLabels, ...estimateSummary.gasLabels]);
         setLiveEta({ total: estimateSummary.totalEtaSeconds, attestation: estimateSummary.attestationEtaSeconds });
+        if (useForwarder && estimateSummary.totalUsdcFees >= Number(amount)) {
+          setStatus("error");
+          setError(`Forwarder fee is ~${estimateSummary.totalUsdcFees.toFixed(6)} USDC, higher than this transfer. Increase amount or turn off Auto forwarder.`);
+          return;
+        }
         setBridgeProgress("Waiting for wallet confirmation");
         setStatus("confirming");
 
@@ -306,6 +311,9 @@ export default function BridgePage() {
           bridgeSpeed,
           (event) => {
             setBridgeProgress(event.state ? `${event.label} • ${event.state}` : event.label);
+            if (event.state === "error" || event.state === "failed") {
+              setError(event.errorMessage || `${event.label} failed`);
+            }
             if (event.txHash) setTxHash(event.txHash);
             const key = event.method as BridgeStepKey;
             const order: BridgeStepKey[] = ["approve", "burn", "fetchAttestation", "mint"];

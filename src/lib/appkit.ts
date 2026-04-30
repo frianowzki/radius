@@ -28,6 +28,7 @@ export interface BridgeEstimateSummary {
   attestationEtaSeconds?: number;
   feeCount: number;
   gasFeeCount: number;
+  totalUsdcFees: number;
   feeLabels: string[];
   gasLabels: string[];
 }
@@ -37,6 +38,7 @@ export interface BridgeProgressEvent {
   label: string;
   state?: string;
   txHash?: string;
+  errorMessage?: string;
 }
 
 function getBridgeConfig(speed: BridgeSpeed) {
@@ -49,11 +51,20 @@ function getBridgeConfig(speed: BridgeSpeed) {
 function parseBridgeProgress(payload: unknown): BridgeProgressEvent {
   const event = payload as {
     method?: string;
-    values?: { name?: string; state?: string; txHash?: string; data?: unknown };
+    values?: {
+      name?: string;
+      state?: string;
+      txHash?: string;
+      data?: unknown;
+      error?: unknown;
+      errorMessage?: string;
+    };
   };
   const method = event.method || event.values?.name || "bridge";
   const txHashFromData = (event.values?.data as { txHash?: string } | undefined)?.txHash;
   const txHash = event.values?.txHash || txHashFromData;
+  const rawError = event.values?.error;
+  const errorMessage = event.values?.errorMessage || (rawError instanceof Error ? rawError.message : typeof rawError === "string" ? rawError : undefined);
   const labels: Record<string, string> = {
     approve: "Approving USDC spend",
     burn: "Source burn submitted",
@@ -67,6 +78,7 @@ function parseBridgeProgress(payload: unknown): BridgeProgressEvent {
     label: labels[method] || `Bridge step: ${method}`,
     state: event.values?.state,
     txHash,
+    errorMessage,
   };
 }
 
@@ -124,6 +136,10 @@ export function summarizeBridgeEstimate(estimate: unknown): BridgeEstimateSummar
 
   const fees = Array.isArray(estimateRecord.fees) ? estimateRecord.fees : [];
   const gasFees = Array.isArray(estimateRecord.gasFees) ? estimateRecord.gasFees : [];
+  const totalUsdcFees = fees.reduce((sum, fee) => {
+    const amount = typeof fee.amount === "string" ? Number(fee.amount) : undefined;
+    return Number.isFinite(amount) ? sum + (amount as number) : sum;
+  }, 0);
 
   // Total ETA: top-level estimatedTime / eta / durationSeconds, or timing.totalSeconds.
   const totalEtaSeconds =
@@ -140,6 +156,7 @@ export function summarizeBridgeEstimate(estimate: unknown): BridgeEstimateSummar
     attestationEtaSeconds,
     feeCount: fees.length,
     gasFeeCount: gasFees.length,
+    totalUsdcFees,
     feeLabels: fees.map((fee) => [fee.type || "Fee", fee.amount, fee.token || fee.symbol].filter(Boolean).join(" • ")),
     gasLabels: gasFees.map((fee) => [fee.chain || "Gas", fee.amount, fee.token || fee.symbol].filter(Boolean).join(" • ")),
   };
@@ -189,6 +206,13 @@ export async function executeBridgeTransfer(
   }
 }
 
+function simplifyBridgeError(message: string) {
+  if (/iris-api.*circle|safesurf|biznet|cert.*altname|fetch failed|failed to fetch|network/i.test(message)) {
+    return "Circle IRIS API/network failed. If you are on Biznet SafeSurf or filtered DNS, switch network/VPN/private DNS and retry.";
+  }
+  return message;
+}
+
 export function getBridgeErrorMessage(result: unknown) {
   const bridgeResult = result as { steps?: Array<{ name?: string; errorMessage?: string; error?: unknown }> };
   const failedStep = bridgeResult.steps?.find((step) => step.errorMessage || step.error);
@@ -196,6 +220,6 @@ export function getBridgeErrorMessage(result: unknown) {
 
   const rawError = failedStep.error;
   const rawMessage = rawError instanceof Error ? rawError.message : typeof rawError === "string" ? rawError : "";
-  const message = failedStep.errorMessage || rawMessage || "Crosschain transfer failed";
+  const message = simplifyBridgeError(failedStep.errorMessage || rawMessage || "Crosschain transfer failed");
   return [failedStep.name, message].filter(Boolean).join(": ").slice(0, 220);
 }
