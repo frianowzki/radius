@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMounted } from "@/lib/useMounted";
 import {
   useAccount,
@@ -80,18 +80,8 @@ export default function BridgePage() {
   const [bridgeEstimateText, setBridgeEstimateText] = useState("");
   const [bridgeDetails, setBridgeDetails] = useState<string[]>([]);
   const [liveEta, setLiveEta] = useState<{ total?: number; attestation?: number }>({});
-  const [bridgeSpeed, setBridgeSpeed] = useState<BridgeSpeed>("FAST");
-  const [useForwarder, setUseForwarder] = useState(true);
-  /* eslint-disable react-hooks/set-state-in-effect -- hydrate persisted bridge prefs on mount */
-  useEffect(() => {
-    const speed = localStorage.getItem("radius-bridge-speed");
-    if (speed === "FAST" || speed === "FAST_FINALITY" || speed === "STANDARD") setBridgeSpeed(speed as BridgeSpeed);
-    const fwd = localStorage.getItem("radius-bridge-forwarder");
-    if (fwd === "false") setUseForwarder(false);
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
-  useEffect(() => { localStorage.setItem("radius-bridge-speed", bridgeSpeed); }, [bridgeSpeed]);
-  useEffect(() => { localStorage.setItem("radius-bridge-forwarder", String(useForwarder)); }, [useForwarder]);
+  const bridgeSpeed: BridgeSpeed = "FAST";
+  const useForwarder = true;
   const [bridgeProgress, setBridgeProgress] = useState("");
   type BridgeStepKey = "approve" | "burn" | "fetchAttestation" | "mint";
   type BridgeStepStatus = "pending" | "active" | "done" | "error";
@@ -657,62 +647,6 @@ export default function BridgePage() {
                 </div>
                 {isBridgeRoute && (
                   <div className="mt-4 space-y-3">
-                    <div>
-                      <p className="mb-2 text-xs font-medium text-zinc-500">Bridge speed</p>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {(["FAST", "SLOW"] as BridgeSpeed[]).map((speed) => (
-                          <button
-                            key={speed}
-                            type="button"
-                            onClick={() => {
-                              setBridgeSpeed(speed);
-                              resetBridgeFeedback();
-                            }}
-                            className={`bridge-choice relative rounded-2xl border px-4 py-3 text-left text-xs transition-all ${
-                              bridgeSpeed === speed
-                                ? "border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
-                                : "border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
-                            }`}
-                          >
-                            {bridgeSpeed === speed && <span className="card-check">✓</span>}
-                            <span className="block font-semibold">{speed === "FAST" ? "Fast" : "Standard"}</span>
-                            <span className="mt-1 block text-zinc-500">
-                              {speed === "FAST" ? "Faster relay, may be less wallet-friendly" : "Slower, usually more reliable"}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="mb-2 text-xs font-medium text-zinc-500">Mint mode</p>
-                      <p className="mb-2 text-[11px] leading-snug text-zinc-500">
-                        Tip: pick <span className="text-zinc-300">Manual</span> if your wallet shows a &ldquo;risky signature&rdquo; warning &mdash; you&rsquo;ll pay a tiny gas fee on the destination chain instead of signing a permit.
-                      </p>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {[
-                          { id: true, label: "Auto (Forwarder)", desc: "Circle handles the destination mint. Requires a permit signature." },
-                          { id: false, label: "Manual", desc: "You sign the mint on the destination chain. Use this if your wallet blocks permit signatures." },
-                        ].map((option) => (
-                          <button
-                            key={String(option.id)}
-                            type="button"
-                            onClick={() => {
-                              setUseForwarder(option.id);
-                              resetBridgeFeedback();
-                            }}
-                            className={`bridge-choice relative rounded-2xl border px-4 py-3 text-left text-xs transition-all ${
-                              useForwarder === option.id
-                                ? "border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
-                                : "border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
-                            }`}
-                          >
-                            {useForwarder === option.id && <span className="card-check">✓</span>}
-                            <span className="block font-semibold">{option.label}</span>
-                            <span className="mt-1 block text-zinc-500">{option.desc}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                     <div className="grid gap-2 text-xs sm:grid-cols-2">
                       <div className="bridge-info-card rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
                         <p className="flex items-center gap-2 text-zinc-500"><TokenLogo symbol="USDC" size={22} />Source USDC</p>
