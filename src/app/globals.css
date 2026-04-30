@@ -298,6 +298,42 @@ html[data-theme="dark"] h1,
 html[data-theme="dark"] h2,
 html[data-theme="dark"] h3,
 html[data-theme="dark"] .text-\[\#17151f\] { color: #f1f5f9 !important; }
+html[data-theme="dark"] .glass-panel .text-white,
+html[data-theme="dark"] .glass-panel-strong .text-white,
+html[data-theme="dark"] .glass-panel .text-zinc-50,
+html[data-theme="dark"] .glass-panel-strong .text-zinc-50,
+html[data-theme="dark"] .glass-panel .text-zinc-100,
+html[data-theme="dark"] .glass-panel-strong .text-zinc-100,
+html[data-theme="dark"] .glass-panel .text-zinc-200,
+html[data-theme="dark"] .glass-panel-strong .text-zinc-200,
+html[data-theme="dark"] .glass-panel .text-zinc-300,
+html[data-theme="dark"] .glass-panel-strong .text-zinc-300 { color: #f1f5f9 !important; }
+html[data-theme="dark"] .glass-panel .text-zinc-400,
+html[data-theme="dark"] .glass-panel-strong .text-zinc-400,
+html[data-theme="dark"] .glass-panel .text-zinc-500,
+html[data-theme="dark"] .glass-panel-strong .text-zinc-500 { color: #94a3b8 !important; }
+html[data-theme="dark"] .glass-panel .bg-white\/\[0\.04\],
+html[data-theme="dark"] .glass-panel-strong .bg-white\/\[0\.04\],
+html[data-theme="dark"] .glass-panel .bg-white\/\[0\.05\],
+html[data-theme="dark"] .glass-panel-strong .bg-white\/\[0\.05\],
+html[data-theme="dark"] .glass-panel .bg-white\/\[0\.08\],
+html[data-theme="dark"] .glass-panel-strong .bg-white\/\[0\.08\] { background: rgba(255,255,255,.06) !important; }
+html[data-theme="dark"] .glass-panel .border-white\/8,
+html[data-theme="dark"] .glass-panel-strong .border-white\/8,
+html[data-theme="dark"] .glass-panel .border-white\/6,
+html[data-theme="dark"] .glass-panel-strong .border-white\/6 { border-color: rgba(255,255,255,.10) !important; }
+html[data-theme="dark"] .glass-panel input,
+html[data-theme="dark"] .glass-panel-strong input,
+html[data-theme="dark"] .glass-panel textarea,
+html[data-theme="dark"] .glass-panel-strong textarea {
+  color: #f1f5f9 !important;
+  background: rgba(255,255,255,.08) !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+html[data-theme="dark"] .glass-panel input::placeholder,
+html[data-theme="dark"] .glass-panel-strong input::placeholder,
+html[data-theme="dark"] .glass-panel textarea::placeholder,
+html[data-theme="dark"] .glass-panel-strong textarea::placeholder { color: #8f889f !important; }
 html[data-theme="dark"] .text-\[\#595465\],
 html[data-theme="dark"] .text-\[\#8b8795\],
 html[data-theme="dark"] .text-\[\#9a94a3\] { color: #94a3b8 !important; }
