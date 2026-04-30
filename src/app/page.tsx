@@ -19,6 +19,17 @@ import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, forma
 import { dueSchedules, type ScheduledPaymentRecord } from "@/lib/scheduled-payments";
 
 
+function WalletIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4.2 8.1h13.9a2.2 2.2 0 0 1 2.2 2.2v7.1a2.2 2.2 0 0 1-2.2 2.2H5.9a2.2 2.2 0 0 1-2.2-2.2V6.8a2.2 2.2 0 0 1 2.2-2.2h10.2" />
+      <path d="M4 8.2 17.1 8" />
+      <path d="M16.3 13.9h4" />
+      <path d="M16.3 13.9a.25.25 0 1 0 0 .5.25.25 0 0 0 0-.5" />
+    </svg>
+  );
+}
+
 function WalletLoginButton() {
   return (
     <ConnectButton.Custom>
@@ -30,6 +41,7 @@ function WalletLoginButton() {
             onClick={connected ? (chain.unsupported ? openChainModal : openAccountModal) : openConnectModal}
             className="radius-auth-button secondary justify-center"
           >
+            <span className="login-action-icon" aria-hidden="true"><WalletIcon /></span>
             <span>{connected ? (chain.unsupported ? "Switch network" : account.displayName) : "Connect wallet"}</span>
           </button>
         );
@@ -70,8 +82,8 @@ function LoginScreen() {
         </section>
 
         <div className="login-actions">
-          <SocialLoginButton label="Press to Continue" className="login-action login-action-primary disabled:cursor-not-allowed disabled:opacity-50" />
-          <SocialLoginButton method="modal" label="Other social options" className="login-action login-action-secondary login-social-action disabled:cursor-not-allowed disabled:opacity-50" />
+          <SocialLoginButton icon="sparkle" label="Press to Continue" className="login-action login-action-primary disabled:cursor-not-allowed disabled:opacity-50" />
+          <SocialLoginButton icon="users" method="modal" label="Other social options" className="login-action login-action-secondary login-social-action disabled:cursor-not-allowed disabled:opacity-50" />
           <div className="login-wallet-action"><WalletLoginButton /></div>
         </div>
       </div>
