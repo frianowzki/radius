@@ -231,8 +231,8 @@ export default function SendPage() {
             <ReceiptCard title="Arc Flow" amount={amount} token={token} status="Settled" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={recipientLabel} note="Arc Testnet" shareText={validRecipient ? `Sent ${amount} ${token} on Arc to ${recipientLabel}` : undefined} txHash={txHash} explorerUrl={txHash ? `${arcTestnet.blockExplorers.default.url}/tx/${txHash}` : undefined} />
           </div>
         ) : (
-          <form onSubmit={handleSend} className="space-y-5">
-            <div className="glass-panel-strong rounded-[32px] p-6">
+          <form onSubmit={handleSend} className="send-flow space-y-5">
+            <div className="send-hero-card glass-panel-strong rounded-[32px] p-6">
               <div className="flex items-start gap-4">
                 <div className="bridge-header-icon shrink-0">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -245,7 +245,7 @@ export default function SendPage() {
               </div>
             </div>
 
-            <div className="glass-panel rounded-[28px] p-5">
+            <div className="flow-card glass-panel rounded-[28px] p-5">
               <label className="mb-3 block text-sm font-medium text-zinc-400">Token</label>
               <div className="grid grid-cols-2 gap-2">
                 {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
@@ -257,7 +257,7 @@ export default function SendPage() {
               </div>
             </div>
 
-            <div className="glass-panel rounded-[28px] p-5 text-sm">
+            <div className="flow-card compact glass-panel rounded-[28px] p-5 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500">Network</span>
                 <span className={`inline-flex items-center gap-2 font-medium ${isOnArc ? "text-emerald-500" : "text-amber-500"}`}>
@@ -268,7 +268,7 @@ export default function SendPage() {
               {!isOnArc && <button type="button" onClick={() => switchChainAsync({ chainId: arcTestnet.id }).catch(() => setError("Failed to switch network"))} className="ghost-btn mt-3 w-full text-xs">Switch to Arc</button>}
             </div>
 
-            <div className="glass-panel rounded-[28px] p-5">
+            <div className="flow-card glass-panel rounded-[28px] p-5">
               <div className="mb-3 flex items-center justify-between"><label className="text-sm font-medium text-zinc-400">Recipient</label><span className="text-xs text-zinc-500">Address or username</span></div>
               <input className="radius-input font-mono text-sm" value={recipient} onChange={(e) => { setRecipient(e.target.value); setDirectoryQuery(e.target.value); setShowDirectory(true); }} placeholder="0x... or username" />
               <button type="button" onClick={() => { setDirectoryQuery(""); setShowDirectory(true); }} className="ghost-btn mt-3 w-full text-xs">Choose from contacts</button>
@@ -287,7 +287,7 @@ export default function SendPage() {
               )}
             </div>
 
-            <div className="glass-panel rounded-[28px] p-5">
+            <div className="send-amount-card flow-card glass-panel rounded-[28px] p-5">
               <label className="mb-3 block text-sm font-medium text-zinc-400">Amount</label>
               <div className="flex items-center gap-3">
                 <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="min-w-0 flex-1 bg-transparent text-5xl font-semibold tracking-tight outline-none" />
@@ -308,7 +308,7 @@ export default function SendPage() {
             </div>
 
             {readyToSend && (
-              <div className="glass-panel rounded-[28px] p-5 text-sm">
+              <div className="review-card glass-panel rounded-[28px] p-5 text-sm">
                 <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Review before sending</p>
                 <div className="space-y-3">
                   <div className="flex justify-between gap-4"><span className="text-zinc-500">Recipient</span><span className="min-w-0 text-right font-medium break-words">{recipientLabel}</span></div>
@@ -320,9 +320,11 @@ export default function SendPage() {
             )}
 
             {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
-            <button type="submit" disabled={!readyToSend} className="primary-btn w-full disabled:opacity-40">{status === "sending" ? "Sending..." : status === "confirming" ? "Confirming..." : "Send on Arc"}</button>
+            <button type="submit" disabled={!readyToSend} className="primary-btn flow-primary-action w-full disabled:opacity-40">{status === "sending" ? "Sending..." : status === "confirming" ? "Confirming..." : "Review send"}</button>
 
-            <ReceiptCard title="Send preview" amount={amount || "0.00"} token={token} status="Preview" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={validRecipient ? recipientLabel : recipient || "Recipient"} note="Arc Testnet" preview />
+            <div className="flow-preview-wrap">
+              <ReceiptCard title="Send preview" amount={amount || "0.00"} token={token} status="Preview" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={validRecipient ? recipientLabel : recipient || "Recipient"} note="Arc Testnet" preview />
+            </div>
           </form>
         )}
 

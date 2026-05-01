@@ -8,7 +8,6 @@ import { useRadiusAuth } from "@/lib/web3auth";
 import { AppShell } from "@/components/AppShell";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { SocialLoginButton } from "@/components/SocialLoginButton";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { AvatarImage } from "@/components/AvatarImage";
@@ -64,8 +63,6 @@ function LoginScreen() {
   return (
     <AppShell>
       <div className="login-reference-shell">
-        <div className="login-theme-slot"><ThemeToggle /></div>
-
         <section className="login-hero" aria-label="Radius welcome">
           <div className="login-planet-wrap" aria-hidden="true">
             <span className="login-orbit login-orbit-a" />
@@ -207,7 +204,7 @@ export default function DashboardPage() {
             <div className="dashboard-logo">Radius</div>
             <h1>Hello, {profileName} <span className="dashboard-wave" aria-hidden="true">👋</span></h1>
           </div>
-          <ThemeToggle className="dashboard-theme-toggle" />
+          <span className="dashboard-network-badge">Arc Testnet</span>
         </header>
 
         {activityNotice && (

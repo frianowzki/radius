@@ -38,10 +38,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#2563eb" },
-    { media: "(prefers-color-scheme: dark)", color: "#07080f" },
-  ],
+  themeColor: "#2563eb",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -62,7 +59,7 @@ export default function RootLayout({
         {/* Anti-FOUC: apply saved theme before first paint */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('radius-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.setAttribute('data-theme','dark');document.documentElement.style.colorScheme='dark'}else{document.documentElement.setAttribute('data-theme','light');document.documentElement.style.colorScheme='light'}}catch(e){}}())`,
+            __html: `(function(){try{document.documentElement.setAttribute('data-theme','light');document.documentElement.style.colorScheme='light';localStorage.setItem('radius-theme','light')}catch(e){}}())`,
           }}
         />
       </head>

@@ -260,8 +260,8 @@ function PayContent() {
             </div>
           </div>
         ) : (
-          <div className="space-y-5">
-              <div className="glass-panel-strong rounded-[32px] p-6">
+          <div className="pay-flow space-y-5">
+              <div className="pay-hero-card glass-panel-strong rounded-[32px] p-6">
                 <div className="flex items-start gap-4">
                   <div className="bridge-header-icon shrink-0">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
@@ -274,12 +274,12 @@ function PayContent() {
                 </div>
               </div>
 
-              <div className="pay-request-card glass-panel rounded-[28px] p-6">
+              <div className="pay-request-card payment-sheet glass-panel rounded-[28px] p-6">
                 <div className="text-center mb-6">
                   <p className="pay-muted text-sm mb-1">Amount requested</p>
                   <div className="mt-3 flex items-center justify-center gap-3">
                     <TokenLogo symbol={token} size={42} />
-                    <p className="pay-amount text-4xl font-bold">
+                    <p className="pay-amount text-4xl font-black tracking-[-0.05em]">
                       {amount} <span className="pay-token text-2xl">{token}</span>
                     </p>
                   </div>
@@ -332,7 +332,7 @@ function PayContent() {
                 <button
                   onClick={handlePay}
                   disabled={status === "sending" || status === "confirming"}
-                  className="pay-submit-button primary-btn w-full rounded-2xl px-4 py-4 font-semibold text-white disabled:opacity-60"
+                  className="pay-submit-button primary-btn flow-primary-action w-full rounded-2xl px-4 py-4 font-semibold text-white disabled:opacity-60"
                 >
                   {status === "sending" || status === "confirming" ? (
                     <span className="flex items-center justify-center gap-2">
