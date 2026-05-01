@@ -35,6 +35,7 @@ import {
   type BridgeSpeed,
 } from "@/lib/appkit";
 import {
+  decimalToUnits,
   formatAddress,
   formatAmount,
   formatContactLabel,
@@ -143,6 +144,8 @@ export default function BridgePage() {
   const eurcBalance = balances?.[1]?.result as bigint | undefined;
   const currentBalance = token === "USDC" ? usdcBalance : eurcBalance;
   const currentDecimals = TOKENS[token].decimals;
+  const requestedRaw = amount && Number(amount) > 0 ? decimalToUnits(amount, currentDecimals) : BigInt(0);
+  const hasEnoughBalance = typeof currentBalance === "bigint" ? currentBalance >= requestedRaw : true;
 
   const directoryEntries = useMemo(() => {
     const query = directoryQuery.trim().toLowerCase();
@@ -188,6 +191,7 @@ export default function BridgePage() {
     status !== "sending" &&
     status !== "confirming" &&
     isOnExpectedSourceChain &&
+    hasEnoughBalance &&
     (!isBridgeRoute || token === "USDC");
   // ETAs prefer the live estimate when the SDK provides one; otherwise fall
   // back to coarse defaults based on testnet observations.
@@ -260,6 +264,11 @@ export default function BridgePage() {
     if (isBridgeRoute && !isOnExpectedSourceChain) {
       setStatus("error");
       setError(`Switch wallet to ${expectedSourceChainLabel}.`);
+      return;
+    }
+    if (!hasEnoughBalance) {
+      setStatus("error");
+      setError(`Insufficient ${token} balance on ${expectedSourceChainLabel}.`);
       return;
     }
 
@@ -777,6 +786,15 @@ export default function BridgePage() {
                     <TokenLogo symbol={token} size={22} />{token}
                   </span>
                 </div>
+                {currentBalance !== undefined && (
+                  <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-500">
+                    <span>Available: {formatAmount(currentBalance, currentDecimals)} {token}</span>
+                    <button type="button" onClick={() => setAmount(formatAmount(currentBalance, currentDecimals).replace(/,/g, ""))} className="font-semibold text-[var(--brand)]">Max</button>
+                  </div>
+                )}
+                {!hasEnoughBalance && amount && Number(amount) > 0 && (
+                  <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-400">Insufficient {token} balance on {expectedSourceChainLabel}.</p>
+                )}
               </div>
 
 

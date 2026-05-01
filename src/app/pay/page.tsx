@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useReadContract, useSwitchChain, useWalletClient } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { createWalletClient, custom, parseUnits, isAddress } from "viem";
 import { AppShell } from "@/components/AppShell";
@@ -13,6 +13,7 @@ import {
   formatContactLabel,
   findContactByAddress,
   resolveRecipientInput,
+  decimalToUnits,
   markMatchingPaymentRequestPaid,
   saveLocalTransfer,
   upsertContactByAddress,
@@ -26,8 +27,10 @@ function PayContent() {
   const { authenticated, address: authAddress, provider: authProvider } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: arcTestnet.id });
   const { data: walletClient } = useWalletClient();
+  const chainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
 
   const recipient = searchParams.get("to") || "";
   const amount = searchParams.get("amount") || "";
@@ -46,6 +49,19 @@ function PayContent() {
   const resolvedRecipient = resolveRecipientInput(recipient);
   const recipientAddress = resolvedRecipient.address || "";
   const matchedRecipient = recipientAddress ? findContactByAddress(recipientAddress) : undefined;
+  const tokenInfo = token in TOKENS ? TOKENS[token] : TOKENS.USDC;
+  const requestedRaw = amount && Number(amount) > 0 ? decimalToUnits(amount, tokenInfo.decimals) : BigInt(0);
+  const isOnArc = chainId === arcTestnet.id;
+
+  const { data: tokenBalance } = useReadContract({
+    address: tokenInfo.address,
+    abi: ERC20_TRANSFER_ABI,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    chainId: arcTestnet.id,
+    query: { enabled: Boolean(address && token in TOKENS) },
+  });
+  const hasEnoughBalance = typeof tokenBalance === "bigint" ? tokenBalance >= requestedRaw : true;
 
   const validRequest =
     isAddress(recipientAddress) &&
@@ -65,6 +81,16 @@ function PayContent() {
 
   async function handlePay() {
     if (!publicClient || !address) return;
+    if (!isOnArc) {
+      setStatus("error");
+      setError("Switch to Arc Testnet before paying this request.");
+      return;
+    }
+    if (!hasEnoughBalance) {
+      setStatus("error");
+      setError(`Insufficient ${token} balance for this payment.`);
+      return;
+    }
     const activeWalletClient = await getActiveWalletClient();
     if (!activeWalletClient) {
       setStatus("error");
@@ -76,7 +102,6 @@ function PayContent() {
     setError("");
 
     try {
-      const tokenInfo = TOKENS[token];
       const parsedAmount = parseUnits(amount, tokenInfo.decimals);
       const hash = await activeWalletClient.writeContract({
         address: tokenInfo.address,
@@ -279,7 +304,7 @@ function PayContent() {
                   )}
                   <div className="flex justify-between py-3 border-t border-white/8">
                     <span className="pay-muted">Network</span>
-                    <span className="pay-value">Arc Testnet</span>
+                    <span className={isOnArc ? "pay-value" : "font-semibold text-amber-500"}>{isOnArc ? "Arc Testnet" : "Wrong network"}</span>
                   </div>
                 </div>
               </div>
@@ -287,6 +312,21 @@ function PayContent() {
               {!isConnected ? (
                 <div className="glass-panel rounded-[28px] p-5 text-center text-sm text-amber-300">
                   Connect your wallet to pay this request.
+                </div>
+              ) : !isOnArc ? (
+                <button
+                  type="button"
+                  onClick={() => switchChainAsync({ chainId: arcTestnet.id }).catch(() => {
+                    setStatus("error");
+                    setError("Failed to switch to Arc Testnet.");
+                  })}
+                  className="ghost-btn w-full rounded-2xl px-4 py-4 text-sm"
+                >
+                  Switch to Arc Testnet
+                </button>
+              ) : !hasEnoughBalance ? (
+                <div className="glass-panel rounded-[28px] p-5 text-center text-sm text-red-500">
+                  Insufficient {token} balance for this payment.
                 </div>
               ) : (
                 <button

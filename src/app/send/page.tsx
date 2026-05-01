@@ -10,7 +10,7 @@ import { ProfileChip } from "@/components/ProfileChip";
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { arcTestnet } from "@/config/wagmi";
-import { formatAmount, formatContactLabel, getDirectoryEntries, getIdentityLabel, getIdentityProfile, resolveRecipientInput, saveLocalTransfer, upsertContactByAddress } from "@/lib/utils";
+import { decimalToUnits, formatAmount, formatContactLabel, getDirectoryEntries, getIdentityLabel, getIdentityProfile, resolveRecipientInput, saveLocalTransfer, upsertContactByAddress } from "@/lib/utils";
 import type { DirectoryEntry } from "@/lib/utils";
 import { fetchRegistryProfile, type RegistryProfile } from "@/lib/registry-client";
 import { useMounted } from "@/lib/useMounted";
@@ -75,7 +75,10 @@ export default function SendPage() {
 
   const balanceByToken = Object.fromEntries((Object.keys(TOKENS) as TokenKey[]).map((key, i) => [key, balances?.[i]?.result as bigint | undefined])) as Record<TokenKey, bigint | undefined>;
   const isOnArc = activeChainId === arcTestnet.id;
-  const canSend = isConnected && isOnArc && !!amount && Number(amount) > 0 && status !== "sending" && status !== "confirming";
+  const requestedRaw = amount && Number(amount) > 0 ? decimalToUnits(amount, TOKENS[token].decimals) : BigInt(0);
+  const selectedBalance = balanceByToken[token];
+  const hasEnoughBalance = typeof selectedBalance === "bigint" ? selectedBalance >= requestedRaw : true;
+  const canSend = isConnected && isOnArc && !!amount && Number(amount) > 0 && hasEnoughBalance && status !== "sending" && status !== "confirming";
 
   const directoryEntries = useMemo(() => {
     if (!mounted) return [] as DirectoryEntry[];
@@ -121,6 +124,11 @@ export default function SendPage() {
     if (!isOnArc) {
       setStatus("error");
       setError("Switch to Arc Testnet before sending. Bridge is now a separate tab.");
+      return;
+    }
+    if (!hasEnoughBalance) {
+      setStatus("error");
+      setError(`Insufficient ${token} balance for this send.`);
       return;
     }
     setShowConfirm(true);
@@ -289,10 +297,13 @@ export default function SendPage() {
                 </span>
               </div>
               {balanceByToken[token] !== undefined && (
-                <div className="mt-3 flex items-center justify-between text-xs text-zinc-500">
+                <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-500">
                   <span>Available: {formatAmount(balanceByToken[token]!, TOKENS[token].decimals)} {token}</span>
                   <button type="button" onClick={() => setAmount(formatAmount(balanceByToken[token]!, TOKENS[token].decimals).replace(/,/g, ""))} className="font-semibold text-[var(--brand)]">Max</button>
                 </div>
+              )}
+              {!hasEnoughBalance && amount && Number(amount) > 0 && (
+                <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">Insufficient {token} balance.</p>
               )}
             </div>
 

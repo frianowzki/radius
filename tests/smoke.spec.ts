@@ -32,7 +32,8 @@ test.describe("Radius smoke", () => {
       expect(res?.ok()).toBeTruthy();
       // Hydration sanity: the bottom nav (in AppShell) should be present on every screen using AppShell.
       // Routes that don't use AppShell (none here) would skip this assertion.
-      await expect(page.locator("nav.bottom-nav, .phone-shell")).toBeVisible({ timeout: 10_000 });
+      await expect(page.locator(".phone-shell")).toBeVisible({ timeout: 10_000 });
+      await expect(page.locator("nav.bottom-nav")).toBeVisible({ timeout: 10_000 });
       const fatal = consoleErrors.filter((line) => /hydration|cannot read|undefined is not/i.test(line));
       expect(fatal, `fatal client errors on ${path}:\n${fatal.join("\n")}`).toHaveLength(0);
     });
