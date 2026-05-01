@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMounted } from "@/lib/useMounted";
 import {
   useAccount,
@@ -38,14 +38,14 @@ import {
   formatAddress,
   formatAmount,
   formatContactLabel,
-  getDirectoryEntries,
   getIdentityLabel,
   getIdentityProfile,
+  getLocalTransfers,
   resolveRecipientInput,
   saveLocalTransfer,
   upsertContactByAddress,
 } from "@/lib/utils";
-import type { DirectoryEntry } from "@/lib/utils";
+import type { LocalTransferRecord } from "@/lib/utils";
 
 type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
@@ -67,16 +67,49 @@ export default function BridgePage() {
   const [error, setError] = useState("");
   const mounted = useMounted();
   const senderLabel = mounted ? getIdentityLabel(getIdentityProfile()) : "Connected wallet";
-  const [directoryQuery, setDirectoryQuery] = useState("");
-  const [showDirectory, setShowDirectory] = useState(true);
   const [showSaveRecipient, setShowSaveRecipient] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [saveHandle, setSaveHandle] = useState("");
   const [saveAvatar, setSaveAvatar] = useState("");
+  const [destPickerOpen, setDestPickerOpen] = useState(false);
+  const [showTxDetails, setShowTxDetails] = useState(false);
+  const [recipientEditOpen, setRecipientEditOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  /* eslint-disable react-hooks/set-state-in-effect -- prefill recipient with user's own address for self-bridges */
+  useEffect(() => {
+    if (address && !recipient) setRecipient(address);
+  }, [address, recipient]);
+  /* eslint-enable react-hooks/set-state-in-effect */
   const bridgeRoutes = CROSSCHAIN_ROUTES.filter((route) => route.mode === "bridge");
-  const [selectedRoute, setSelectedRoute] = useState<CrosschainRoute["id"]>(
-    bridgeRoutes[0]?.id ?? CROSSCHAIN_ROUTES[0].id
-  );
+  type PartnerChain = "Ethereum_Sepolia" | "Base_Sepolia" | "Arbitrum_Sepolia";
+  type BridgeDirection = "out" | "in"; // out = Arc → partner, in = partner → Arc
+  const PARTNER_CHAINS: PartnerChain[] = ["Ethereum_Sepolia", "Base_Sepolia", "Arbitrum_Sepolia"];
+  const [partner, setPartner] = useState<PartnerChain>("Ethereum_Sepolia");
+  const [direction, setDirection] = useState<BridgeDirection>("out");
+  const [bridgeHistory, setBridgeHistory] = useState<LocalTransferRecord[]>([]);
+  const [bridgeHistoryNow, setBridgeHistoryNow] = useState(0);
+  /* eslint-disable react-hooks/set-state-in-effect -- hydrate localStorage-backed history into state */
+  useEffect(() => {
+    if (!mounted) return;
+    setBridgeHistoryNow(Date.now());
+    setBridgeHistory(
+      getLocalTransfers(address)
+        .filter((t) => t.routeLabel?.includes("→"))
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 20)
+    );
+  }, [mounted, address, status, historyOpen]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const selectedRoute = useMemo<CrosschainRoute["id"]>(() => {
+    const match = bridgeRoutes.find((r) =>
+      direction === "out"
+        ? r.fromChain === "Arc_Testnet" && r.toChain === partner
+        : r.fromChain === partner && r.toChain === "Arc_Testnet"
+    );
+    return (match?.id ?? bridgeRoutes[0]?.id) as CrosschainRoute["id"];
+  }, [bridgeRoutes, partner, direction]);
   const [bridgeEstimateText, setBridgeEstimateText] = useState("");
   const [bridgeDetails, setBridgeDetails] = useState<string[]>([]);
   const [liveEta, setLiveEta] = useState<{ total?: number; attestation?: number }>({});
@@ -143,21 +176,6 @@ export default function BridgePage() {
   const eurcBalance = balances?.[1]?.result as bigint | undefined;
   const currentBalance = token === "USDC" ? usdcBalance : eurcBalance;
   const currentDecimals = TOKENS[token].decimals;
-
-  const directoryEntries = useMemo(() => {
-    const query = directoryQuery.trim().toLowerCase();
-    if (!mounted) return [] as DirectoryEntry[];
-    return getDirectoryEntries(address).filter((entry) => {
-      if (!query) return entry.kind === "contact";
-      return [
-        entry.name.toLowerCase(),
-        entry.handle?.toLowerCase(),
-        entry.address?.toLowerCase(),
-        entry.note?.toLowerCase(),
-        entry.bio?.toLowerCase(),
-      ].some((value) => value?.includes(query));
-    });
-  }, [mounted, address, directoryQuery]);
 
   const resolvedRecipient = resolveRecipientInput(recipient);
   const resolvedRecipientAddress = resolvedRecipient.address;
@@ -392,12 +410,6 @@ export default function BridgePage() {
     }
   }
 
-  function handleSelectDirectoryEntry(entry: DirectoryEntry) {
-    if (entry.kind !== "contact" || !entry.address) return;
-    setRecipient(entry.handle ? `@${entry.handle}` : entry.address);
-    setShowDirectory(false);
-  }
-
   function handleSaveRecipient() {
     if (!resolvedRecipientAddress || !saveName.trim()) return;
     upsertContactByAddress(resolvedRecipientAddress, {
@@ -578,241 +590,266 @@ export default function BridgePage() {
             </div>
           </div>
         ) : (
-          <div>
-            <form onSubmit={handleSend} className="space-y-5">
-              <div className="glass-panel-strong rounded-[32px] p-8">
-                <div className="flex items-start gap-4">
-                  <div className="bridge-header-icon shrink-0">A</div>
-                  <div>
-                    <h2 className="text-3xl font-black tracking-tight text-glow">Crosschains Bridge</h2>
-                    <p className="mt-3 max-w-xs text-sm leading-6 text-zinc-400">Move USDC between supported testnets without mixing it into your simple Arc sends.</p>
-                  </div>
-                </div>
-              </div>
+          <div className="bridge-v2">
+            <header className="bridge-v2-header">
+              <h1>Bridge</h1>
+              <button
+                type="button"
+                aria-label="Bridge history"
+                className="bridge-v2-history"
+                onClick={() => setHistoryOpen(true)}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><polyline points="3 3 3 8 8 8"/><polyline points="12 7 12 12 15 14"/></svg>
+                {bridgeHistory.length > 0 && <span className="bridge-history-dot" aria-hidden="true">{bridgeHistory.length}</span>}
+              </button>
+            </header>
 
-              <div className="glass-panel rounded-[28px] p-5">
-                <label className="mb-3 block text-sm font-medium text-zinc-400">Token</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
+            <form onSubmit={handleSend} className="space-y-4">
+              <div className="bridge-token-row">
+                {(Object.keys(TOKENS) as TokenKey[]).map((key) => {
+                  const isActive = token === key;
+                  return (
                     <button
                       key={key}
                       type="button"
-                      onClick={() => {
-                        setToken(key);
-                        resetBridgeFeedback();
-                      }}
-                      className={`bridge-choice relative rounded-2xl px-4 py-4 text-sm font-medium transition-all ${
-                        token === key
-                          ? "border border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
-                          : "border border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
-                      }`}
+                      onClick={() => { setToken(key); resetBridgeFeedback(); }}
+                      className={`bridge-token-pill${isActive ? " active" : ""}`}
                     >
-                      {token === key && <span className="card-check">✓</span>}
-                      <div className="flex items-center gap-2 font-semibold"><TokenLogo symbol={key} size={26} />{TOKENS[key].symbol}</div>
-                      {currentBalance !== undefined && token === key && (
-                        <div className="mt-1 text-xs opacity-70">
-                          Balance: {formatAmount(currentBalance, currentDecimals)}
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="glass-panel rounded-[28px] p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <label className="text-sm font-medium text-zinc-400">Route</label>
-                  
-                </div>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {bridgeRoutes.map((route) => (
-                    <button
-                      key={route.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedRoute(route.id);
-                        resetBridgeFeedback();
-                      }}
-                      className={`bridge-choice relative rounded-2xl border px-4 py-3 text-left text-sm transition-all ${
-                        selectedRoute === route.id
-                          ? "border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
-                          : "border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
-                      }`}
-                    >
-                      {selectedRoute === route.id && <span className="card-check">✓</span>}
-                      <div className="font-medium">{route.label}</div>
-                      <div className="mt-1 text-xs text-zinc-500">{route.token} • {route.mode}</div>
-                    </button>
-                  ))}
-                </div>
-                {isBridgeRoute && (
-                  <div className="mt-4 space-y-3">
-                    <div className="grid gap-2 text-xs sm:grid-cols-2">
-                      <div className="bridge-info-card rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
-                        <p className="flex items-center gap-2 text-zinc-500"><TokenLogo symbol="USDC" size={22} />Source USDC</p>
-                        <p className="mt-1 break-all font-mono text-zinc-300">{sourceUsdcAddress}</p>
-                      </div>
-                      <div className="bridge-info-card rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
-                        <p className="flex items-center gap-2 text-zinc-500"><TokenLogo symbol="USDC" size={22} />Destination USDC</p>
-                        <p className="mt-1 break-all font-mono text-zinc-300">{destinationUsdcAddress}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="bridge-info-card mt-4 rounded-[22px] border border-white/8 bg-white/[0.03] p-4 text-xs leading-6">
-                  <p className="text-zinc-400">Source wallet network</p>
-                  <p className={`mt-1 font-medium ${isOnExpectedSourceChain ? "text-emerald-300" : "text-amber-300"}`}>
-                    {isOnExpectedSourceChain
-                      ? `Connected to ${expectedSourceChainLabel}`
-                      : `Need ${expectedSourceChainLabel}`}
-                  </p>
-                  {canSwitchSourceChain && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        resetBridgeFeedback();
-                        const switcher = wagmiConnected
-                          ? switchChainAsync({ chainId: expectedSourceChainId })
-                          : switchAuthChain(expectedSourceChainId);
-                        switcher.catch((err) => {
-                          setError(err instanceof Error ? err.message.slice(0, 160) : "Failed to switch network");
-                        });
-                      }}
-                      className="mt-3 rounded-2xl bg-white/10 px-3 py-2 text-xs font-medium text-zinc-100 transition-colors hover:bg-white/14"
-                    >
-                      Switch to {expectedSourceChainLabel}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="glass-panel rounded-[28px] p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <label className="text-sm font-medium text-zinc-400">Recipient</label>
-                  <span className="text-xs text-zinc-500"></span>
-                </div>
-
-                <div className="bridge-info-card mb-3 rounded-[24px] border border-white/8 bg-white/[0.03] p-3">
-                  <input
-                    type="text"
-                    placeholder="Search people or @username"
-                    value={directoryQuery}
-                    onChange={(e) => {
-                      setDirectoryQuery(e.target.value);
-                      setShowDirectory(true);
-                      resetBridgeFeedback();
-                    }}
-                    className="bridge-input mb-3 w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
-                  />
-
-                  {showDirectory && (
-                    <div className="space-y-1.5 max-h-52 overflow-y-auto">
-                      {directoryEntries.map((entry) => (
-                      <button
-                        key={`${entry.kind}-${entry.handle || entry.address || entry.name}`}
-                        type="button"
-                        onClick={() => handleSelectDirectoryEntry(entry)}
-                        disabled={entry.kind === "self" || !entry.address}
-                        className="bridge-directory-row flex w-full items-center justify-between rounded-2xl border border-white/6 bg-white/[0.04] px-4 py-3 text-left text-sm transition-colors hover:bg-white/[0.06] disabled:cursor-default disabled:opacity-60"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-zinc-200">{entry.name}</span>
-                            {entry.handle && (
-                              <span className="text-xs text-zinc-500">@{entry.handle}</span>
-                            )}
-                          </div>
-                          {(entry.note || entry.bio) && (
-                            <p className="mt-1 text-xs text-zinc-500">{entry.note || entry.bio}</p>
-                          )}
-                        </div>
-                        <span className="text-xs text-zinc-500">
-                          {entry.kind === "self" ? "You" : entry.address ? formatAddress(entry.address) : ""}
+                      <TokenLogo symbol={key} size={22} />
+                      <span>{TOKENS[key].symbol}</span>
+                      {isActive && (
+                        <span className="bridge-token-check" aria-hidden="true">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </span>
-                      </button>
-                    ))}
-                      {directoryEntries.length === 0 && (
-                        <div className="bridge-directory-row rounded-2xl border border-white/6 bg-white/[0.04] px-4 py-4 text-sm text-zinc-500">
-                          No matching people yet.
-                        </div>
                       )}
-                    </div>
-                  )}
-                </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {currentBalance !== undefined && (
+                <p className="bridge-balance-line">Balance: <span>{formatAmount(currentBalance, currentDecimals)} {token}</span></p>
+              )}
 
-                <input
-                  type="text"
-                  placeholder="0x... or @username"
-                  value={recipient}
-                  onChange={(e) => {
-                    setRecipient(e.target.value);
-                    resetBridgeFeedback();
-                  }}
-                  className="bridge-input w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 font-mono text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
-                />
-                {recipient && !validRecipient && (
-                  <p className="mt-2 text-xs text-red-400">Enter a valid address or a saved @username</p>
-                )}
-                {isBridgeRoute && token !== "USDC" && (
-                  <p className="mt-2 text-xs text-amber-400">Crosschain route currently supports USDC only.</p>
-                )}
+              <div className="bridge-network-card">
+                <p className="bridge-network-eyebrow">You send</p>
+                <div className="bridge-network-row">
+                  {direction === "out" ? (
+                    <div className="bridge-network-icon arc"><span>A</span></div>
+                  ) : (
+                    <div className="bridge-network-icon"><TokenLogo symbol="USDC" size={26} /></div>
+                  )}
+                  <div className="bridge-network-name">{expectedSourceChainLabel}</div>
+                  <span className="bridge-network-tag">Source</span>
+                </div>
+                <div className="bridge-network-meta">
+                  <span>Network</span>
+                  <span>{expectedSourceChainLabel}</span>
+                </div>
               </div>
 
-              <div className="glass-panel rounded-[28px] p-5">
-                <label className="mb-3 block text-sm font-medium text-zinc-400">Amount</label>
-                <div className="relative">
+              <button
+                type="button"
+                onClick={() => { setDirection((d) => (d === "out" ? "in" : "out")); resetBridgeFeedback(); }}
+                className="bridge-arrow-orb"
+                aria-label="Swap bridge direction"
+                title="Swap direction"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              </button>
+
+              <div className="bridge-network-card">
+                <p className="bridge-network-eyebrow">You receive</p>
+                <div className="bridge-network-row">
+                  {direction === "in" ? (
+                    <div className="bridge-network-icon arc"><span>A</span></div>
+                  ) : (
+                    <div className="bridge-network-icon"><TokenLogo symbol="USDC" size={26} /></div>
+                  )}
+                  <div className="bridge-network-name">{destinationChainLabel}</div>
+                  <span className="bridge-network-tag dest">Destination</span>
+                </div>
+                <div className="bridge-network-meta">
+                  <span>Network</span>
+                  <span>{destinationChainLabel}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDestPickerOpen(true)}
+                  className="bridge-choose-dest"
+                >
+                  <span>Choose destination</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+
+              <div className="bridge-amount-card">
+                <p className="bridge-network-eyebrow">Amount</p>
+                <div className="bridge-amount-input-row">
                   <input
                     type="number"
                     placeholder="0.00"
                     value={amount}
-                    onChange={(e) => {
-                      setAmount(e.target.value);
-                      resetBridgeFeedback();
-                    }}
+                    onChange={(e) => { setAmount(e.target.value); resetBridgeFeedback(); }}
                     min="0"
                     step="any"
-                    className="bridge-input w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-4 pr-16 text-lg font-medium text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                    inputMode="decimal"
+                    className="bridge-amount-input"
                   />
-                  <span className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 text-sm font-medium text-zinc-400">
-                    <TokenLogo symbol={token} size={22} />{token}
-                  </span>
+                  <div className="bridge-amount-token">
+                    <TokenLogo symbol={token} size={20} />
+                    <span>{token}</span>
+                  </div>
                 </div>
+                <p className="bridge-amount-usd">≈ ${amount && Number(amount) > 0 ? Number(amount).toFixed(2) : "0.00"}</p>
+
+                <div className="bridge-meta-row">
+                  <div className="bridge-meta-item">
+                    <span className="bridge-meta-label">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      Est. time
+                    </span>
+                    <span className="bridge-meta-value">{liveEta.total ? formatEtaSeconds(liveEta.total) : attestationEta}</span>
+                  </div>
+                  <div className="bridge-meta-divider" aria-hidden="true" />
+                  <div className="bridge-meta-item">
+                    <span className="bridge-meta-label">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      Fee
+                    </span>
+                    <span className="bridge-meta-value">~0.0001 {token}</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowTxDetails((v) => !v)}
+                  className="bridge-tx-details-toggle"
+                  aria-expanded={showTxDetails}
+                >
+                  <span>Transaction details</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: showTxDetails ? "rotate(90deg)" : "none", transition: "transform .2s ease" }}><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                {showTxDetails && (
+                  <div className="bridge-tx-details">
+                    <div className="bridge-tx-row">
+                      <span>Route</span>
+                      <span>{selectedRouteConfig.label}</span>
+                    </div>
+                    <div className="bridge-tx-row">
+                      <span>Path</span>
+                      <span>{expectedSourceChainLabel} → {destinationChainLabel}</span>
+                    </div>
+                    <div className="bridge-tx-row">
+                      <span>Recipient</span>
+                      <span className="font-mono text-[11px]">
+                        {validRecipient && resolvedRecipientAddress
+                          ? (resolvedRecipientAddress.toLowerCase() === address?.toLowerCase() ? "Self" : formatAddress(resolvedRecipientAddress))
+                          : "—"}
+                        <button type="button" onClick={() => setRecipientEditOpen((v) => !v)} className="bridge-tx-edit">Edit</button>
+                      </span>
+                    </div>
+                    <div className="bridge-tx-row"><span>Source USDC</span><span className="font-mono text-[11px]">{formatAddress(sourceUsdcAddress)}</span></div>
+                    <div className="bridge-tx-row"><span>Destination USDC</span><span className="font-mono text-[11px]">{formatAddress(destinationUsdcAddress)}</span></div>
+                    {recipientEditOpen && (
+                      <div className="mt-2">
+                        <input
+                          type="text"
+                          placeholder="0x... or @username"
+                          value={recipient}
+                          onChange={(e) => { setRecipient(e.target.value); resetBridgeFeedback(); }}
+                          className="bridge-recipient-input"
+                        />
+                        {recipient && !validRecipient && (
+                          <p className="mt-2 text-xs text-red-400">Enter a valid address or a saved @username</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-
-              {isBridgeRoute && (
-                <div className="glass-panel rounded-[28px] p-5">
-                  <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Bridge timeline</p>
-                  <div className="space-y-3">
-                    {bridgeStepDefs.map((step, index) => {
-                      const s = bridgeSteps[step.key];
-                      const done = s === "done";
-                      const active = s === "active";
-                      const errored = s === "error";
-                      return (
-                        <div key={step.key} className="flex items-center justify-between gap-3 text-sm">
-                          <div className="flex items-center gap-3">
-                            <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${errored ? "bg-red-500 text-white" : done ? "bg-emerald-500 text-white" : active ? "bg-indigo-500 text-white animate-pulse" : "bg-white/10 text-zinc-500"}`}>
-                              {errored ? "!" : done ? "✓" : index + 1}
-                            </span>
-                            <span className={errored ? "text-red-300" : done ? "text-emerald-400" : active ? "text-indigo-300" : "text-zinc-500"}>{step.label}</span>
-                          </div>
-                          <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">{done ? "done" : step.eta}</span>
-                        </div>
-                      );
-                    })}
+              {!isOnExpectedSourceChain && (() => {
+                const walletChainMeta = Object.values(CHAIN_METADATA).find((c) => c.chainId === activeChainId);
+                const walletIsPartner = walletChainMeta && PARTNER_CHAINS.some((p) => CHAIN_METADATA[p].chainId === activeChainId);
+                const walletIsArc = activeChainId === CHAIN_METADATA.Arc_Testnet.chainId;
+                // Reverse is only meaningful when the user's wallet is on a chain that's part of the bridge pair (Arc or current partner)
+                const canReverse = walletIsArc || walletIsPartner;
+                return (
+                  <div className="bridge-network-warning">
+                    <p>
+                      Need <strong>{expectedSourceChainLabel}</strong> in your wallet.
+                      {walletChainMeta && <span className="bridge-warn-sub"> Currently on {walletChainMeta.label}.</span>}
+                    </p>
+                    <div className="bridge-warn-actions">
+                      {canReverse && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // If wallet is on Arc → outbound; if wallet is on a partner → inbound to Arc (and lock that partner)
+                            if (walletIsArc) {
+                              setDirection("out");
+                            } else if (walletChainMeta) {
+                              const matched = PARTNER_CHAINS.find((p) => CHAIN_METADATA[p].chainId === activeChainId);
+                              if (matched) setPartner(matched);
+                              setDirection("in");
+                            }
+                            resetBridgeFeedback();
+                          }}
+                          className="bridge-warn-reverse"
+                        >
+                          ↻ Bridge from {walletChainMeta?.label ?? "current network"}
+                        </button>
+                      )}
+                      {canSwitchSourceChain && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            resetBridgeFeedback();
+                            const switcher = wagmiConnected
+                              ? switchChainAsync({ chainId: expectedSourceChainId })
+                              : switchAuthChain(expectedSourceChainId);
+                            switcher.catch((err) => {
+                              setError(err instanceof Error ? err.message.slice(0, 160) : "Failed to switch network");
+                            });
+                          }}
+                        >
+                          Switch network
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <p className="mt-4 text-xs text-zinc-500">
-                    {bridgeProgress || "Timeline updates once the bridge starts."}
-                    {liveEta.total ? ` · Total ${formatEtaSeconds(liveEta.total)}` : ""}
-                  </p>
+                );
+              })()}
+
+              {isBridgeRoute && token !== "USDC" && (
+                <p className="text-center text-xs text-amber-400">Crosschain route currently supports USDC only.</p>
+              )}
+
+              {(status === "sending" || status === "confirming") && isBridgeRoute && (
+                <div className="bridge-progress-card">
+                  {bridgeStepDefs.map((step, index) => {
+                    const s = bridgeSteps[step.key];
+                    const done = s === "done";
+                    const active = s === "active";
+                    const errored = s === "error";
+                    return (
+                      <div key={step.key} className="bridge-progress-row">
+                        <span className={`bridge-progress-dot ${errored ? "err" : done ? "done" : active ? "active" : ""}`}>
+                          {errored ? "!" : done ? "✓" : index + 1}
+                        </span>
+                        <span className={`bridge-progress-label ${errored ? "err" : done ? "done" : active ? "active" : ""}`}>{step.label}</span>
+                        <span className="bridge-progress-eta">{done ? "done" : step.eta}</span>
+                      </div>
+                    );
+                  })}
+                  {bridgeProgress && <p className="bridge-progress-note">{bridgeProgress}</p>}
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={!canSend}
-                className="primary-btn w-full rounded-2xl px-4 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                className="primary-btn bridge-cta w-full rounded-2xl px-4 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
               >
                 {status === "sending" || status === "confirming" ? (
                   <span className="flex items-center justify-center gap-2">
@@ -820,24 +857,121 @@ export default function BridgePage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    {status === "sending" ? "Sending..." : isBridgeRoute ? "Bridging..." : "Confirming..."}
+                    {status === "sending" ? "Preparing..." : isBridgeRoute ? "Bridging..." : "Confirming..."}
                   </span>
                 ) : (
-                  `Send ${token}`
+                  "Bridge Now"
                 )}
               </button>
-
-              {isBridgeRoute && bridgeProgress && status !== "error" && (
-                <p className="text-center text-sm text-zinc-400">
-                  {bridgeProgress}. CCTP attestation can take a few minutes, especially on testnets.
-                </p>
-              )}
 
               {status === "error" && error && (
                 <p className="text-center text-sm text-red-400">{error}</p>
               )}
             </form>
 
+            {destPickerOpen && (
+              <div className="bridge-sheet-backdrop" onClick={() => setDestPickerOpen(false)}>
+                <div className="bridge-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Choose destination">
+                  <div className="bridge-sheet-handle" aria-hidden="true" />
+                  <div className="bridge-sheet-header">
+                    <h3>Choose destination</h3>
+                    <button type="button" onClick={() => setDestPickerOpen(false)} aria-label="Close">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                  <div className="bridge-sheet-list">
+                    {PARTNER_CHAINS.map((chain) => {
+                      const meta = CHAIN_METADATA[chain];
+                      const active = partner === chain;
+                      return (
+                        <button
+                          key={chain}
+                          type="button"
+                          onClick={() => { setPartner(chain); resetBridgeFeedback(); }}
+                          className={`bridge-sheet-row${active ? " active" : ""}`}
+                        >
+                          <div className="bridge-sheet-row-icon"><TokenLogo symbol="USDC" size={28} /></div>
+                          <div className="bridge-sheet-row-text">
+                            <p className="bridge-sheet-row-name">{meta.label}</p>
+                            <p className="bridge-sheet-row-sub">USDC · Bridge</p>
+                          </div>
+                          <span className={`bridge-sheet-radio${active ? " on" : ""}`} aria-hidden="true">
+                            {active && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button type="button" onClick={() => setDestPickerOpen(false)} className="primary-btn bridge-sheet-cta w-full rounded-2xl px-4 py-4 font-semibold text-white">
+                    Select destination
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {historyOpen && (
+              <div className="bridge-sheet-backdrop" onClick={() => setHistoryOpen(false)}>
+                <div className="bridge-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Bridge history">
+                  <div className="bridge-sheet-handle" aria-hidden="true" />
+                  <div className="bridge-sheet-header">
+                    <h3>Bridge history</h3>
+                    <button type="button" onClick={() => setHistoryOpen(false)} aria-label="Close">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                  <div className="bridge-history-list">
+                    {bridgeHistory.length === 0 ? (
+                      <div className="bridge-history-empty">
+                        <div className="bridge-history-empty-orb" aria-hidden="true">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+                        </div>
+                        <p className="bridge-history-empty-title">No bridges yet</p>
+                        <p className="bridge-history-empty-sub">Your bridge transactions will appear here.</p>
+                      </div>
+                    ) : (
+                      bridgeHistory.map((tx) => {
+                        const isOngoing = !tx.txHash;
+                        const fromTo = (tx.routeLabel || "").split("→").map((s) => s.trim());
+                        const fromLabel = fromTo[0] || "";
+                        const toLabel = fromTo[1] || "";
+                        const meta = Object.values(CHAIN_METADATA).find((c) => c.label === fromLabel);
+                        const explorerBase = meta?.explorerUrl;
+                        const ageMs = bridgeHistoryNow - tx.createdAt;
+                        const ageMin = Math.max(1, Math.round(ageMs / 60000));
+                        const ageLabel = ageMs < 3600000 ? `${ageMin}m ago` : ageMs < 86400000 ? `${Math.round(ageMs / 3600000)}h ago` : `${Math.round(ageMs / 86400000)}d ago`;
+                        return (
+                          <a
+                            key={tx.id}
+                            href={tx.txHash && explorerBase ? `${explorerBase}/tx/${tx.txHash}` : undefined}
+                            target={tx.txHash ? "_blank" : undefined}
+                            rel="noopener noreferrer"
+                            className={`bridge-history-row${isOngoing ? " ongoing" : ""}`}
+                          >
+                            <div className="bridge-history-row-icon">
+                              <TokenLogo symbol={tx.token} size={28} />
+                            </div>
+                            <div className="bridge-history-row-text">
+                              <p className="bridge-history-row-name">
+                                {formatAmount(BigInt(tx.value || "0"), TOKENS[tx.token].decimals)} {tx.token}
+                              </p>
+                              <p className="bridge-history-row-sub">
+                                {fromLabel} <span className="bridge-history-arrow">→</span> {toLabel}
+                              </p>
+                            </div>
+                            <div className="bridge-history-row-side">
+                              <span className={`bridge-history-status ${isOngoing ? "ongoing" : "done"}`}>
+                                {isOngoing ? "Pending" : "Done"}
+                              </span>
+                              <span className="bridge-history-age">{ageLabel}</span>
+                            </div>
+                          </a>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

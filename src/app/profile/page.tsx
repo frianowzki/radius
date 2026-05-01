@@ -32,6 +32,7 @@ export default function ProfilePage() {
   /* eslint-enable react-hooks/set-state-in-effect */
   const [saved, setSaved] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
+  const [showQr, setShowQr] = useState(true);
   const [registryStatus, setRegistryStatus] = useState("");
 
   const mounted = useMounted();
@@ -150,15 +151,31 @@ export default function ProfilePage() {
           <section className="profile-qr-card">
             <div className="profile-qr-header">
               <h2>My pay QR</h2>
-              <span>{profile.handle ? `@${profile.handle}` : "address-based"}</span>
+              <button
+                type="button"
+                onClick={() => setShowQr((v) => !v)}
+                className="profile-qr-toggle"
+                aria-label={showQr ? "Hide QR" : "Show QR"}
+                title={showQr ? "Hide" : "Show"}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  {showQr ? (
+                    <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></>
+                  ) : (
+                    <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
+                  )}
+                </svg>
+              </button>
             </div>
-            <div className="profile-qr-frame">
-              {payLink ? (
-                <QRCodeSVG value={payLink} size={224} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
-              ) : (
-                <div className="profile-qr-placeholder" />
-              )}
-            </div>
+            {showQr && (
+              <div className="profile-qr-frame">
+                {payLink ? (
+                  <QRCodeSVG value={payLink} size={224} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
+                ) : (
+                  <div className="profile-qr-placeholder" />
+                )}
+              </div>
+            )}
           </section>
         )}
 
