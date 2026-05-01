@@ -1,14 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-
-const PaymentRequestNotifier = dynamic(
-  () => import("@/components/PaymentRequestNotifier").then((m) => m.PaymentRequestNotifier),
-  { ssr: false }
-);
+import { PaymentRequestNotifier } from "@/components/PaymentRequestNotifier";
 
 type NavIconName = "home" | "request" | "history" | "profile";
 
@@ -78,20 +72,10 @@ function NavIcon({ name }: { name: NavIconName }) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [notifierReady, setNotifierReady] = useState(false);
-
-  useEffect(() => {
-    const run = () => setNotifierReady(true);
-    const idle = window.requestIdleCallback?.(run, { timeout: 1600 });
-    if (!idle) window.setTimeout(run, 500);
-    return () => {
-      if (idle) window.cancelIdleCallback?.(idle);
-    };
-  }, []);
 
   return (
     <div className="phone-shell">
-      {notifierReady && <PaymentRequestNotifier />}
+      <PaymentRequestNotifier />
       <main>{children}</main>
       <nav className="bottom-nav" aria-label="Primary navigation">
         <div className="bottom-nav-grid">

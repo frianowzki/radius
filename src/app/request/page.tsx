@@ -123,7 +123,7 @@ export default function RequestPage() {
     <AppShell>
       <div className="screen-pad">
         <header className="mb-7 flex items-center justify-between">
-          <Link href="/" aria-label="Back" className="back-btn">
+          <Link href="/" aria-label="Back" className="grid h-9 w-9 place-items-center rounded-full bg-white/40 text-[var(--brand)] backdrop-blur transition-colors hover:bg-white/60">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </Link>
           <h1 className="text-sm font-bold">Request Payment</h1>
@@ -146,20 +146,20 @@ export default function RequestPage() {
               <div className="request-amount-row mt-3 flex items-center justify-center gap-3">
                 <span className="request-currency-symbol text-4xl font-semibold tracking-[-0.06em]">$</span>
                 <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className="request-amount-input w-40 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none" />
-                <button type="button" onClick={() => setShowTokenPicker(true)} className="request-token-pill flex items-center gap-2 rounded-full bg-[var(--card)] px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} />{token}</button>
+                <button type="button" onClick={() => setShowTokenPicker(true)} className="request-token-pill flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} />{token}</button>
               </div>
-              <p className="request-estimate mt-2 text-xs text-[var(--muted)]">≈ {amount || "0.00"} {token}</p>
+              <p className="request-estimate mt-2 text-xs text-[#b2adba]">≈ {amount || "0.00"} {token}</p>
 
               <div className="request-main-card soft-card mx-auto mt-7 rounded-[28px] p-5">
-                {!qrValue && <p className="mb-3 text-xs text-[var(--muted)]">Enter an amount to generate QR.</p>}
-                <div ref={qrWrapRef} className="request-qr-frame relative mx-auto w-fit rounded-[24px] bg-[var(--card)] p-4 shadow-[0_14px_38px_rgba(143,124,255,.16)]">
-                  {qrValue ? <QRCodeSVG value={qrValue} size={218} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin /> : <div className="h-[218px] w-[218px] rounded-2xl bg-[var(--background)]" />}
-                  {qrValue && <div className="radius-qr-logo absolute left-1/2 top-1/2 z-10 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-2xl bg-[var(--card)] text-2xl font-black text-[var(--brand)] shadow-lg">R</div>}
+                {!qrValue && <p className="mb-3 text-xs text-[#9a94a3]">Enter an amount to generate QR.</p>}
+                <div ref={qrWrapRef} className="request-qr-frame relative mx-auto w-fit rounded-[24px] bg-white p-4 shadow-[0_14px_38px_rgba(143,124,255,.16)]">
+                  {qrValue ? <QRCodeSVG value={qrValue} size={218} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin /> : <div className="h-[218px] w-[218px] rounded-2xl bg-[#f7f5fb]" />}
+                  {qrValue && <div className="radius-qr-logo absolute left-1/2 top-1/2 z-10 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-2xl bg-white text-2xl font-black text-[#7a70d8] shadow-lg">R</div>}
                 </div>
-                <p className="mt-3 text-xs text-[var(--muted)]">{qrValue ? "Scan to pay" : "QR appears here after amount is set"}</p>
+                <p className="mt-3 text-xs text-[#9a94a3]">{qrValue ? "Scan to pay" : "QR appears here after amount is set"}</p>
 
-                <label className="mt-5 block text-left text-xs font-semibold text-[var(--muted)]">Payment link</label>
-                <div className="request-link-box mt-2 flex items-center gap-2 rounded-2xl bg-[var(--background)] px-3 py-3 text-left text-xs text-[var(--foreground)]">
+                <label className="mt-5 block text-left text-xs font-semibold text-[#8b8795]">Payment link</label>
+                <div className="request-link-box mt-2 flex items-center gap-2 rounded-2xl bg-[#f7f5fb] px-3 py-3 text-left text-xs text-[#686272]">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--brand)]"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                   <span className="min-w-0 flex-1 truncate">{qrValue || "Link will appear here"}</span>
                   <button type="button" onClick={copyLink} disabled={!qrValue} aria-label="Copy link" className="shrink-0 text-[var(--brand)] disabled:opacity-40">
@@ -169,28 +169,28 @@ export default function RequestPage() {
 
                 <input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="Note" className="request-note-input radius-input mt-3 text-sm" />
 
-                <div className="mt-3 flex items-center justify-between rounded-2xl bg-[var(--card)]/55 px-3 py-2 text-left">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-[var(--foreground)]">
+                <div className="mt-3 flex items-center justify-between rounded-2xl bg-white/55 px-3 py-2 text-left">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-[#595465]">
                     <input type="checkbox" checked={splitMode} onChange={(e) => { setSplitMode(e.target.checked); setPaymentUrl(""); }} />
                     Split this bill
                   </label>
                   {splitMode && (
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="text-[var(--muted)]">Among</span>
+                      <span className="text-[#8b8795]">Among</span>
                       <input
                         type="number"
                         min={2}
                         max={50}
                         value={participants}
                         onChange={(e) => { setParticipants(e.target.value); setPaymentUrl(""); }}
-                        className="w-14 rounded-lg bg-[var(--background)] px-2 py-1 text-center text-xs"
+                        className="w-14 rounded-lg bg-white px-2 py-1 text-center text-xs"
                       />
-                      <span className="text-[var(--muted)]">people</span>
+                      <span className="text-[#8b8795]">people</span>
                     </div>
                   )}
                 </div>
                 {splitMode && amount && Number(amount) > 0 && (
-                  <p className="mt-2 text-left text-[11px] text-[var(--muted)]">
+                  <p className="mt-2 text-left text-[11px] text-[#8b8795]">
                     Each person pays ≈ {formatAmount(decimalToUnits(amount, TOKENS[token].decimals) / BigInt(Math.max(2, Math.floor(Number(participants) || 2))), TOKENS[token].decimals)} {token}
                   </p>
                 )}
@@ -220,12 +220,12 @@ export default function RequestPage() {
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold">Request status</h3>
-                  <p className="mt-1 text-xs text-[var(--muted)]">Pending links turn paid when the matching balance lands.</p>
+                  <p className="mt-1 text-xs text-[#9a94a3]">Pending links turn paid when the matching balance lands.</p>
                 </div>
                 <button type="button" onClick={refreshRequests} className="ghost-btn px-3 py-2 text-xs">Refresh</button>
               </div>
               {requests.length === 0 ? (
-                <p className="rounded-2xl bg-[var(--card)]/50 p-4 text-sm text-[var(--muted)]">No requests created yet.</p>
+                <p className="rounded-2xl bg-white/50 p-4 text-sm text-[#8b8795]">No requests created yet.</p>
               ) : (
                 <div className="space-y-3">
                   {requests.map((request) => {
@@ -235,13 +235,13 @@ export default function RequestPage() {
                     const paidUnits = split ? BigInt(split.paidUnits) : (request.status === "paid" ? targetUnits : BigInt(0));
                     const pct = targetUnits > BigInt(0) ? Math.min(100, Number((paidUnits * BigInt(1000)) / targetUnits) / 10) : 0;
                     return (
-                      <div key={request.id} className="rounded-2xl bg-[var(--card)]/55 p-3">
+                      <div key={request.id} className="rounded-2xl bg-white/55 p-3">
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
                             <TokenLogo symbol={request.token} size={30} />
                             <div>
                               <p className="text-sm font-bold">{request.amount} {request.token}{split ? ` · split ${split.participants ?? ""}` : ""}</p>
-                              <p className="text-xs text-[var(--muted)]">{request.memo || "Payment request"}</p>
+                              <p className="text-xs text-[#8b8795]">{request.memo || "Payment request"}</p>
                             </div>
                           </div>
                           <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${request.status === "paid" ? "bg-emerald-500/12 text-emerald-600" : request.status === "expired" ? "bg-zinc-500/10 text-zinc-500" : "bg-amber-500/12 text-amber-600"}`}>
@@ -250,10 +250,10 @@ export default function RequestPage() {
                         </div>
                         {split && (
                           <div className="mt-3">
-                            <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--background)]">
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-[#ece9f3]">
                               <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
                             </div>
-                            <p className="mt-1 text-[11px] text-[var(--muted)]">
+                            <p className="mt-1 text-[11px] text-[#8b8795]">
                               {formatAmount(paidUnits, decimals)} / {formatAmount(targetUnits, decimals)} {request.token} ({pct.toFixed(0)}%)
                             </p>
                           </div>

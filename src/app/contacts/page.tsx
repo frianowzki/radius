@@ -108,22 +108,8 @@ export default function ContactsPage() {
           </div>
           <div className="flex items-center gap-2">
             {owner && (
-              <button
-                type="button"
-                onClick={syncToCloud}
-                className="contacts-sync-btn"
-                aria-label={syncStatus === "syncing" ? "Syncing" : syncStatus === "synced" ? "Synced" : syncStatus === "error" ? "Sync failed" : "Sync"}
-                title={syncStatus === "syncing" ? "Syncing…" : syncStatus === "synced" ? "Synced" : syncStatus === "error" ? "Sync failed" : "Sync"}
-              >
-                {syncStatus === "syncing" ? (
-                  <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                ) : syncStatus === "synced" ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                ) : syncStatus === "error" ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
-                )}
+              <button type="button" onClick={syncToCloud} className="rounded-full bg-white/60 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
+                {syncStatus === "syncing" ? "Syncing…" : syncStatus === "synced" ? "Synced" : syncStatus === "error" ? "Sync failed" : "Sync"}
               </button>
             )}
             <button type="button" onClick={() => setShowForm((v) => !v)} className="theme-toggle icon-only"><span className="theme-toggle-dot">＋</span></button>

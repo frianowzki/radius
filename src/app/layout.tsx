@@ -3,8 +3,9 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ClientRuntime } from "@/components/ClientRuntime";
+import { GlobalErrorListeners } from "@/components/GlobalErrorListeners";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -61,7 +62,7 @@ export default function RootLayout({
         {/* Anti-FOUC: apply saved theme before first paint */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('radius-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.setAttribute('data-theme','dark');document.documentElement.style.colorScheme='dark'}else{document.documentElement.setAttribute('data-theme','light');document.documentElement.style.colorScheme='light'}}catch(e){}}())`,
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.setAttribute('data-theme','dark');document.documentElement.style.colorScheme='dark'}else{document.documentElement.setAttribute('data-theme','light');document.documentElement.style.colorScheme='light'}}catch(e){}}())`,
           }}
         />
       </head>
@@ -69,7 +70,8 @@ export default function RootLayout({
         <ErrorBoundary>
           <Providers>{children}</Providers>
         </ErrorBoundary>
-        <ClientRuntime />
+        <GlobalErrorListeners />
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );

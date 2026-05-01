@@ -177,13 +177,13 @@ export default function HistoryPage() {
   return (
     <AppShell>
       <div className="history-reference-screen">
-        <section className="history-reference-hero" style={{ paddingTop: '8px' }}>
+        <section className="history-reference-hero">
           <div>
             <p>History</p>
             <h1>Every transfer should read like a receipt feed.</h1>
             <span>Not charts, not noise, just clear sent and received payment moments across your Arc stablecoin activity.</span>
           </div>
-          <div className="history-receipt-orb" aria-hidden="true" style={{ marginLeft: '24px' }}>
+          <div className="history-receipt-orb" aria-hidden="true">
             <span>▤</span>
           </div>
         </section>
@@ -226,7 +226,7 @@ export default function HistoryPage() {
                       <h2>{isSent ? "Sent" : "Received"} <span>{tx.token}</span></h2>
                       {tx.source === "local" && <em>Saved</em>}
                     </div>
-                    <p className="history-from">{isSent ? "To" : "From"} <a href={`https://testnet.arcscan.app/address/${counterparty}`} target="_blank" rel="noopener noreferrer" className="history-explorer-link">{formatContactLabel(counterparty)}</a></p>
+                    <p className="history-from">{isSent ? "To" : "From"} {formatContactLabel(counterparty)}</p>
                     <div className="history-counterparty-chip">
                       <ProfileChip contact={matchedContact} address={counterparty} fallbackLabel={formatContactLabel(counterparty)} />
                     </div>
