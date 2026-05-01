@@ -145,7 +145,7 @@ export default function RequestPage() {
               
               <div className="request-amount-row mt-3 flex items-center justify-center gap-3">
                 <span className="request-currency-symbol text-4xl font-semibold tracking-[-0.06em]">$</span>
-                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className="request-amount-input w-40 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none" />
+                <input value={amount} onChange={(e) => { setAmount(e.target.value); setPaymentUrl(""); }} inputMode="decimal" className="request-amount-input w-40 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none" />
                 <button type="button" onClick={() => setShowTokenPicker(true)} className="request-token-pill flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} />{token}</button>
               </div>
               <p className="request-estimate mt-2 text-xs text-[#b2adba]">≈ {amount || "0.00"} {token}</p>
@@ -167,7 +167,7 @@ export default function RequestPage() {
                   </button>
                 </div>
 
-                <input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="Note" className="request-note-input radius-input mt-3 text-sm" />
+                <input value={memo} onChange={(e) => { setMemo(e.target.value); setPaymentUrl(""); }} placeholder="Note" className="request-note-input radius-input mt-3 text-sm" />
 
                 <div className="mt-3 flex items-center justify-between rounded-2xl bg-white/55 px-3 py-2 text-left">
                   <label className="flex items-center gap-2 text-xs font-semibold text-[#595465]">
@@ -195,12 +195,16 @@ export default function RequestPage() {
                   </p>
                 )}
 
+                <button type="submit" disabled={!address || !amount || Number(amount) <= 0} className="primary-btn mt-4 w-full disabled:opacity-40">
+                  {paymentUrl ? "Refresh request link" : "Create request link"}
+                </button>
+
                 <div className="request-action-grid mt-4 grid grid-cols-3 gap-3">
-                  <button type="button" aria-label="Share link" onClick={shareLink} className="ghost-btn flex items-center justify-center gap-2 text-sm">
+                  <button type="button" aria-label="Share link" onClick={shareLink} disabled={!qrValue} className="ghost-btn flex items-center justify-center gap-2 text-sm disabled:opacity-40">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                     Share
                   </button>
-                  <button type="button" aria-label="Copy link" onClick={copyLink} className="ghost-btn flex items-center justify-center gap-2 text-sm">
+                  <button type="button" aria-label="Copy link" onClick={copyLink} disabled={!qrValue} className="ghost-btn flex items-center justify-center gap-2 text-sm disabled:opacity-40">
                     {copied ? (
                       <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied</>
                     ) : (
@@ -278,7 +282,7 @@ export default function RequestPage() {
                   </div>
                   <div className="space-y-3">
                     {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
-                      <button key={key} type="button" onClick={() => { setToken(key); setShowTokenPicker(false); }} className={`frosted-choice w-full ${token === key ? "active" : ""}`}>
+                      <button key={key} type="button" onClick={() => { setToken(key); setPaymentUrl(""); setShowTokenPicker(false); }} className={`frosted-choice w-full ${token === key ? "active" : ""}`}>
                         <div className="flex items-center gap-3"><TokenLogo symbol={key} size={34} /><div><p className="font-bold">{key}</p><p className="text-xs opacity-70">{TOKENS[key].name}</p></div></div>
                       </button>
                     ))}

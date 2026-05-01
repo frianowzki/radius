@@ -264,6 +264,9 @@ export default function SendPage() {
               <div className="mb-3 flex items-center justify-between"><label className="text-sm font-medium text-zinc-400">Recipient</label><span className="text-xs text-zinc-500">Address or username</span></div>
               <input className="radius-input font-mono text-sm" value={recipient} onChange={(e) => { setRecipient(e.target.value); setDirectoryQuery(e.target.value); setShowDirectory(true); }} placeholder="0x... or username" />
               <button type="button" onClick={() => { setDirectoryQuery(""); setShowDirectory(true); }} className="ghost-btn mt-3 w-full text-xs">Choose from contacts</button>
+              {showDirectory && directoryEntries.length === 0 && !recipient && (
+                <p className="mt-3 rounded-2xl bg-white/55 p-3 text-xs text-zinc-500">No saved contacts yet. Paste an address or username to send.</p>
+              )}
               {showDirectory && directoryEntries.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {directoryEntries.slice(0, 4).map((entry) => entry.address && <button key={`${entry.kind}-${entry.address}`} type="button" onClick={() => handleSelectDirectoryEntry(entry)} className="w-full rounded-2xl bg-white/60 p-3 text-left text-sm"><ProfileChip contact={entry.kind === "contact" ? { id: entry.address, name: entry.name, address: entry.address, handle: entry.handle, avatar: entry.avatar, note: entry.note } : undefined} address={entry.address} /></button>)}
@@ -279,7 +282,7 @@ export default function SendPage() {
             <div className="glass-panel rounded-[28px] p-5">
               <label className="mb-3 block text-sm font-medium text-zinc-400">Amount</label>
               <div className="flex items-center gap-3">
-                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="flex-1 bg-transparent text-5xl font-semibold tracking-tight outline-none" />
+                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="min-w-0 flex-1 bg-transparent text-5xl font-semibold tracking-tight outline-none" />
                 <span className="inline-flex items-center gap-2 rounded-full border border-[var(--brand)]/20 bg-[var(--brand)]/8 px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
                   <TokenLogo symbol={token} size={20} />
                   {token}
@@ -297,7 +300,7 @@ export default function SendPage() {
               <div className="glass-panel rounded-[28px] p-5 text-sm">
                 <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Review before sending</p>
                 <div className="space-y-3">
-                  <div className="flex justify-between gap-4"><span className="text-zinc-500">Recipient</span><span className="text-right font-medium">{recipientLabel}</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-zinc-500">Recipient</span><span className="min-w-0 text-right font-medium break-words">{recipientLabel}</span></div>
                   <div className="flex justify-between gap-4"><span className="text-zinc-500">Amount</span><span className="font-medium">{amount} {token}</span></div>
                   <div className="flex justify-between gap-4"><span className="text-zinc-500">Network</span><span className="font-medium text-emerald-500">Arc Testnet</span></div>
                   <div className="flex justify-between gap-4"><span className="text-zinc-500">Network fee</span><span className="font-medium">Wallet estimate</span></div>
@@ -318,7 +321,7 @@ export default function SendPage() {
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand)]">Confirm send</p>
               <h3 className="mt-2 text-2xl font-bold">Send {amount} {token}?</h3>
               <div className="mt-5 space-y-3 rounded-2xl bg-white/55 p-4 text-sm">
-                <div className="flex justify-between gap-4"><span className="text-[#8b8795]">To</span><span className="text-right font-semibold">{recipientLabel}</span></div>
+                <div className="flex justify-between gap-4"><span className="text-[#8b8795]">To</span><span className="min-w-0 text-right font-semibold break-words">{recipientLabel}</span></div>
                 <div className="flex justify-between gap-4"><span className="text-[#8b8795]">Network</span><span className="font-semibold">Arc Testnet</span></div>
                 <div className="flex justify-between gap-4"><span className="text-[#8b8795]">Fee</span><span className="font-semibold">Shown in wallet</span></div>
               </div>

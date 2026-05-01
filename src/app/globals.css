@@ -2498,3 +2498,115 @@ html[data-theme="dark"] .profile-qr-frame {
   background: #fff;
   box-shadow: 0 24px 60px rgba(0,0,0,.28), 0 0 0 1px rgba(255,255,255,.04);
 }
+
+/* Mobile portrait fit pass — preserve the current visual design, only tighten layout. */
+@media (max-width: 430px) {
+  .screen-pad {
+    padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .bottom-nav {
+    width: min(calc(100% - 18px), 392px);
+    padding: 7px 8px;
+    border-radius: 24px;
+  }
+
+  .bottom-nav-grid {
+    gap: 2px;
+  }
+
+  .nav-item {
+    min-width: 0;
+  }
+
+  .nav-label {
+    max-width: 58px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .soft-card,
+  .glass-panel,
+  .glass-panel-strong,
+  .mobile-panel {
+    overflow-wrap: anywhere;
+  }
+
+  .request-amount-row {
+    flex-wrap: wrap;
+  }
+
+  .request-amount-input {
+    width: min(10rem, 42vw) !important;
+  }
+
+  .request-main-card {
+    padding: 16px !important;
+  }
+
+  .request-qr-frame {
+    max-width: 100%;
+    padding: 12px !important;
+  }
+
+  .request-qr-frame svg,
+  .request-qr-frame > div:not(.radius-qr-logo) {
+    width: min(218px, calc(100vw - 96px)) !important;
+    height: min(218px, calc(100vw - 96px)) !important;
+  }
+
+  .request-action-grid {
+    gap: 8px !important;
+  }
+
+  .request-action-grid .ghost-btn {
+    min-width: 0;
+    padding-inline: 8px !important;
+    font-size: 12px !important;
+  }
+
+  .profile-qr-card {
+    padding: 16px !important;
+  }
+
+  .profile-qr-frame {
+    max-width: 100%;
+    padding: 14px !important;
+  }
+
+  .profile-qr-frame svg,
+  .profile-qr-placeholder {
+    width: min(224px, calc(100vw - 100px)) !important;
+    height: min(224px, calc(100vw - 100px)) !important;
+  }
+}
+
+@media (max-width: 370px) {
+  .screen-pad {
+    padding-inline: 12px;
+  }
+
+  .nav-label {
+    font-size: 9px !important;
+    max-width: 48px;
+  }
+
+  .nav-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .nav-orb {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .request-action-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .request-action-grid .ghost-btn:first-child {
+    grid-column: span 2;
+  }
+}
