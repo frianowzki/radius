@@ -12,7 +12,7 @@ import { installCircleFetchProxy } from "@/lib/install-circle-fetch-proxy";
 
 function WalletProviders({ children }: { children: ReactNode }) {
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={config} reconnectOnMount={false}>
       <RainbowKitProvider
         theme={darkTheme({
           accentColor: "#183B5C",
@@ -35,6 +35,7 @@ export function Providers({ children }: { children: ReactNode }) {
           queries: {
             staleTime: 30_000,
             refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
           },
         },
       })

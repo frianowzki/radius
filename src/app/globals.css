@@ -366,7 +366,8 @@ button, input, textarea, select { font: inherit; }
   background: rgba(255,255,255,.58);
   border-color: rgba(255,255,255,.72);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 18px 46px rgba(55,46,88,.16);
-  backdrop-filter: blur(24px) saturate(1.25);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 html[data-theme="dark"] {
   --background: #07080f;
@@ -1077,7 +1078,8 @@ html[data-theme="dark"] .pay-success-link {
     inset 0 -1px 0 rgba(30,58,138,.04),
     0 18px 34px rgba(30,58,138,.10),
     0 4px 12px rgba(59,130,246,.08);
-  backdrop-filter: blur(26px) saturate(1.22);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .bottom-nav-grid {
   display: grid;
@@ -2753,5 +2755,114 @@ html[data-theme="dark"] {
 
   .pay-amount {
     font-size: clamp(34px, 10vw, 42px) !important;
+  }
+}
+
+/* No-layout performance pass: reduce expensive paint/compositing while keeping geometry intact. */
+html {
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+}
+
+.phone-shell,
+.bottom-nav,
+.primary-btn,
+.ghost-btn,
+.radius-input,
+.soft-card,
+.glass-panel,
+.glass-panel-strong,
+.mobile-panel,
+.flow-card,
+.payment-sheet,
+.review-card,
+.send-hero-card,
+.pay-hero-card {
+  transform: translateZ(0);
+}
+
+.screen-pad > *,
+.dashboard-reference-screen > *,
+.history-reference-screen > *,
+.profile-reference-screen > * {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 360px;
+}
+
+@media (max-width: 767px) {
+  body {
+    background-attachment: scroll;
+  }
+
+  body::before {
+    animation: none !important;
+    filter: blur(28px) saturate(1.04) !important;
+    opacity: .58;
+  }
+
+  body::after {
+    opacity: .12;
+  }
+
+  .phone-shell,
+  .soft-card,
+  .glass-panel,
+  .glass-panel-strong,
+  .mobile-panel,
+  .bottom-nav,
+  .flow-card,
+  .payment-sheet,
+  .review-card,
+  .send-hero-card,
+  .pay-hero-card,
+  .profile-qr-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .primary-btn::after {
+    display: none !important;
+  }
+
+  .primary-btn,
+  .bottom-nav,
+  .soft-card,
+  .glass-panel,
+  .glass-panel-strong,
+  .mobile-panel,
+  .flow-card,
+  .payment-sheet,
+  .review-card,
+  .send-hero-card,
+  .pay-hero-card {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.78), 0 10px 24px rgba(30,58,138,.08) !important;
+  }
+
+  .gradient-card,
+  .dashboard-balance-card {
+    box-shadow: 0 14px 30px rgba(37,99,235,.18) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (max-width: 767px) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton::after,
+  .status-dot,
+  .dashboard-wave {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html body .phone-shell nav.bottom-nav,
+  html body .phone-shell .bottom-nav,
+  html body .bottom-nav {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
