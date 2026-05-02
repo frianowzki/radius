@@ -2018,7 +2018,8 @@ html[data-theme="dark"] .profile-upload-edit { color: #7dd3fc; border-color: rgb
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-.dashboard-balance-actions a {
+.dashboard-balance-actions a,
+.dashboard-balance-actions button {
   min-height: 40px;
   display: inline-flex;
   align-items: center;
@@ -2031,6 +2032,7 @@ html[data-theme="dark"] .profile-upload-edit { color: #7dd3fc; border-color: rgb
   font-weight: 780;
   box-shadow: 0 8px 18px rgba(30,27,75,.12);
 }
+.dashboard-balance-actions button { border: 0; cursor: pointer; }
 .dashboard-actions-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -2160,7 +2162,8 @@ html[data-theme="dark"] .dashboard-theme-toggle { background: rgba(255,255,255,.
 html[data-theme="dark"] .dashboard-balance-card {
   box-shadow: 0 20px 44px rgba(0,0,0,.32), 0 0 36px rgba(59,130,246,.12), inset 0 1px 0 rgba(255,255,255,.10);
 }
-html[data-theme="dark"] .dashboard-balance-actions a {
+html[data-theme="dark"] .dashboard-balance-actions a,
+html[data-theme="dark"] .dashboard-balance-actions button {
   background: rgba(15,23,42,.58);
   color: #f8fafc;
   border: 1px solid rgba(255,255,255,.07);

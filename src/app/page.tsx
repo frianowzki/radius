@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { QRCodeSVG } from "qrcode.react";
 import { useAccount, useReadContracts } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRadiusAuth } from "@/lib/web3auth";
@@ -95,6 +96,8 @@ export default function DashboardPage() {
   const isConnected = wagmiConnected || authenticated;
   const [hideBalance, setHideBalance] = useState(false);
   const [showAssets, setShowAssets] = useState(false);
+  const [showReceiveAddress, setShowReceiveAddress] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState(false);
   const [identity, setIdentity] = useState<{ displayName?: string; authMode?: string }>({ displayName: "Arc user", authMode: "wallet" });
   const [contacts, setContacts] = useState<{ id: string; name: string; handle?: string; address: string; avatar?: string }[]>([]);
   const [recentTransfers, setRecentTransfers] = useState<ReturnType<typeof getLocalTransfers>>([]);
@@ -168,6 +171,13 @@ export default function DashboardPage() {
   useEffect(() => {
     localStorage.setItem("radius-hide-balance", String(hideBalance));
   }, [hideBalance]);
+
+  async function copyReceiveAddress() {
+    if (!address) return;
+    await navigator.clipboard.writeText(address);
+    setCopiedAddress(true);
+    window.setTimeout(() => setCopiedAddress(false), 1500);
+  }
 
   useEffect(() => {
     if (!address || !balanceSnapshot) return;
@@ -245,10 +255,10 @@ export default function DashboardPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3.8s6 6.4 6 10.5a6 6 0 0 1-12 0C6 10.2 12 3.8 12 3.8Z"/><path d="M9.5 15.2a2.8 2.8 0 0 0 2.8 2.8"/></svg>
               Faucets
             </a>
-            <Link href="/request">
+            <button type="button" onClick={() => setShowReceiveAddress(true)}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
               Receive
-            </Link>
+            </button>
           </div>
         </section>
 
@@ -315,6 +325,30 @@ export default function DashboardPage() {
             ))}
           </div>
         </section>
+
+        {showReceiveAddress && address && (
+          <div className="fixed inset-0 z-[80] grid place-items-end bg-slate-950/35 p-4" onClick={() => setShowReceiveAddress(false)}>
+            <div className="assets-modal-card w-full max-w-sm rounded-[30px] p-5 text-center" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-4 flex items-center justify-between text-left">
+                <div>
+                  <h3 className="text-lg font-bold">Receive to Address</h3>
+                  <p className="mt-1 text-xs text-[#8b8795]">Arc Testnet wallet address</p>
+                </div>
+                <button type="button" aria-label="Close receive address" onClick={() => setShowReceiveAddress(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button>
+              </div>
+              <div className="mx-auto w-fit rounded-[26px] bg-white p-4 shadow-[0_14px_38px_rgba(37,99,235,.14)]">
+                <QRCodeSVG value={address} size={220} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
+              </div>
+              <div className="mt-4 rounded-2xl bg-[#f7f9ff] px-3 py-3 text-left">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">Full address</p>
+                <p className="mt-2 break-all font-mono text-xs leading-5 text-[#475569]">{address}</p>
+              </div>
+              <button type="button" onClick={copyReceiveAddress} className="primary-btn mt-4 w-full text-sm">
+                {copiedAddress ? "Copied address" : "Copy address"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {showAssets && (
           <div className="fixed inset-0 z-[80] grid place-items-end bg-slate-950/35 p-4" onClick={() => setShowAssets(false)}>
