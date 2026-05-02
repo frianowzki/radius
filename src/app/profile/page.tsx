@@ -24,7 +24,7 @@ function EyeIcon({ hidden }: { hidden: boolean }) {
 export default function ProfilePage() {
   const { isConnected: wagmiConnected, address: wagmiAddress } = useAccount();
   const { disconnect } = useDisconnect();
-  const { authenticated, address: authAddress, user, logout } = useRadiusAuth();
+  const { authenticated, address: authAddress, provider: authProvider, user, logout } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const [profile, setProfile] = useState<ReturnType<typeof getIdentityProfile>>({ displayName: "Arc user", authMode: "wallet" });
@@ -78,7 +78,7 @@ export default function ProfilePage() {
     setProfile(next);
     setRegistryStatus("Saving global profile...");
     try {
-      const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle, avatar: next.avatar, bio: next.bio });
+      const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle, avatar: next.avatar, bio: next.bio }, { provider: authProvider, prompt: true });
       const synced = registryProfileToIdentity(remote);
       saveIdentityProfile(synced);
       setProfile(synced);
@@ -97,7 +97,7 @@ export default function ProfilePage() {
     if (!address) return;
     setRegistryStatus("Syncing global picture...");
     try {
-      const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle, avatar: url, bio: next.bio });
+      const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle, avatar: url, bio: next.bio }, { provider: authProvider, prompt: true });
       const synced = registryProfileToIdentity(remote);
       saveIdentityProfile(synced);
       setProfile(synced);

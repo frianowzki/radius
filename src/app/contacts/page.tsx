@@ -32,7 +32,7 @@ function ContactAvatar({ contact }: { contact: Contact }) {
 
 export default function ContactsPage() {
   const { address: wagmiAddress } = useAccount();
-  const { address: authAddress } = useRadiusAuth();
+  const { address: authAddress, provider: authProvider } = useRadiusAuth();
   const owner = wagmiAddress ?? authAddress;
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "synced" | "error">("idle");
@@ -63,7 +63,7 @@ export default function ContactsPage() {
   function syncToCloud() {
     if (!owner) return;
     setSyncStatus("syncing");
-    pushRemoteContacts(owner, getContacts()).then((res) => setSyncStatus(res ? "synced" : "error"));
+    pushRemoteContacts(owner, getContacts(), { provider: authProvider, prompt: true }).then((res) => setSyncStatus(res ? "synced" : "error"));
   }
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);

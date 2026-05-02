@@ -1,4 +1,5 @@
-import { isAddress } from "viem";
+import { isAddress, type EIP1193Provider } from "viem";
+import { getRegistryProof } from "@/lib/registry-proof";
 import { normalizeHandle, type UserIdentityProfile } from "@/lib/utils";
 
 export interface RegistryProfile {
@@ -39,11 +40,12 @@ export async function saveRegistryProfile(input: {
   handle?: string;
   avatar?: string;
   bio?: string;
-}): Promise<RegistryProfile> {
+}, options?: { provider?: EIP1193Provider | null; prompt?: boolean }): Promise<RegistryProfile> {
+  const proof = await getRegistryProof(input.address, "profile", { provider: options?.provider, prompt: options?.prompt ?? true });
   const res = await fetch("/api/registry/profile", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ...input, avatar: input.avatar?.startsWith("data:") ? undefined : input.avatar }),
+    body: JSON.stringify({ ...input, avatar: input.avatar?.startsWith("data:") ? undefined : input.avatar, proof }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || "Could not save registry profile");

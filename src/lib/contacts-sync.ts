@@ -1,5 +1,7 @@
 "use client";
 
+import type { EIP1193Provider } from "viem";
+import { getRegistryProof } from "@/lib/registry-proof";
 import type { Contact } from "@/lib/utils";
 
 export interface RemoteContactsResponse {
@@ -19,12 +21,14 @@ export async function fetchRemoteContacts(owner: string): Promise<RemoteContacts
   }
 }
 
-export async function pushRemoteContacts(owner: string, contacts: Contact[]): Promise<RemoteContactsResponse | null> {
+export async function pushRemoteContacts(owner: string, contacts: Contact[], options?: { provider?: EIP1193Provider | null; prompt?: boolean }): Promise<RemoteContactsResponse | null> {
   try {
+    const proof = await getRegistryProof(owner, "contacts", options);
+    if (!proof) return null;
     const res = await fetch(`/api/registry/contacts`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ owner, contacts }),
+      body: JSON.stringify({ owner, contacts, proof }),
     });
     if (!res.ok) return null;
     return (await res.json()) as RemoteContactsResponse;

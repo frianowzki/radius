@@ -13,7 +13,7 @@ type Step = "welcome" | "profile" | "fund" | "done";
 
 export function OnboardingWizard() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated, address: authAddress, user } = useRadiusAuth();
+  const { authenticated, address: authAddress, provider: authProvider, user } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
 
@@ -49,7 +49,7 @@ export function OnboardingWizard() {
     const normalizedHandle = handle.trim().replace(/^@+/, "").toLowerCase() || undefined;
     const next = { displayName: displayName.trim(), handle: normalizedHandle, authMode: "wallet" as const };
     try { saveIdentityProfile(next); } catch { /* noop */ }
-    try { await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle }); } catch { /* registry optional */ }
+    try { await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle }, { provider: authProvider, prompt: true }); } catch { /* registry optional */ }
     setSaving(false);
     setStep("fund");
   }

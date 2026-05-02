@@ -1,5 +1,7 @@
 "use client";
 
+import type { EIP1193Provider } from "viem";
+import { getRegistryProof } from "@/lib/registry-proof";
 import type { LocalTransferRecord, PaymentRequestRecord } from "@/lib/utils";
 
 export interface RemoteActivityResponse {
@@ -19,12 +21,14 @@ export async function fetchRemoteActivity(owner: string): Promise<RemoteActivity
   }
 }
 
-export async function pushRemoteActivity(owner: string, data: { requests: PaymentRequestRecord[]; transfers: LocalTransferRecord[] }): Promise<RemoteActivityResponse | null> {
+export async function pushRemoteActivity(owner: string, data: { requests: PaymentRequestRecord[]; transfers: LocalTransferRecord[] }, options?: { provider?: EIP1193Provider | null; prompt?: boolean }): Promise<RemoteActivityResponse | null> {
   try {
+    const proof = await getRegistryProof(owner, "activity", options);
+    if (!proof) return null;
     const res = await fetch(`/api/registry/activity`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ owner, ...data }),
+      body: JSON.stringify({ owner, ...data, proof }),
     });
     if (!res.ok) return null;
     return (await res.json()) as RemoteActivityResponse;
