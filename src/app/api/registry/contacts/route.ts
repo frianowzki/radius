@@ -4,6 +4,12 @@ import { isAddress } from "viem";
 
 export const runtime = "nodejs";
 
+function jsonNoStore(body: unknown, init?: ResponseInit) {
+  const res = NextResponse.json(body, init);
+  res.headers.set("Cache-Control", "no-store");
+  return res;
+}
+
 interface ContactPayload {
   id: string;
   name: string;
@@ -71,20 +77,20 @@ async function writeTable(table: ContactsTable) {
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const owner = url.searchParams.get("owner");
-  if (!owner || !isAddress(owner)) return NextResponse.json({ error: "owner address required" }, { status: 400 });
+  if (!owner || !isAddress(owner)) return jsonNoStore({ error: "owner address required" }, { status: 400 });
   const table = await readTable(owner);
-  return NextResponse.json({ owner: table.owner, contacts: table.contacts, updatedAt: table.updatedAt });
+  return jsonNoStore({ owner: table.owner, contacts: table.contacts, updatedAt: table.updatedAt });
 }
 
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch {
-    return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
+    return jsonNoStore({ error: "invalid JSON" }, { status: 400 });
   }
   const owner = clean(body.owner, 64);
-  if (!isAddress(owner)) return NextResponse.json({ error: "invalid owner address" }, { status: 400 });
+  if (!isAddress(owner)) return jsonNoStore({ error: "invalid owner address" }, { status: 400 });
   const incoming = Array.isArray(body.contacts) ? body.contacts : [];
-  if (incoming.length > 500) return NextResponse.json({ error: "too many contacts (max 500)" }, { status: 400 });
+  if (incoming.length > 500) return jsonNoStore({ error: "too many contacts (max 500)" }, { status: 400 });
   const contacts = incoming.map(sanitize).filter((c): c is ContactPayload => !!c);
   // Dedupe by address (lowercased) keeping last occurrence.
   const byAddress = new Map<string, ContactPayload>();
@@ -97,9 +103,9 @@ export async function POST(req: Request) {
   };
   try {
     await writeTable(table);
-    return NextResponse.json({ owner: table.owner, contacts: table.contacts, updatedAt: table.updatedAt });
+    return jsonNoStore({ owner: table.owner, contacts: table.contacts, updatedAt: table.updatedAt });
   } catch (err) {
     const message = err instanceof Error ? err.message : "registry unavailable";
-    return NextResponse.json({ error: message }, { status: 503 });
+    return jsonNoStore({ error: message }, { status: 503 });
   }
 }

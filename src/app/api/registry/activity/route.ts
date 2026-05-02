@@ -4,6 +4,12 @@ import { isAddress } from "viem";
 
 export const runtime = "nodejs";
 
+function jsonNoStore(body: unknown, init?: ResponseInit) {
+  const res = NextResponse.json(body, init);
+  res.headers.set("Cache-Control", "no-store");
+  return res;
+}
+
 type TokenKey = "USDC" | "EURC";
 type PaymentRequestStatus = "pending" | "paid" | "expired";
 
@@ -138,18 +144,18 @@ async function writeTable(table: ActivityTable) {
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const owner = url.searchParams.get("owner");
-  if (!owner || !isAddress(owner)) return NextResponse.json({ error: "owner address required" }, { status: 400 });
+  if (!owner || !isAddress(owner)) return jsonNoStore({ error: "owner address required" }, { status: 400 });
   const table = await readTable(owner);
-  return NextResponse.json({ owner: table.owner, requests: table.requests, transfers: table.transfers, updatedAt: table.updatedAt });
+  return jsonNoStore({ owner: table.owner, requests: table.requests, transfers: table.transfers, updatedAt: table.updatedAt });
 }
 
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch {
-    return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
+    return jsonNoStore({ error: "invalid JSON" }, { status: 400 });
   }
   const owner = clean(body.owner, 64);
-  if (!isAddress(owner)) return NextResponse.json({ error: "invalid owner address" }, { status: 400 });
+  if (!isAddress(owner)) return jsonNoStore({ error: "invalid owner address" }, { status: 400 });
   const current = await readTable(owner);
   const requests = [...current.requests, ...(Array.isArray(body.requests) ? body.requests : []).map(sanitizeRequest).filter((r): r is PaymentRequestPayload => !!r)];
   const transfers = [...current.transfers, ...(Array.isArray(body.transfers) ? body.transfers : []).map(sanitizeTransfer).filter((t): t is TransferPayload => !!t)];
@@ -169,9 +175,9 @@ export async function POST(req: Request) {
   };
   try {
     await writeTable(table);
-    return NextResponse.json({ owner: table.owner, requests: table.requests, transfers: table.transfers, updatedAt: table.updatedAt });
+    return jsonNoStore({ owner: table.owner, requests: table.requests, transfers: table.transfers, updatedAt: table.updatedAt });
   } catch (err) {
     const message = err instanceof Error ? err.message : "activity registry unavailable";
-    return NextResponse.json({ error: message }, { status: 503 });
+    return jsonNoStore({ error: message }, { status: 503 });
   }
 }

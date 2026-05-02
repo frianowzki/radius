@@ -5,6 +5,12 @@ import { normalizeHandle } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
+function jsonNoStore(body: unknown, init?: ResponseInit) {
+  const res = NextResponse.json(body, init);
+  res.headers.set("Cache-Control", "no-store");
+  return res;
+}
+
 const REGISTRY_PATH = "registry/profiles.json";
 const HANDLE_RE = /^[a-z0-9_][a-z0-9_.-]{1,29}$/;
 
@@ -72,8 +78,8 @@ export async function GET(req: Request) {
       ? table.profiles.find((item) => item.handle === normalizeHandle(handle))
       : null;
 
-  if (!profile) return NextResponse.json({ profile: null }, { status: 404 });
-  return NextResponse.json({ profile });
+  if (!profile) return jsonNoStore({ profile: null }, { status: 404 });
+  return jsonNoStore({ profile });
 }
 
 export async function POST(req: Request) {
@@ -81,7 +87,7 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return jsonNoStore({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const address = cleanText(body.address, 64);
@@ -90,10 +96,10 @@ export async function POST(req: Request) {
   const avatar = cleanText(body.avatar, 600) || undefined;
   const bio = cleanText(body.bio, 180) || undefined;
 
-  if (!isAddress(address)) return NextResponse.json({ error: "Invalid wallet address" }, { status: 400 });
-  if (!displayName) return NextResponse.json({ error: "Display name is required" }, { status: 400 });
+  if (!isAddress(address)) return jsonNoStore({ error: "Invalid wallet address" }, { status: 400 });
+  if (!displayName) return jsonNoStore({ error: "Display name is required" }, { status: 400 });
   if (handle && !HANDLE_RE.test(handle)) {
-    return NextResponse.json({ error: "Username must be 2-30 chars: letters, numbers, _, ., -" }, { status: 400 });
+    return jsonNoStore({ error: "Username must be 2-30 chars: letters, numbers, _, ., -" }, { status: 400 });
   }
 
   try {
@@ -101,7 +107,7 @@ export async function POST(req: Request) {
     const existingHandle = handle
       ? table.profiles.find((item) => item.handle === handle && item.address.toLowerCase() !== address.toLowerCase())
       : undefined;
-    if (existingHandle) return NextResponse.json({ error: "Username is already taken" }, { status: 409 });
+    if (existingHandle) return jsonNoStore({ error: "Username is already taken" }, { status: 409 });
 
     const profile: RegistryProfile = {
       address,
@@ -118,9 +124,9 @@ export async function POST(req: Request) {
     table.updatedAt = Date.now();
 
     await writeTable(table);
-    return NextResponse.json({ profile });
+    return jsonNoStore({ profile });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Registry unavailable";
-    return NextResponse.json({ error: message }, { status: 503 });
+    return jsonNoStore({ error: message }, { status: 503 });
   }
 }
