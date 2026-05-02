@@ -10,11 +10,12 @@ import { ProfileChip } from "@/components/ProfileChip";
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { arcTestnet } from "@/config/wagmi";
-import { decimalToUnits, formatAmount, formatContactLabel, getDirectoryEntries, getIdentityLabel, getIdentityProfile, resolveRecipientInput, saveLocalTransfer, upsertContactByAddress } from "@/lib/utils";
+import { decimalToUnits, formatAmount, formatContactLabel, getDirectoryEntries, getIdentityLabel, getIdentityProfile, getLocalTransfers, getPaymentRequests, resolveRecipientInput, saveLocalTransfer, upsertContactByAddress } from "@/lib/utils";
 import type { DirectoryEntry } from "@/lib/utils";
 import { fetchRegistryProfile, type RegistryProfile } from "@/lib/registry-client";
 import { useMounted } from "@/lib/useMounted";
 import { advanceSchedule } from "@/lib/scheduled-payments";
+import { pushRemoteActivity } from "@/lib/activity-sync";
 
 type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
@@ -172,6 +173,7 @@ export default function SendPage() {
       setStatus("confirming");
       await publicClient.waitForTransactionReceipt({ hash });
       saveLocalTransfer({ from: address, to: resolvedRecipientAddress, value: parsedAmount.toString(), token, txHash: hash, direction: "sent", routeLabel: "Arc → Arc" });
+      void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
       if (scheduleId) {
         try { advanceSchedule(scheduleId, Date.now()); } catch { /* noop */ }
       }

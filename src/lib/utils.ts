@@ -316,6 +316,11 @@ export function decimalToUnits(value: string, decimals: number): bigint {
   return BigInt(`${whole || "0"}${padded}`);
 }
 
+export function savePaymentRequests(requests: PaymentRequestRecord[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(PAYMENT_REQUESTS_KEY, JSON.stringify(requests));
+}
+
 export function getPaymentRequests(currentAddress?: string): PaymentRequestRecord[] {
   if (typeof window === "undefined") return [];
 
@@ -351,7 +356,7 @@ export function savePaymentRequest(
     createdAt: Date.now(),
   };
 
-  localStorage.setItem(PAYMENT_REQUESTS_KEY, JSON.stringify([record, ...requests]));
+  savePaymentRequests([record, ...requests]);
   return record;
 }
 
@@ -395,7 +400,7 @@ export function markMatchingPaymentRequestPaid(
     updatedRecord = { ...request, status: "paid" as const, paidAt: Date.now() };
     return updatedRecord;
   });
-  localStorage.setItem(PAYMENT_REQUESTS_KEY, JSON.stringify(updated));
+  savePaymentRequests(updated);
   return updatedRecord;
 }
 
@@ -407,8 +412,20 @@ export function expirePaymentRequest(id: string): PaymentRequestRecord | undefin
     updatedRecord = { ...request, status: "expired" };
     return updatedRecord;
   });
-  localStorage.setItem(PAYMENT_REQUESTS_KEY, JSON.stringify(updated));
+  savePaymentRequests(updated);
   return updatedRecord;
+}
+
+export function deletePaymentRequest(id: string): PaymentRequestRecord | undefined {
+  const requests = getPaymentRequests();
+  const removed = requests.find((request) => request.id === id);
+  savePaymentRequests(requests.filter((request) => request.id !== id));
+  return removed;
+}
+
+export function saveLocalTransfers(transfers: LocalTransferRecord[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(LOCAL_TRANSFERS_KEY, JSON.stringify(transfers));
 }
 
 export function getLocalTransfers(currentAddress?: string): LocalTransferRecord[] {
@@ -450,7 +467,7 @@ export function saveLocalTransfer(
     createdAt: Date.now(),
   };
 
-  localStorage.setItem(LOCAL_TRANSFERS_KEY, JSON.stringify([record, ...transfers]));
+  saveLocalTransfers([record, ...transfers]);
   return record;
 }
 

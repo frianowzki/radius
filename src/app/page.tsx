@@ -14,8 +14,9 @@ import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
 import { arcTestnet } from "@/config/wagmi";
 import { showRadiusNotification } from "@/lib/notifications";
-import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, formatContactLabel, markMatchingPaymentRequestPaid, saveLocalTransfer } from "@/lib/utils";
+import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, getPaymentRequests, saveLocalTransfers, savePaymentRequests, formatContactLabel, markMatchingPaymentRequestPaid, saveLocalTransfer } from "@/lib/utils";
 import { dueSchedules, type ScheduledPaymentRecord } from "@/lib/scheduled-payments";
+import { fetchRemoteActivity, mergePaymentRequests, mergeTransfers, pushRemoteActivity } from "@/lib/activity-sync";
 
 
 function WalletIcon() {
@@ -107,7 +108,19 @@ export default function DashboardPage() {
 
   /* eslint-disable react-hooks/set-state-in-effect -- hydrate recentTransfers on address change (client-only) */
   useEffect(() => {
-    if (address) setRecentTransfers(getLocalTransfers(address).slice(0, 3));
+    if (!address) return;
+    let cancelled = false;
+    setRecentTransfers(getLocalTransfers(address).slice(0, 3));
+    fetchRemoteActivity(address).then((remote) => {
+      if (!remote || cancelled) return;
+      const mergedRequests = mergePaymentRequests(getPaymentRequests(), remote.requests);
+      const mergedTransfers = mergeTransfers(getLocalTransfers(), remote.transfers);
+      savePaymentRequests(mergedRequests);
+      saveLocalTransfers(mergedTransfers);
+      setRecentTransfers(getLocalTransfers(address).slice(0, 3));
+      void pushRemoteActivity(address, { requests: mergedRequests, transfers: mergedTransfers });
+    });
+    return () => { cancelled = true; };
   }, [address]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -176,6 +189,7 @@ export default function DashboardPage() {
           routeLabel: "Balance update",
         });
         const paidRequest = markMatchingPaymentRequestPaid(symbol, delta, tokenInfo.decimals, address);
+        void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
         setActivityNotice(paidRequest ? `Request paid: ${paidRequest.amount} ${symbol}` : message);
         window.setTimeout(() => setActivityNotice(""), 4200);
         void showRadiusNotification("Radius activity", { body: message });
@@ -303,9 +317,9 @@ export default function DashboardPage() {
         </section>
 
         {showAssets && (
-          <div className="fixed inset-0 z-[80] grid place-items-end bg-black/30 p-4" onClick={() => setShowAssets(false)}>
-            <div className="soft-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
-              <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-bold">My Assets</h3><button onClick={() => setShowAssets(false)} className="ghost-btn px-3 py-2 text-xs">Close</button></div>
+          <div className="fixed inset-0 z-[80] grid place-items-end bg-slate-950/35 p-4" onClick={() => setShowAssets(false)}>
+            <div className="assets-modal-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-bold">My Assets</h3><button type="button" aria-label="Close assets" onClick={() => setShowAssets(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button></div>
               <div className="space-y-3">
                 {[["USDC","USD Coin",visibleUsdc],["EURC","Euro Coin",visibleEurc]].map(([s,n,b]) => (
                   <div key={s} className="flex items-center justify-between rounded-2xl bg-white/55 p-3">

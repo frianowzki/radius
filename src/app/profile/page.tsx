@@ -43,7 +43,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [registryStatus, setRegistryStatus] = useState("");
-  const [hidePayQr, setHidePayQr] = useState(false);
+  const [hidePayQr, setHidePayQr] = useState(true);
 
   const mounted = useMounted();
   const payTarget = (profile.handle && `@${profile.handle.replace(/^@+/, "")}`) || address || "";

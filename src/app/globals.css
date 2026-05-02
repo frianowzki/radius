@@ -2513,6 +2513,12 @@ html[data-theme="dark"] .history-token-orb > span { border-color: #0b1221; }
   box-shadow: 0 24px 58px rgba(139,92,246,.11), 0 8px 24px rgba(30,41,59,.05);
 }
 .profile-qr-frame svg { display: block; }
+.assets-modal-card {
+  background: #ffffff;
+  border: 1px solid rgba(255,255,255,.86);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 24px 60px rgba(30,58,138,.18);
+}
+
 .profile-qr-placeholder {
   width: 224px;
   height: 224px;
@@ -2538,6 +2544,7 @@ html[data-theme="dark"] .profile-qr-frame {
   }
 
   .bottom-nav {
+    bottom: 13px;
     width: min(calc(100% - 18px), 392px);
     padding: 7px 8px;
     border-radius: 24px;

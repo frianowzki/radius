@@ -42,10 +42,13 @@ import {
   getDirectoryEntries,
   getIdentityLabel,
   getIdentityProfile,
+  getLocalTransfers,
+  getPaymentRequests,
   resolveRecipientInput,
   saveLocalTransfer,
   upsertContactByAddress,
 } from "@/lib/utils";
+import { pushRemoteActivity } from "@/lib/activity-sync";
 import type { DirectoryEntry } from "@/lib/utils";
 
 type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
@@ -357,6 +360,7 @@ export default function BridgePage() {
             direction: "sent",
             routeLabel: selectedRouteConfig.label,
           });
+          void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
         }
         return;
       }
@@ -384,6 +388,7 @@ export default function BridgePage() {
           direction: "sent",
           routeLabel: selectedRouteConfig.label,
         });
+        void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
       }
       setShowSaveRecipient(!resolvedRecipient.contact && !!resolvedRecipientAddress);
       setStatus("success");

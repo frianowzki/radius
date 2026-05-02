@@ -14,7 +14,11 @@ import {
   formatContactLabel,
   findContactByAddress,
   getLocalTransfers,
+  getPaymentRequests,
+  saveLocalTransfers,
+  savePaymentRequests,
 } from "@/lib/utils";
+import { fetchRemoteActivity, mergePaymentRequests, mergeTransfers, pushRemoteActivity } from "@/lib/activity-sync";
 
 interface TransferLogArgs {
   from?: string;
@@ -49,7 +53,31 @@ export default function HistoryPage() {
   useEffect(() => {
     if (!address) return;
 
-    const localEvents: TransferEvent[] = getLocalTransfers(address).map((transfer) => ({
+    const syncRemote = async () => {
+      const remote = await fetchRemoteActivity(address);
+      if (!remote) return;
+      const mergedRequests = mergePaymentRequests(getPaymentRequests(), remote.requests);
+      const mergedTransfers = mergeTransfers(getLocalTransfers(), remote.transfers);
+      savePaymentRequests(mergedRequests);
+      saveLocalTransfers(mergedTransfers);
+      setTransfers(mergedTransfers
+        .filter((transfer) => transfer.from.toLowerCase() === address.toLowerCase() || transfer.to.toLowerCase() === address.toLowerCase())
+        .map((transfer) => ({
+          from: transfer.from,
+          to: transfer.to,
+          value: BigInt(transfer.value),
+          token: transfer.token,
+          txHash: transfer.txHash,
+          direction: transfer.direction,
+          createdAt: transfer.createdAt,
+          source: "local" as const,
+          localId: transfer.id,
+        })));
+      void pushRemoteActivity(address, { requests: mergedRequests, transfers: mergedTransfers });
+    };
+    void syncRemote();
+
+    const localEvents: TransferEvent[] = getLocalTransfers(address).map((transfer) => ({ 
       from: transfer.from,
       to: transfer.to,
       value: BigInt(transfer.value),

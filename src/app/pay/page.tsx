@@ -14,10 +14,13 @@ import {
   findContactByAddress,
   resolveRecipientInput,
   decimalToUnits,
+  getLocalTransfers,
+  getPaymentRequests,
   markMatchingPaymentRequestPaid,
   saveLocalTransfer,
   upsertContactByAddress,
 } from "@/lib/utils";
+import { pushRemoteActivity } from "@/lib/activity-sync";
 
 type PayStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
@@ -124,6 +127,7 @@ function PayContent() {
         routeLabel: "Payment request",
       });
       markMatchingPaymentRequestPaid(token, parsedAmount, tokenInfo.decimals, recipientAddress, requestId);
+      void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
       setShowSaveRecipient(!matchedRecipient);
       setStatus("success");
     } catch (err: unknown) {

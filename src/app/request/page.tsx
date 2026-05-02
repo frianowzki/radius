@@ -9,8 +9,9 @@ import { QRCodeSVG } from "qrcode.react";
 import { AppShell } from "@/components/AppShell";
 import { TOKENS, type TokenKey } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
-import { buildPaymentUrl, decimalToUnits, expirePaymentRequest, formatAmount, formatPreferredRecipientInput, getPaymentRequests, savePaymentRequest, type PaymentRequestRecord } from "@/lib/utils";
+import { buildPaymentUrl, decimalToUnits, deletePaymentRequest, expirePaymentRequest, formatAmount, formatPreferredRecipientInput, getLocalTransfers, getPaymentRequests, saveLocalTransfers, savePaymentRequest, savePaymentRequests, type PaymentRequestRecord } from "@/lib/utils";
 import { usePaymentRequestWatcher } from "@/lib/usePaymentRequestWatcher";
+import { fetchRemoteActivity, mergePaymentRequests, mergeTransfers, pushRemoteActivity } from "@/lib/activity-sync";
 
 export default function RequestPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
@@ -37,8 +38,24 @@ export default function RequestPage() {
 
   useEffect(() => {
     if (!address) return;
+    let cancelled = false;
     queueMicrotask(() => setRequests(getPaymentRequests(address).slice(0, 5)));
+    fetchRemoteActivity(address).then((remote) => {
+      if (!remote || cancelled) return;
+      const mergedRequests = mergePaymentRequests(getPaymentRequests(), remote.requests);
+      const mergedTransfers = mergeTransfers(getLocalTransfers(), remote.transfers);
+      savePaymentRequests(mergedRequests);
+      saveLocalTransfers(mergedTransfers);
+      setRequests(getPaymentRequests(address).slice(0, 5));
+      void pushRemoteActivity(address, { requests: mergedRequests, transfers: mergedTransfers });
+    });
+    return () => { cancelled = true; };
   }, [address]);
+
+  function pushActivity() {
+    if (!address) return;
+    void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
+  }
 
   function refreshRequests() {
     if (!address) return;
@@ -80,12 +97,20 @@ export default function RequestPage() {
         : {}),
     });
     refreshRequests();
+    pushActivity();
     maybeAskNotificationPermission();
   }
 
   function expireRequest(id: string) {
     expirePaymentRequest(id);
     refreshRequests();
+    pushActivity();
+  }
+
+  function removeRequest(id: string) {
+    deletePaymentRequest(id);
+    refreshRequests();
+    pushActivity();
   }
 
   async function copyLink() {
@@ -267,6 +292,7 @@ export default function RequestPage() {
                         <div className="mt-3 flex gap-2">
                           <button type="button" onClick={() => navigator.clipboard.writeText(request.url)} className="ghost-btn flex-1 px-3 py-2 text-xs">Copy link</button>
                           {request.status === "pending" && <button type="button" onClick={() => expireRequest(request.id)} className="ghost-btn px-3 py-2 text-xs">Expire</button>}
+                          {request.status === "expired" && <button type="button" onClick={() => removeRequest(request.id)} className="ghost-btn px-3 py-2 text-xs text-red-500">Remove</button>}
                         </div>
                       </div>
                     );

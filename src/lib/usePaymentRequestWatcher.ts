@@ -5,7 +5,8 @@ import { usePublicClient } from "wagmi";
 import { parseAbiItem, type Log } from "viem";
 import { arcTestnet } from "@/config/wagmi";
 import { TOKENS, type TokenKey } from "@/config/tokens";
-import { getPaymentRequests, markMatchingPaymentRequestPaid } from "@/lib/utils";
+import { getLocalTransfers, getPaymentRequests, markMatchingPaymentRequestPaid } from "@/lib/utils";
+import { pushRemoteActivity } from "@/lib/activity-sync";
 
 const TRANSFER_EVENT = parseAbiItem(
   "event Transfer(address indexed from, address indexed to, uint256 value)"
@@ -63,7 +64,10 @@ export function usePaymentRequestWatcher({ address, onPaid }: Options) {
                 const value = log.args.value;
                 if (typeof value !== "bigint") continue;
                 const matched = markMatchingPaymentRequestPaid(key, value, decimals, address);
-                if (matched && onPaidRef.current) onPaidRef.current(matched.id);
+                if (matched) {
+                  void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
+                  if (onPaidRef.current) onPaidRef.current(matched.id);
+                }
               }
             } catch (err) {
               console.warn("[paymentWatcher] log handler error", err);
