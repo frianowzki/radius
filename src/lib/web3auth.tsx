@@ -15,6 +15,7 @@ import {
   useLogin,
   useLogout,
   usePrivy,
+  useSignMessage,
   useWallets,
   type ConnectedWallet,
   type LoginModalOptions,
@@ -43,6 +44,7 @@ type RadiusAuthContextValue = {
   login: (method?: SocialLoginMethod) => Promise<void>;
   logout: () => Promise<void>;
   switchChain: (chainId: number) => Promise<void>;
+  signMessage: (message: string) => Promise<string>;
 };
 
 const RadiusAuthContext = createContext<RadiusAuthContextValue | null>(null);
@@ -81,6 +83,7 @@ function RadiusPrivyBridgeProvider({ children }: { children: ReactNode }) {
   const { ready, authenticated, user } = usePrivy();
   const { wallets } = useWallets();
   const { logout: privyLogout } = useLogout();
+  const { signMessage: privySignMessage } = useSignMessage();
   const [provider, setProvider] = useState<EIP1193Provider | null>(null);
   const [address, setAddress] = useState<`0x${string}` | undefined>();
   const [chainId, setChainId] = useState<number | undefined>();
@@ -142,6 +145,15 @@ function RadiusPrivyBridgeProvider({ children }: { children: ReactNode }) {
     setChainId(undefined);
   }, [privyLogout]);
 
+  const signMessage = useCallback(
+    async (message: string) => {
+      if (!address) throw new Error("Wallet unavailable");
+      const { signature } = await privySignMessage({ message }, { address });
+      return signature;
+    },
+    [address, privySignMessage]
+  );
+
   const switchChain = useCallback(
     async (targetChainId: number) => {
       if (!wallet) throw new Error("Privy wallet unavailable");
@@ -164,8 +176,9 @@ function RadiusPrivyBridgeProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       switchChain,
+      signMessage,
     }),
-    [address, authenticated, chainId, login, logout, provider, ready, switchChain, user]
+    [address, authenticated, chainId, login, logout, provider, ready, switchChain, signMessage, user]
   );
 
   return <RadiusAuthContext.Provider value={value}>{children}</RadiusAuthContext.Provider>;
@@ -185,6 +198,9 @@ export function RadiusAuthProvider({ children }: { children: ReactNode }) {
           },
           logout: async () => undefined,
           switchChain: async () => {
+            throw new Error("Privy is not configured");
+          },
+          signMessage: async () => {
             throw new Error("Privy is not configured");
           },
         }}

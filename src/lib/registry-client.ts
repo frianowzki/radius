@@ -40,8 +40,8 @@ export async function saveRegistryProfile(input: {
   handle?: string;
   avatar?: string;
   bio?: string;
-}, options?: { provider?: EIP1193Provider | null; prompt?: boolean }): Promise<RegistryProfile> {
-  const proof = await getRegistryProof(input.address, "profile", { provider: options?.provider, prompt: options?.prompt ?? true });
+}, options?: { provider?: EIP1193Provider | null; prompt?: boolean; signMessage?: (message: string) => Promise<string> }): Promise<RegistryProfile> {
+  const proof = await getRegistryProof(input.address, "profile", { provider: options?.provider, prompt: options?.prompt ?? true, signMessage: options?.signMessage });
   const res = await fetch("/api/registry/profile", {
     method: "POST",
     headers: { "content-type": "application/json" },

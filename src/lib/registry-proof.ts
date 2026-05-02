@@ -22,24 +22,28 @@ function parseCached(raw: string | null): RegistryProof | null {
   }
 }
 
-export async function getRegistryProof(owner: string, action: RegistryAction, options?: { provider?: EIP1193Provider | null; prompt?: boolean }): Promise<RegistryProof | null> {
+export async function getRegistryProof(owner: string, action: RegistryAction, options?: { provider?: EIP1193Provider | null; prompt?: boolean; signMessage?: (message: string) => Promise<string> }): Promise<RegistryProof | null> {
   if (typeof window === "undefined") return null;
   const key = cacheKey(owner, action);
   const cached = parseCached(sessionStorage.getItem(key));
   if (cached) return cached;
   if (!options?.prompt) return null;
 
-  const provider = options.provider ?? getInjectedProvider();
-  if (!provider?.request) throw new Error("Wallet signer unavailable for registry sync");
-
   const issuedAt = new Date().toISOString();
   const message = registryProofMessage(owner, action, issuedAt);
   let signature: string;
-  const request = provider.request as (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  try {
-    signature = await request({ method: "personal_sign", params: [message, owner] }) as string;
-  } catch {
-    signature = await request({ method: "personal_sign", params: [owner, message] }) as string;
+
+  if (options?.signMessage) {
+    signature = await options.signMessage(message);
+  } else {
+    const provider = options?.provider ?? getInjectedProvider();
+    if (!provider?.request) throw new Error("Wallet signer unavailable for registry sync");
+    const request = provider.request as (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+    try {
+      signature = await request({ method: "personal_sign", params: [message, owner] }) as string;
+    } catch {
+      signature = await request({ method: "personal_sign", params: [owner, message] }) as string;
+    }
   }
 
   const proof: RegistryProof = { owner, action, issuedAt, signature: signature as `0x${string}` };

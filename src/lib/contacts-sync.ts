@@ -21,7 +21,7 @@ export async function fetchRemoteContacts(owner: string): Promise<RemoteContacts
   }
 }
 
-export async function pushRemoteContacts(owner: string, contacts: Contact[], options?: { provider?: EIP1193Provider | null; prompt?: boolean }): Promise<RemoteContactsResponse | null> {
+export async function pushRemoteContacts(owner: string, contacts: Contact[], options?: { provider?: EIP1193Provider | null; prompt?: boolean; signMessage?: (message: string) => Promise<string> }): Promise<RemoteContactsResponse | null> {
   try {
     const proof = await getRegistryProof(owner, "contacts", options);
     if (!proof) return null;

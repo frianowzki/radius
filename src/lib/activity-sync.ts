@@ -21,7 +21,7 @@ export async function fetchRemoteActivity(owner: string): Promise<RemoteActivity
   }
 }
 
-export async function pushRemoteActivity(owner: string, data: { requests: PaymentRequestRecord[]; transfers: LocalTransferRecord[] }, options?: { provider?: EIP1193Provider | null; prompt?: boolean }): Promise<RemoteActivityResponse | null> {
+export async function pushRemoteActivity(owner: string, data: { requests: PaymentRequestRecord[]; transfers: LocalTransferRecord[] }, options?: { provider?: EIP1193Provider | null; prompt?: boolean; signMessage?: (message: string) => Promise<string> }): Promise<RemoteActivityResponse | null> {
   try {
     const proof = await getRegistryProof(owner, "activity", options);
     if (!proof) return null;
