@@ -227,18 +227,23 @@ export default function HistoryPage() {
                       {tx.source === "local" && <em>Saved</em>}
                     </div>
                     <p className="history-from">{isSent ? "To" : "From"} {formatContactLabel(counterparty)}</p>
-                    <div className="history-counterparty-chip">
-                      <ProfileChip contact={matchedContact} address={counterparty} fallbackLabel={formatContactLabel(counterparty)} />
-                    </div>
+                    {tx.txHash.startsWith("0x") ? (
+                      <a className="history-counterparty-chip history-tx-link" href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`} target="_blank" rel="noopener noreferrer">
+                        <span>Tx hash</span>
+                        <strong>{formatContactLabel(tx.txHash)}</strong>
+                      </a>
+                    ) : (
+                      <div className="history-counterparty-chip">
+                        <ProfileChip contact={matchedContact} address={counterparty} fallbackLabel={formatContactLabel(counterparty)} />
+                      </div>
+                    )}
                   </div>
 
                   <div className="history-card-side">
                     <strong className={isSent ? "sent" : "received"}>{isSent ? "−" : "+"}{amount}<br />{tx.token}</strong>
                     <Link href={`/send?to=${encodeURIComponent(counterparty)}&amount=${encodeURIComponent(amount.replace(/,/g, ""))}&token=${tx.token}`}>Send again</Link>
-                    {tx.localId ? (
-                      <Link href={`/receipt/${tx.localId}`}>Receipt</Link>
-                    ) : tx.txHash.startsWith("0x") ? (
-                      <a href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`} target="_blank" rel="noopener noreferrer">ArcScan</a>
+                    {tx.txHash.startsWith("0x") ? (
+                      <a href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`} target="_blank" rel="noopener noreferrer">Tx link</a>
                     ) : (
                       <span>Balance<br />update</span>
                     )}

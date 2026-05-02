@@ -24,9 +24,9 @@ export function QuickActionIcon({ name }: { name: QuickActionIconName }) {
   if (name === "request") {
     return (
       <svg {...common}>
-        <path d="M19 5 5 19" />
-        <path d="M9 19H5v-4" />
-        <path d="M19 5h-4" />
+        <path d="M12 3.8v11.1" />
+        <path d="m7.4 10.3 4.6 4.6 4.6-4.6" />
+        <path d="M5.2 16.9v3.3h13.6v-3.3" />
       </svg>
     );
   }

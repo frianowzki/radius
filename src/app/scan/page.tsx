@@ -140,9 +140,9 @@ export default function ScanPage() {
                 <rect x="14" y="14" width="3" height="3" />
                 <path d="M20 14v3h-3" />
                 <path d="M14 20h3v-3" />
-                <rect x="5" y="5" width="3" height="3" rx="0.5" className="fill-current" />
-                <rect x="16" y="5" width="3" height="3" rx="0.5" className="fill-current" />
-                <rect x="5" y="16" width="3" height="3" rx="0.5" className="fill-current" />
+                <rect x="5" y="5" width="3" height="3" rx="0.5" fill="currentColor" />
+                <rect x="16" y="5" width="3" height="3" rx="0.5" fill="currentColor" />
+                <rect x="5" y="16" width="3" height="3" rx="0.5" fill="currentColor" />
               </svg>
             </div>
             <h2 className="mt-6 text-2xl font-semibold tracking-[-0.04em]">Scan QR code</h2>
@@ -158,10 +158,10 @@ export default function ScanPage() {
             )}
             <form onSubmit={openLink} className="mt-5 space-y-3 text-left">
               <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)]">
+                <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[var(--muted)]">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                 </span>
-                <input value={value} onChange={(e) => setValue(e.target.value)} placeholder="Paste request link" className="radius-input pl-10 text-sm" />
+                <input value={value} onChange={(e) => setValue(e.target.value)} placeholder="Paste request link" className="radius-input pl-14 text-sm" />
               </div>
               <button type="submit" className="primary-btn w-full text-sm disabled:opacity-40" disabled={!value.trim()}>
                 <span className="flex items-center justify-center gap-2">

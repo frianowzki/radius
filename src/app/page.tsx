@@ -41,7 +41,7 @@ function WalletLoginButton() {
             className="radius-auth-button secondary justify-center"
           >
             <span className="login-action-icon" aria-hidden="true"><WalletIcon /></span>
-            <span>{connected ? (chain.unsupported ? "Switch network" : account.displayName) : "Connect wallet"}</span>
+            <span>{connected ? (chain.unsupported ? "Switch Network" : account.displayName) : "Connect Wallet"}</span>
           </button>
         );
       }}
@@ -79,8 +79,7 @@ function LoginScreen() {
         </section>
 
         <div className="login-actions">
-          <SocialLoginButton icon="sparkle" label="Press to Continue" className="login-action login-action-primary disabled:cursor-not-allowed disabled:opacity-50" />
-          <SocialLoginButton icon="users" method="modal" label="Other social options" className="login-action login-action-secondary login-social-action disabled:cursor-not-allowed disabled:opacity-50" />
+          <SocialLoginButton icon="users" method="modal" label="Social Wallets Login" className="login-action login-action-secondary login-social-action disabled:cursor-not-allowed disabled:opacity-50" />
           <div className="login-wallet-action"><WalletLoginButton /></div>
         </div>
       </div>
@@ -127,7 +126,10 @@ export default function DashboardPage() {
   const eurcBalance = balances?.[1]?.result as bigint | undefined;
   const usdcDisplay = usdcBalance !== undefined ? formatAmount(usdcBalance, TOKENS.USDC.decimals) : "0.00";
   const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance, TOKENS.EURC.decimals) : "0.00";
-  const totalDisplay = (Number(usdcDisplay.replace(/,/g, "")) + Number(eurcDisplay.replace(/,/g, ""))).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const numericUsdc = Number(usdcDisplay.replace(/,/g, ""));
+  const numericEurc = Number(eurcDisplay.replace(/,/g, ""));
+  const totalValue = (Number.isFinite(numericUsdc) ? numericUsdc : 0) + (Number.isFinite(numericEurc) ? numericEurc : 0);
+  const totalDisplay = totalValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
   const profileName = identity.displayName || "Arc user";
   const visibleTotal = hideBalance ? "••••••" : totalDisplay;
   const visibleUsdc = hideBalance ? "••••••" : usdcDisplay;
@@ -224,7 +226,6 @@ export default function DashboardPage() {
             <button type="button" aria-label={hideBalance ? "Show balance" : "Hide balance"} onClick={() => setHideBalance((v) => !v)}><EyeIcon hidden={hideBalance} /></button>
           </div>
           <p className={`dashboard-total ${hideBalance ? "balance-hidden" : ""}`}>${visibleTotal}</p>
-          <p className="dashboard-eq">≈ {visibleUsdc} USDC</p>
           <div className="dashboard-balance-actions">
             <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -296,7 +297,7 @@ export default function DashboardPage() {
           <div className="dashboard-section-title"><h2>My Assets</h2><button type="button" onClick={() => setShowAssets(true)}>Manage</button></div>
           <div className="dashboard-list-card asset-card">
             {[["USDC","USD Coin",visibleUsdc],["EURC","Euro Coin",visibleEurc]].map(([s,n,b], i) => (
-              <div key={s} className={`dashboard-asset-row ${i ? 'with-border' : ''}`}><div><TokenLogo symbol={s} size={38} /><div><p>{s}</p><small>{n}</small></div></div><div><p>{b}</p><small>${Number(String(b).replace(/,/g, "") || 0).toFixed(2)}</small></div></div>
+              <div key={s} className={`dashboard-asset-row ${i ? 'with-border' : ''}`}><div><TokenLogo symbol={s} size={38} /><div><p>{s}</p><small>{n}</small></div></div><div><p>{b}</p>{!hideBalance && <small>${Number(String(b).replace(/,/g, "") || 0).toFixed(2)}</small>}</div></div>
             ))}
           </div>
         </section>

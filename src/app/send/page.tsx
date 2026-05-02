@@ -322,9 +322,6 @@ export default function SendPage() {
             {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
             <button type="submit" disabled={!readyToSend} className="primary-btn flow-primary-action w-full disabled:opacity-40">{status === "sending" ? "Sending..." : status === "confirming" ? "Confirming..." : "Review send"}</button>
 
-            <div className="flow-preview-wrap">
-              <ReceiptCard title="Send preview" amount={amount || "0.00"} token={token} status="Preview" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={validRecipient ? recipientLabel : recipient || "Recipient"} note="Arc Testnet" preview />
-            </div>
           </form>
         )}
 

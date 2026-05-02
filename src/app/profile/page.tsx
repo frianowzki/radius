@@ -11,6 +11,16 @@ import { clearRadiusLocalSession, formatAddress, getIdentityProfile, saveIdentit
 import { fetchRegistryProfile, registryProfileToIdentity, saveRegistryProfile } from "@/lib/registry-client";
 import { useMounted } from "@/lib/useMounted";
 
+function EyeIcon({ hidden }: { hidden: boolean }) {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true" className="h-5 w-5 fill-current">
+      <path d="M24 11C12.5 11 5 24 5 24s7.5 13 19 13 19-13 19-13-7.5-13-19-13Zm0 20.5a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" />
+      <circle cx="24" cy="24" r="4.2" fill="white" opacity=".92" />
+      {hidden && <path d="M8 42 42 8" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />}
+    </svg>
+  );
+}
+
 export default function ProfilePage() {
   const { isConnected: wagmiConnected, address: wagmiAddress } = useAccount();
   const { disconnect } = useDisconnect();
@@ -33,6 +43,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [registryStatus, setRegistryStatus] = useState("");
+  const [hidePayQr, setHidePayQr] = useState(false);
 
   const mounted = useMounted();
   const payTarget = (profile.handle && `@${profile.handle.replace(/^@+/, "")}`) || address || "";
@@ -149,16 +160,23 @@ export default function ProfilePage() {
         {address && (
           <section className="profile-qr-card">
             <div className="profile-qr-header">
-              <h2>My pay QR</h2>
-              <span>{profile.handle ? `@${profile.handle}` : "address-based"}</span>
+              <div>
+                <h2>My pay QR</h2>
+                <span>{profile.handle ? `@${profile.handle}` : "address-based"}</span>
+              </div>
+              <button type="button" onClick={() => setHidePayQr((v) => !v)} aria-label={hidePayQr ? "Show My Pay QR" : "Hide My Pay QR"} className="grid h-10 w-10 place-items-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)]">
+                <EyeIcon hidden={hidePayQr} />
+              </button>
             </div>
-            <div className="profile-qr-frame">
-              {payLink ? (
-                <QRCodeSVG value={payLink} size={224} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
-              ) : (
-                <div className="profile-qr-placeholder" />
-              )}
-            </div>
+            {!hidePayQr && (
+              <div className="profile-qr-frame">
+                {payLink ? (
+                  <QRCodeSVG value={payLink} size={224} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
+                ) : (
+                  <div className="profile-qr-placeholder" />
+                )}
+              </div>
+            )}
           </section>
         )}
 

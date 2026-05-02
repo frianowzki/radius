@@ -9,6 +9,19 @@ import { useRadiusAuth } from "@/lib/web3auth";
 import { addContact, formatAddress, getContacts, removeContact, saveContacts, updateContact, type Contact } from "@/lib/utils";
 import { fetchRemoteContacts, mergeContacts, pushRemoteContacts } from "@/lib/contacts-sync";
 
+function SyncStatusIcon({ status }: { status: "idle" | "syncing" | "synced" | "error" }) {
+  if (status === "syncing") {
+    return <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 12a9 9 0 0 1-9 9" /><path d="M3 12a9 9 0 0 1 9-9" /></svg>;
+  }
+  if (status === "synced") {
+    return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>;
+  }
+  if (status === "error") {
+    return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 8v5" /><path d="M12 16h.01" /></svg>;
+  }
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9.7 9.7 0 0 1-6.7-2.8" /><path d="M3 12a9 9 0 0 1 9-9 9.7 9.7 0 0 1 6.7 2.8" /><path d="M3 19v-4h4" /><path d="M21 5v4h-4" /></svg>;
+}
+
 function ContactAvatar({ contact }: { contact: Contact }) {
   return (
     <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#3b82f6] text-sm font-bold text-white shadow-sm">
@@ -108,11 +121,13 @@ export default function ContactsPage() {
           </div>
           <div className="flex items-center gap-2">
             {owner && (
-              <button type="button" onClick={syncToCloud} className="rounded-full bg-white/60 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
-                {syncStatus === "syncing" ? "Syncing…" : syncStatus === "synced" ? "Synced" : syncStatus === "error" ? "Sync failed" : "Sync"}
+              <button type="button" onClick={syncToCloud} aria-label={syncStatus === "syncing" ? "Syncing contacts" : syncStatus === "synced" ? "Contacts synced" : syncStatus === "error" ? "Sync failed" : "Sync contacts"} title={syncStatus === "error" ? "Sync failed" : syncStatus === "synced" ? "Synced" : "Sync contacts"} className={`grid h-9 w-9 place-items-center rounded-full bg-white/60 text-[var(--brand)] shadow-sm ${syncStatus === "error" ? "text-red-500" : ""}`}>
+                <SyncStatusIcon status={syncStatus} />
               </button>
             )}
-            <button type="button" onClick={() => setShowForm((v) => !v)} className="theme-toggle icon-only"><span className="theme-toggle-dot">＋</span></button>
+            <button type="button" onClick={() => setShowForm((v) => !v)} aria-label="Add contact" className="grid h-9 w-9 place-items-center rounded-full bg-[var(--brand)] text-white shadow-sm shadow-blue-500/20">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+            </button>
           </div>
         </header>
 
@@ -160,9 +175,9 @@ export default function ContactsPage() {
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2">
-                  <Link href={`/send?to=${encodeURIComponent(contact.handle ? contact.handle.replace(/^@/, "") : contact.address)}`} className="rounded-2xl bg-[var(--brand)]/10 px-3 py-2.5 text-center text-xs font-bold text-[var(--brand)]">Send to</Link>
-                  <button type="button" onClick={() => startEdit(contact)} className="rounded-2xl bg-emerald-500/12 px-3 py-2.5 text-xs font-bold text-emerald-600">Edit</button>
-                  <button type="button" onClick={() => handleDelete(contact.id)} className="rounded-2xl bg-red-500/12 px-3 py-2.5 text-xs font-bold text-red-600">Delete</button>
+                  <Link href={`/send?to=${encodeURIComponent(contact.handle ? contact.handle.replace(/^@/, "") : contact.address)}`} className="rounded-2xl bg-[var(--brand)]/10 px-3 py-2.5 text-center text-xs font-semibold text-[var(--brand)]">Send to</Link>
+                  <button type="button" onClick={() => startEdit(contact)} className="rounded-2xl bg-emerald-500/12 px-3 py-2.5 text-xs font-semibold text-emerald-600">Edit</button>
+                  <button type="button" onClick={() => handleDelete(contact.id)} className="rounded-2xl bg-red-500/12 px-3 py-2.5 text-xs font-semibold text-red-600">Delete</button>
                 </div>
               </div>
             ))}
