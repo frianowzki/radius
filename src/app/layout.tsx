@@ -58,7 +58,7 @@ export default function RootLayout({
         {/* Anti-FOUC: apply saved theme before first paint */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{document.documentElement.setAttribute('data-theme','light');document.documentElement.style.colorScheme='light';localStorage.setItem('radius-theme','light')}catch(e){}}())`,
+            __html: `(function(){try{var t=localStorage.getItem('radius-theme');if(t!=='dark'&&t!=='light')t='light';document.documentElement.setAttribute('data-theme',t);document.documentElement.style.colorScheme=t}catch(e){document.documentElement.setAttribute('data-theme','light');document.documentElement.style.colorScheme='light'}}())`,
           }}
         />
       </head>

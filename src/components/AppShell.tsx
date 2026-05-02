@@ -4,6 +4,8 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { DynamicBackground } from "@/components/DynamicBackground";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const PaymentRequestNotifier = dynamic(
   () => import("@/components/PaymentRequestNotifier").then((m) => m.PaymentRequestNotifier),
@@ -91,6 +93,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="phone-shell">
+      <DynamicBackground />
+      <ThemeToggle className="app-theme-toggle" />
       {notifierReady && <PaymentRequestNotifier />}
       <main>{children}</main>
       <nav className="bottom-nav" aria-label="Primary navigation">
