@@ -2856,7 +2856,6 @@ html {
   }
 
   .phone-shell,
-  .bottom-nav,
   .primary-btn,
   .ghost-btn,
   .radius-input,
@@ -2870,6 +2869,11 @@ html {
   .send-hero-card,
   .pay-hero-card {
     transform: none !important;
+    will-change: auto !important;
+  }
+
+  .bottom-nav {
+    transform: translateX(-50%) !important;
     will-change: auto !important;
   }
 
