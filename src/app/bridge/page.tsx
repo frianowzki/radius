@@ -186,6 +186,8 @@ export default function BridgePage() {
   const currentDecimals = TOKENS[token].decimals;
   const requestedRaw = amount && Number(amount) > 0 ? decimalToUnits(amount, currentDecimals) : BigInt(0);
   const hasEnoughBalance = typeof currentBalance === "bigint" ? currentBalance >= requestedRaw : true;
+  const manualForwarderMessage = "Manual destination minting is temporarily disabled because Circle App Kit is reverting this mobile route with an invalid destination domain. Keep Auto Forwarder on for now.";
+  const manualForwarderSupported = false;
 
   useEffect(() => {
     if (!showDestinationPicker) return;
@@ -239,7 +241,7 @@ export default function BridgePage() {
     status !== "confirming" &&
     isOnExpectedSourceChain &&
     hasEnoughBalance &&
-    (!isBridgeRoute || token === "USDC");
+    (!isBridgeRoute || (token === "USDC" && (useForwarder || manualForwarderSupported)));
   // ETAs prefer the live estimate when the SDK provides one; otherwise fall
   // back to coarse defaults based on testnet observations.
   const isFast = bridgeSpeed === "FAST";
@@ -316,6 +318,11 @@ export default function BridgePage() {
     if (!hasEnoughBalance) {
       setStatus("error");
       setError(`Insufficient ${token} balance on ${expectedSourceChainLabel}.`);
+      return;
+    }
+    if (isBridgeRoute && !useForwarder && !manualForwarderSupported) {
+      setStatus("error");
+      setError(manualForwarderMessage);
       return;
     }
 
@@ -834,17 +841,20 @@ export default function BridgePage() {
                     <button
                       type="button"
                       onClick={() => {
+                        if (!manualForwarderSupported) return;
                         setUseForwarder((v) => !v);
                         resetBridgeFeedback();
                       }}
+                      disabled={!manualForwarderSupported}
                       className={`bridge-forwarder-toggle ${useForwarder ? "is-on" : ""}`}
                       aria-pressed={useForwarder}
-                      aria-label={useForwarder ? "Disable Auto Forwarder" : "Enable Auto Forwarder"}
+                      aria-label={manualForwarderSupported ? (useForwarder ? "Disable Auto Forwarder" : "Enable Auto Forwarder") : "Auto Forwarder required"}
                     >
                       <span />
                     </button>
                   </div>
-                  <div className="mb-4 rounded-2xl bg-white/60 p-3 text-xs text-[#8b8795]"><b className="text-[#17151f]">Auto Forwarder: {useForwarder ? "On" : "Off"}</b><br />{useForwarder ? "Fastest path, but may add a forwarder fee." : "Lower fee path. You may need to confirm minting on the destination chain."}</div>
+                  <div className="mb-4 rounded-2xl bg-white/60 p-3 text-xs text-[#8b8795]"><b className="text-[#17151f]">Auto Forwarder: {useForwarder ? "On" : "Off"}</b><br />{manualForwarderSupported ? (useForwarder ? "Fastest path, but may add a forwarder fee." : "Lower fee path. You may need to confirm minting on the destination chain.") : "Required for mobile embedded-wallet bridge routes right now."}</div>
+                  {!manualForwarderSupported && <p className="mb-4 rounded-2xl bg-amber-500/10 p-3 text-xs font-medium text-amber-600">{manualForwarderMessage}</p>}
                   <div className="space-y-3">
                     {bridgeStepDefs.map((step, index) => {
                       const s = bridgeSteps[step.key];
