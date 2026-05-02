@@ -9,7 +9,24 @@ import {
 } from "@rainbow-me/rainbowkit/wallets";
 import { createStorage, http } from "wagmi";
 import { defineChain } from "viem";
-import { arbitrumSepolia, baseSepolia, sepolia } from "viem/chains";
+import {
+  arbitrumSepolia,
+  avalancheFuji,
+  baseSepolia,
+  codexTestnet,
+  hyperliquidEvmTestnet,
+  inkSepolia,
+  lineaSepolia,
+  monadTestnet,
+  optimismSepolia,
+  plumeSepolia,
+  polygonAmoy,
+  seiTestnet,
+  sepolia,
+  unichainSepolia,
+  worldchainSepolia,
+  xdcTestnet,
+} from "viem/chains";
 
 export const arcTestnet = defineChain({
   id: 5042002,
@@ -35,7 +52,25 @@ export const arcTestnet = defineChain({
 });
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
-const chains = [arcTestnet, sepolia, baseSepolia, arbitrumSepolia] as const;
+const chains = [
+  arcTestnet,
+  sepolia,
+  baseSepolia,
+  arbitrumSepolia,
+  avalancheFuji,
+  optimismSepolia,
+  polygonAmoy,
+  lineaSepolia,
+  unichainSepolia,
+  worldchainSepolia,
+  inkSepolia,
+  monadTestnet,
+  hyperliquidEvmTestnet,
+  plumeSepolia,
+  seiTestnet,
+  xdcTestnet,
+  codexTestnet,
+] as const;
 
 const memoryStorage = (() => {
   const store = new Map<string, string>();
@@ -83,5 +118,18 @@ export const config = getDefaultConfig({
     [sepolia.id]: http(),
     [baseSepolia.id]: http(),
     [arbitrumSepolia.id]: http(),
+    [avalancheFuji.id]: http(),
+    [optimismSepolia.id]: http(),
+    [polygonAmoy.id]: http(),
+    [lineaSepolia.id]: http(),
+    [unichainSepolia.id]: http(),
+    [worldchainSepolia.id]: http(),
+    [inkSepolia.id]: http(),
+    [monadTestnet.id]: http(),
+    [hyperliquidEvmTestnet.id]: http(),
+    [plumeSepolia.id]: http(),
+    [seiTestnet.id]: http(),
+    [xdcTestnet.id]: http(),
+    [codexTestnet.id]: http(),
   },
 });

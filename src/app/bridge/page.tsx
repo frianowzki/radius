@@ -13,7 +13,24 @@ import {
 import { useRadiusAuth } from "@/lib/web3auth";
 import { createWalletClient, custom, parseUnits, isAddress } from "viem";
 import type { Chain, EIP1193Provider } from "viem";
-import { arbitrumSepolia, baseSepolia, sepolia } from "viem/chains";
+import {
+  arbitrumSepolia,
+  avalancheFuji,
+  baseSepolia,
+  codexTestnet,
+  hyperliquidEvmTestnet,
+  inkSepolia,
+  lineaSepolia,
+  monadTestnet,
+  optimismSepolia,
+  plumeSepolia,
+  polygonAmoy,
+  seiTestnet,
+  sepolia,
+  unichainSepolia,
+  worldchainSepolia,
+  xdcTestnet,
+} from "viem/chains";
 import { AppShell } from "@/components/AppShell";
 import { ReceiptCard } from "@/components/ReceiptCard";
 import { ProfileChip } from "@/components/ProfileChip";
@@ -23,6 +40,7 @@ import {
   CHAIN_METADATA,
   CHAIN_USDC_ADDRESSES,
   CROSSCHAIN_ROUTES,
+  type CrosschainChain,
   type CrosschainRoute,
 } from "@/config/crosschain";
 import { arcTestnet } from "@/config/wagmi";
@@ -109,14 +127,26 @@ export default function BridgePage() {
   const sourceUsdcAddress = CHAIN_USDC_ADDRESSES[selectedRouteConfig.fromChain];
   const destinationUsdcAddress = CHAIN_USDC_ADDRESSES[selectedRouteConfig.toChain];
   const routeExplorerUrl = sourceChainMeta.explorerUrl;
-  const sourceViemChain: Chain =
-    selectedRouteConfig.fromChain === "Ethereum_Sepolia"
-      ? sepolia
-      : selectedRouteConfig.fromChain === "Base_Sepolia"
-        ? baseSepolia
-        : selectedRouteConfig.fromChain === "Arbitrum_Sepolia"
-          ? arbitrumSepolia
-          : arcTestnet;
+  const chainByRoute: Partial<Record<CrosschainChain, Chain>> = {
+    Arc_Testnet: arcTestnet,
+    Ethereum_Sepolia: sepolia,
+    Base_Sepolia: baseSepolia,
+    Arbitrum_Sepolia: arbitrumSepolia,
+    Avalanche_Fuji: avalancheFuji,
+    Optimism_Sepolia: optimismSepolia,
+    Polygon_Amoy_Testnet: polygonAmoy,
+    Linea_Sepolia: lineaSepolia,
+    Unichain_Sepolia: unichainSepolia,
+    World_Chain_Sepolia: worldchainSepolia,
+    Ink_Testnet: inkSepolia,
+    Monad_Testnet: monadTestnet,
+    HyperEVM_Testnet: hyperliquidEvmTestnet,
+    Plume_Testnet: plumeSepolia,
+    Sei_Testnet: seiTestnet,
+    XDC_Apothem: xdcTestnet,
+    Codex_Testnet: codexTestnet,
+  };
+  const sourceViemChain: Chain = chainByRoute[selectedRouteConfig.fromChain] ?? arcTestnet;
   const activeChainId = wagmiConnected ? wagmiChainId : authChainId;
   const isOnExpectedSourceChain = activeChainId === expectedSourceChainId;
   const canSwitchSourceChain = !isOnExpectedSourceChain && (wagmiConnected ? !!switchChainAsync : authenticated);
