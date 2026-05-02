@@ -256,7 +256,7 @@ export default function RequestPage() {
                 </button>
               </div>
               {requests.length === 0 ? (
-                <p className="rounded-2xl bg-white/50 p-4 text-sm text-[#8b8795]">No requests created yet.</p>
+                <p className="request-status-empty rounded-2xl bg-white/50 p-4 text-sm text-[#8b8795]">No requests created yet.</p>
               ) : (
                 <div className="space-y-3">
                   {requests.map((request) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMounted } from "@/lib/useMounted";
 import {
   useAccount,
@@ -186,6 +186,13 @@ export default function BridgePage() {
   const currentDecimals = TOKENS[token].decimals;
   const requestedRaw = amount && Number(amount) > 0 ? decimalToUnits(amount, currentDecimals) : BigInt(0);
   const hasEnoughBalance = typeof currentBalance === "bigint" ? currentBalance >= requestedRaw : true;
+
+  useEffect(() => {
+    if (!showDestinationPicker) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, [showDestinationPicker]);
 
   const directoryEntries = useMemo(() => {
     const query = directoryQuery.trim().toLowerCase();
@@ -818,7 +825,7 @@ export default function BridgePage() {
               </div>
 
               {isBridgeRoute && (
-                <div className="bridge-premium-card p-4">
+                <div className="bridge-premium-card bridge-timeline-card p-4">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8b8795]">Bridge timeline</p>
@@ -830,11 +837,11 @@ export default function BridgePage() {
                         setUseForwarder((v) => !v);
                         resetBridgeFeedback();
                       }}
-                      className={`relative h-8 w-14 shrink-0 rounded-full p-1 transition-colors ${useForwarder ? "bg-[var(--brand)]" : "bg-zinc-300"}`}
+                      className={`bridge-forwarder-toggle ${useForwarder ? "is-on" : ""}`}
                       aria-pressed={useForwarder}
                       aria-label={useForwarder ? "Disable Auto Forwarder" : "Enable Auto Forwarder"}
                     >
-                      <span className={`block h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${useForwarder ? "translate-x-6" : "translate-x-0"}`} />
+                      <span />
                     </button>
                   </div>
                   <div className="mb-4 rounded-2xl bg-white/60 p-3 text-xs text-[#8b8795]"><b className="text-[#17151f]">Auto Forwarder: {useForwarder ? "On" : "Off"}</b><br />{useForwarder ? "Fastest path, but may add a forwarder fee." : "Lower fee path. You may need to confirm minting on the destination chain."}</div>
@@ -867,8 +874,8 @@ export default function BridgePage() {
             </form>
 
             {showDestinationPicker && (
-              <div className="fixed inset-0 z-[90] grid place-items-end bg-slate-950/35 p-4" onClick={() => setShowDestinationPicker(false)}>
-                <div className="bridge-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-backdrop fixed inset-0 z-[90] grid place-items-end bg-slate-950/70 p-4" onClick={() => setShowDestinationPicker(false)}>
+                <div className="bridge-sheet bridge-destination-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-bold text-[#17151f]">Choose destination</h3>
                     <button type="button" onClick={() => setShowDestinationPicker(false)} className="bridge-icon-btn">✕</button>

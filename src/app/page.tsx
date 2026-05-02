@@ -13,6 +13,7 @@ import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { arcTestnet } from "@/config/wagmi";
 import { showRadiusNotification } from "@/lib/notifications";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, getPaymentRequests, saveLocalTransfers, savePaymentRequests, formatContactLabel, markMatchingPaymentRequestPaid, saveLocalTransfer } from "@/lib/utils";
@@ -77,7 +78,7 @@ function LoginScreen() {
 
           <h1 className="login-title">Radius</h1>
           <p className="login-subtitle">P2P stablecoin payments on Arc Testnet</p>
-          <div className="login-network-pill"><span /> Arc Testnet</div>
+          <div className="login-theme-slot"><ThemeToggle /></div>
         </section>
 
         <div className="login-actions">
@@ -230,7 +231,7 @@ export default function DashboardPage() {
             <div className="dashboard-logo">Radius</div>
             <h1>Hello, {profileName} <span className="dashboard-wave" aria-hidden="true">👋</span></h1>
           </div>
-          <span className="dashboard-network-badge">Arc Testnet</span>
+          <ThemeToggle className="dashboard-theme-toggle" />
         </header>
 
         {activityNotice && (
@@ -327,8 +328,8 @@ export default function DashboardPage() {
         </section>
 
         {showReceiveAddress && address && (
-          <div className="fixed inset-0 z-[80] grid place-items-end bg-slate-950/35 p-4" onClick={() => setShowReceiveAddress(false)}>
-            <div className="assets-modal-card w-full max-w-sm rounded-[30px] p-5 text-center" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-backdrop fixed inset-0 z-[80] grid place-items-end bg-slate-950/55 p-4" onClick={() => setShowReceiveAddress(false)}>
+            <div className="assets-modal-card receive-address-modal w-full max-w-sm rounded-[30px] p-5 text-center" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between text-left">
                 <div>
                   <h3 className="text-lg font-bold">Receive to Address</h3>
@@ -339,7 +340,7 @@ export default function DashboardPage() {
               <div className="mx-auto w-fit rounded-[26px] bg-white p-4 shadow-[0_14px_38px_rgba(37,99,235,.14)]">
                 <QRCodeSVG value={address} size={220} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
               </div>
-              <div className="mt-4 rounded-2xl bg-[#f7f9ff] px-3 py-3 text-left">
+              <div className="receive-address-box mt-4 rounded-2xl bg-[#f7f9ff] px-3 py-3 text-left">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">Full address</p>
                 <p className="mt-2 break-all font-mono text-xs leading-5 text-[#475569]">{address}</p>
               </div>
@@ -351,7 +352,7 @@ export default function DashboardPage() {
         )}
 
         {showAssets && (
-          <div className="fixed inset-0 z-[80] grid place-items-end bg-slate-950/35 p-4" onClick={() => setShowAssets(false)}>
+          <div className="modal-backdrop fixed inset-0 z-[80] grid place-items-end bg-slate-950/55 p-4" onClick={() => setShowAssets(false)}>
             <div className="assets-modal-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-bold">My Assets</h3><button type="button" aria-label="Close assets" onClick={() => setShowAssets(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button></div>
               <div className="space-y-3">
