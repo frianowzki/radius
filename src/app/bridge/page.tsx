@@ -85,7 +85,7 @@ export default function BridgePage() {
   const [bridgeDetails, setBridgeDetails] = useState<string[]>([]);
   const [liveEta, setLiveEta] = useState<{ total?: number; attestation?: number }>({});
   const bridgeSpeed: BridgeSpeed = "FAST";
-  const useForwarder = true;
+  const [useForwarder, setUseForwarder] = useState(true);
   const [bridgeProgress, setBridgeProgress] = useState("");
   type BridgeStepKey = "approve" | "burn" | "fetchAttestation" | "mint";
   type BridgeStepStatus = "pending" | "active" | "done" | "error";
@@ -299,7 +299,7 @@ export default function BridgePage() {
         setLiveEta({ total: estimateSummary.totalEtaSeconds, attestation: estimateSummary.attestationEtaSeconds });
         if (useForwarder && estimateSummary.totalUsdcFees >= Number(amount)) {
           setStatus("error");
-          setError(`Forwarder fee is ~${estimateSummary.totalUsdcFees.toFixed(6)} USDC, higher than this transfer. Increase amount or turn off Auto forwarder.`);
+          setError(`Auto Forwarder fee is ~${estimateSummary.totalUsdcFees.toFixed(6)} USDC, higher than this transfer. Turn Auto Forwarder off below and retry.`);
           return;
         }
         setBridgeProgress("Waiting for wallet confirmation");
@@ -805,7 +805,29 @@ export default function BridgePage() {
 
               {isBridgeRoute && (
                 <div className="glass-panel rounded-[28px] p-5">
-                  <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Bridge timeline</p>
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Bridge timeline</p>
+                      <p className="mt-1 text-[11px] text-zinc-500">Auto Forwarder pays destination minting for convenience.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUseForwarder((v) => !v);
+                        resetBridgeFeedback();
+                      }}
+                      className={`relative h-8 w-14 shrink-0 rounded-full p-1 transition-colors ${useForwarder ? "bg-[var(--brand)]" : "bg-zinc-300"}`}
+                      aria-pressed={useForwarder}
+                      aria-label={useForwarder ? "Disable Auto Forwarder" : "Enable Auto Forwarder"}
+                    >
+                      <span className={`block h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${useForwarder ? "translate-x-6" : "translate-x-0"}`} />
+                    </button>
+                  </div>
+                  <div className="mb-4 rounded-2xl bg-white/55 p-3 text-xs text-zinc-500">
+                    <span className="font-semibold text-[#17151f]">Auto Forwarder: {useForwarder ? "On" : "Off"}</span>
+                    <br />
+                    {useForwarder ? "Fastest path, but may add a forwarder fee." : "Lower fee path. You may need to confirm minting on the destination chain."}
+                  </div>
                   <div className="space-y-3">
                     {bridgeStepDefs.map((step, index) => {
                       const s = bridgeSteps[step.key];
