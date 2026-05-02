@@ -95,6 +95,8 @@ export default function BridgePage() {
   const [saveName, setSaveName] = useState("");
   const [saveHandle, setSaveHandle] = useState("");
   const [saveAvatar, setSaveAvatar] = useState("");
+  const [showDestinationPicker, setShowDestinationPicker] = useState(false);
+  const [showBridgeHistory, setShowBridgeHistory] = useState(false);
   const bridgeRoutes = CROSSCHAIN_ROUTES.filter((route) => route.mode === "bridge");
   const [selectedRoute, setSelectedRoute] = useState<CrosschainRoute["id"]>(
     bridgeRoutes[0]?.id ?? CROSSCHAIN_ROUTES[0].id
@@ -125,8 +127,13 @@ export default function BridgePage() {
   const expectedSourceChainLabel = sourceChainMeta.label;
   const destinationChainLabel = destinationChainMeta.label;
   const sourceUsdcAddress = CHAIN_USDC_ADDRESSES[selectedRouteConfig.fromChain];
-  const destinationUsdcAddress = CHAIN_USDC_ADDRESSES[selectedRouteConfig.toChain];
   const routeExplorerUrl = sourceChainMeta.explorerUrl;
+  const sourceRoutes = bridgeRoutes.filter((route) => route.fromChain === selectedRouteConfig.fromChain);
+  const bridgeHistory = mounted
+    ? getLocalTransfers(address)
+        .filter((transfer) => transfer.routeLabel?.includes("→") && transfer.token === "USDC")
+        .slice(0, 8)
+    : [];
   const chainByRoute: Partial<Record<CrosschainChain, Chain>> = {
     Arc_Testnet: arcTestnet,
     Ethereum_Sepolia: sepolia,
@@ -463,6 +470,19 @@ export default function BridgePage() {
     setError("");
   }
 
+  function switchBridgeDirection() {
+    const reverse = bridgeRoutes.find(
+      (route) => route.fromChain === selectedRouteConfig.toChain && route.toChain === selectedRouteConfig.fromChain
+    );
+    if (!reverse) return;
+    setSelectedRoute(reverse.id);
+    resetBridgeFeedback();
+  }
+
+  function shortChainIcon(label: string) {
+    return label.slice(0, 1).toUpperCase();
+  }
+
   return (
     <AppShell>
       <div className="screen-pad">
@@ -622,20 +642,24 @@ export default function BridgePage() {
             </div>
           </div>
         ) : (
-          <div>
-            <form onSubmit={handleSend} className="space-y-5">
-              <div className="glass-panel-strong rounded-[32px] p-8">
-                <div className="flex items-start gap-4">
-                  <div className="bridge-header-icon shrink-0">A</div>
-                  <div>
-                    <h2 className="text-3xl font-black tracking-tight text-glow">Crosschains Bridge</h2>
-                    <p className="mt-3 max-w-xs text-sm leading-6 text-zinc-400">Move USDC between supported testnets without mixing it into your simple Arc sends.</p>
-                  </div>
+          <div className="bridge-redesign">
+            <form onSubmit={handleSend} className="space-y-4">
+              <div className="flex items-center justify-between gap-3 px-1">
+                <div>
+                  <h2 className="text-2xl font-black tracking-tight text-[#17151f]">Bridge</h2>
+                  <p className="mt-1 text-xs text-[#8b8795]">Focused USDC bridge flow</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowBridgeHistory(true)}
+                  className="bridge-icon-btn"
+                  aria-label="Open bridge history"
+                >
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/><path d="M12 7v5l3 2"/></svg>
+                </button>
               </div>
 
-              <div className="glass-panel rounded-[28px] p-5">
-                <label className="mb-3 block text-sm font-medium text-zinc-400">Token</label>
+              <div className="bridge-premium-card p-3">
                 <div className="grid grid-cols-2 gap-2">
                   {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
                     <button
@@ -645,70 +669,58 @@ export default function BridgePage() {
                         setToken(key);
                         resetBridgeFeedback();
                       }}
-                      className={`bridge-choice relative rounded-2xl px-4 py-4 text-sm font-medium transition-all ${
-                        token === key
-                          ? "border border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
-                          : "border border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
-                      }`}
+                      className={`bridge-token-tab ${token === key ? "is-active" : ""}`}
                     >
-                      {token === key && <span className="card-check">✓</span>}
-                      <div className="flex items-center gap-2 font-semibold"><TokenLogo symbol={key} size={26} />{TOKENS[key].symbol}</div>
-                      {currentBalance !== undefined && token === key && (
-                        <div className="mt-1 text-xs opacity-70">
-                          Balance: {formatAmount(currentBalance, currentDecimals)}
-                        </div>
-                      )}
+                      <TokenLogo symbol={key} size={24} />
+                      <span>{TOKENS[key].symbol}</span>
+                      {token === key && <span className="ml-auto text-[11px]">✓</span>}
                     </button>
                   ))}
                 </div>
+                {currentBalance !== undefined && (
+                  <p className="mt-3 px-1 text-xs text-[#8b8795]">Balance: {formatAmount(currentBalance, currentDecimals)} {token}</p>
+                )}
               </div>
 
-              <div className="glass-panel rounded-[28px] p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <label className="text-sm font-medium text-zinc-400">Route</label>
-                  
-                </div>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {bridgeRoutes.map((route) => (
-                    <button
-                      key={route.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedRoute(route.id);
-                        resetBridgeFeedback();
-                      }}
-                      className={`bridge-choice relative rounded-2xl border px-4 py-3 text-left text-sm transition-all ${
-                        selectedRoute === route.id
-                          ? "border-indigo-400/30 bg-indigo-500/15 text-indigo-300"
-                          : "border-white/6 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.06]"
-                      }`}
-                    >
-                      {selectedRoute === route.id && <span className="card-check">✓</span>}
-                      <div className="font-medium">{route.label}</div>
-                      <div className="mt-1 text-xs text-zinc-500">{route.token} • {route.mode}</div>
-                    </button>
-                  ))}
-                </div>
-                {isBridgeRoute && (
-                  <div className="mt-4 space-y-3">
-                    <div className="grid gap-2 text-xs sm:grid-cols-2">
-                      <div className="bridge-info-card rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
-                        <p className="flex items-center gap-2 text-zinc-500"><TokenLogo symbol="USDC" size={22} />Source USDC</p>
-                        <p className="mt-1 break-all font-mono text-zinc-300">{sourceUsdcAddress}</p>
-                      </div>
-                      <div className="bridge-info-card rounded-[18px] border border-white/8 bg-white/[0.03] p-3">
-                        <p className="flex items-center gap-2 text-zinc-500"><TokenLogo symbol="USDC" size={22} />Destination USDC</p>
-                        <p className="mt-1 break-all font-mono text-zinc-300">{destinationUsdcAddress}</p>
-                      </div>
+              <div className="bridge-premium-card space-y-3 p-4">
+                <div className="bridge-chain-card">
+                  <div className="flex items-center gap-3">
+                    <span className="bridge-chain-avatar">{shortChainIcon(expectedSourceChainLabel)}</span>
+                    <div>
+                      <p className="text-[11px] text-[#8b8795]">You send</p>
+                      <p className="font-semibold text-[#17151f]">{expectedSourceChainLabel}</p>
                     </div>
                   </div>
-                )}
-                <div className="bridge-info-card mt-4 rounded-[22px] border border-white/8 bg-white/[0.03] p-4 text-xs leading-6">
-                  <p className="text-zinc-400">Source wallet network</p>
-                  <p className={`mt-1 font-medium ${isOnExpectedSourceChain ? "text-emerald-300" : "text-amber-300"}`}>
-                    {isOnExpectedSourceChain
-                      ? `Connected to ${expectedSourceChainLabel}`
-                      : `Need ${expectedSourceChainLabel}`}
+                  <span className="bridge-role-pill">Source</span>
+                  <div className="mt-3 flex items-center justify-between border-t border-[#1b162b]/5 pt-3 text-xs">
+                    <span className="text-[#8b8795]">Network</span>
+                    <span className="font-semibold text-[#17151f]">{expectedSourceChainLabel}</span>
+                  </div>
+                </div>
+
+                <button type="button" onClick={switchBridgeDirection} className="bridge-switch-btn" aria-label="Switch bridge direction">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                </button>
+
+                <div className="bridge-chain-card">
+                  <div className="flex items-center gap-3">
+                    <span className="bridge-chain-avatar is-destination">{shortChainIcon(destinationChainLabel)}</span>
+                    <div>
+                      <p className="text-[11px] text-[#8b8795]">You receive</p>
+                      <p className="font-semibold text-[#17151f]">{destinationChainLabel}</p>
+                    </div>
+                  </div>
+                  <span className="bridge-role-pill">Destination</span>
+                  <button type="button" onClick={() => setShowDestinationPicker(true)} className="mt-3 flex w-full items-center justify-between rounded-2xl border border-[#1b162b]/8 bg-white/70 px-4 py-3 text-sm font-semibold text-[#3d3750]">
+                    Choose destination
+                    <span>›</span>
+                  </button>
+                </div>
+
+                <div className="bridge-info-card rounded-[18px] p-3 text-xs leading-5">
+                  <p className="text-[#8b8795]">Source wallet network</p>
+                  <p className={`font-semibold ${isOnExpectedSourceChain ? "text-emerald-600" : "text-amber-600"}`}>
+                    {isOnExpectedSourceChain ? `Connected to ${expectedSourceChainLabel}` : `Need ${expectedSourceChainLabel}`}
                   </p>
                   {canSwitchSourceChain && (
                     <button
@@ -722,7 +734,7 @@ export default function BridgePage() {
                           setError(err instanceof Error ? err.message.slice(0, 160) : "Failed to switch network");
                         });
                       }}
-                      className="mt-3 rounded-2xl bg-white/10 px-3 py-2 text-xs font-medium text-zinc-100 transition-colors hover:bg-white/14"
+                      className="mt-2 rounded-xl bg-[var(--brand)]/10 px-3 py-2 text-xs font-semibold text-[var(--brand)]"
                     >
                       Switch to {expectedSourceChainLabel}
                     </button>
@@ -730,13 +742,9 @@ export default function BridgePage() {
                 </div>
               </div>
 
-              <div className="glass-panel rounded-[28px] p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <label className="text-sm font-medium text-zinc-400">Recipient</label>
-                  <span className="text-xs text-zinc-500"></span>
-                </div>
-
-                <div className="bridge-info-card mb-3 rounded-[24px] border border-white/8 bg-white/[0.03] p-3">
+              <div className="bridge-premium-card p-4">
+                <label className="mb-2 block text-xs font-semibold text-[#8b8795]">Recipient</label>
+                <div className="bridge-info-card mb-3 rounded-[20px] p-3">
                   <input
                     type="text"
                     placeholder="Search people or @username"
@@ -746,44 +754,25 @@ export default function BridgePage() {
                       setShowDirectory(true);
                       resetBridgeFeedback();
                     }}
-                    className="bridge-input mb-3 w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                    className="bridge-input mb-3 w-full rounded-2xl px-4 py-3 text-sm"
                   />
-
-                  {showDirectory && (
-                    <div className="space-y-1.5 max-h-52 overflow-y-auto">
+                  {showDirectory && directoryEntries.length > 0 && (
+                    <div className="max-h-44 space-y-1.5 overflow-y-auto">
                       {directoryEntries.map((entry) => (
-                      <button
-                        key={`${entry.kind}-${entry.handle || entry.address || entry.name}`}
-                        type="button"
-                        onClick={() => handleSelectDirectoryEntry(entry)}
-                        disabled={entry.kind === "self" || !entry.address}
-                        className="bridge-directory-row flex w-full items-center justify-between rounded-2xl border border-white/6 bg-white/[0.04] px-4 py-3 text-left text-sm transition-colors hover:bg-white/[0.06] disabled:cursor-default disabled:opacity-60"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-zinc-200">{entry.name}</span>
-                            {entry.handle && (
-                              <span className="text-xs text-zinc-500">@{entry.handle}</span>
-                            )}
-                          </div>
-                          {(entry.note || entry.bio) && (
-                            <p className="mt-1 text-xs text-zinc-500">{entry.note || entry.bio}</p>
-                          )}
-                        </div>
-                        <span className="text-xs text-zinc-500">
-                          {entry.kind === "self" ? "You" : entry.address ? formatAddress(entry.address) : ""}
-                        </span>
-                      </button>
-                    ))}
-                      {directoryEntries.length === 0 && (
-                        <div className="bridge-directory-row rounded-2xl border border-white/6 bg-white/[0.04] px-4 py-4 text-sm text-zinc-500">
-                          No matching people yet.
-                        </div>
-                      )}
+                        <button
+                          key={`${entry.kind}-${entry.handle || entry.address || entry.name}`}
+                          type="button"
+                          onClick={() => handleSelectDirectoryEntry(entry)}
+                          disabled={entry.kind === "self" || !entry.address}
+                          className="bridge-directory-row flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm disabled:opacity-60"
+                        >
+                          <span className="font-medium text-[#17151f]">{entry.name}</span>
+                          <span className="text-xs text-[#8b8795]">{entry.kind === "self" ? "You" : entry.address ? formatAddress(entry.address) : ""}</span>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
-
                 <input
                   type="text"
                   placeholder="0x... or @username"
@@ -792,18 +781,14 @@ export default function BridgePage() {
                     setRecipient(e.target.value);
                     resetBridgeFeedback();
                   }}
-                  className="bridge-input w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 font-mono text-sm text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                  className="bridge-input w-full rounded-2xl px-4 py-3 font-mono text-sm"
                 />
-                {recipient && !validRecipient && (
-                  <p className="mt-2 text-xs text-red-400">Enter a valid address or a saved @username</p>
-                )}
-                {isBridgeRoute && token !== "USDC" && (
-                  <p className="mt-2 text-xs text-amber-400">Crosschain route currently supports USDC only.</p>
-                )}
+                {recipient && !validRecipient && <p className="mt-2 text-xs text-red-500">Enter a valid address or saved @username.</p>}
+                {isBridgeRoute && token !== "USDC" && <p className="mt-2 text-xs text-amber-600">Crosschain route currently supports USDC only.</p>}
               </div>
 
-              <div className="glass-panel rounded-[28px] p-5">
-                <label className="mb-3 block text-sm font-medium text-zinc-400">Amount</label>
+              <div className="bridge-premium-card p-4">
+                <label className="mb-2 block text-xs font-semibold text-[#8b8795]">Amount</label>
                 <div className="relative">
                   <input
                     type="number"
@@ -815,30 +800,29 @@ export default function BridgePage() {
                     }}
                     min="0"
                     step="any"
-                    className="bridge-input w-full rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-4 pr-16 text-lg font-medium text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+                    className="bridge-input w-full rounded-2xl px-4 py-4 pr-24 text-2xl font-semibold"
                   />
-                  <span className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 text-sm font-medium text-zinc-400">
-                    <TokenLogo symbol={token} size={22} />{token}
-                  </span>
+                  <span className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 rounded-xl bg-white/75 px-2 py-1 text-sm font-semibold text-[#3d3750]"><TokenLogo symbol={token} size={20} />{token}</span>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-3 border-t border-[#1b162b]/5 pt-3 text-xs text-[#8b8795]">
+                  <span>Est. time<br /><b className="text-[#17151f]">{attestationEta}</b></span>
+                  <span>Fee<br /><b className="text-[#17151f]">Estimate on bridge</b></span>
                 </div>
                 {currentBalance !== undefined && (
-                  <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-500">
+                  <div className="mt-3 flex items-center justify-between gap-3 text-xs text-[#8b8795]">
                     <span>Available: {formatAmount(currentBalance, currentDecimals)} {token}</span>
                     <button type="button" onClick={() => setAmount(formatAmount(currentBalance, currentDecimals).replace(/,/g, ""))} className="font-semibold text-[var(--brand)]">Max</button>
                   </div>
                 )}
-                {!hasEnoughBalance && amount && Number(amount) > 0 && (
-                  <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-400">Insufficient {token} balance on {expectedSourceChainLabel}.</p>
-                )}
+                {!hasEnoughBalance && amount && Number(amount) > 0 && <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">Insufficient {token} balance on {expectedSourceChainLabel}.</p>}
               </div>
 
-
               {isBridgeRoute && (
-                <div className="glass-panel rounded-[28px] p-5">
+                <div className="bridge-premium-card p-4">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Bridge timeline</p>
-                      <p className="mt-1 text-[11px] text-zinc-500">Auto Forwarder pays destination minting for convenience.</p>
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8b8795]">Bridge timeline</p>
+                      <p className="mt-1 text-[11px] text-[#8b8795]">Auto Forwarder pays destination minting for convenience.</p>
                     </div>
                     <button
                       type="button"
@@ -853,11 +837,7 @@ export default function BridgePage() {
                       <span className={`block h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${useForwarder ? "translate-x-6" : "translate-x-0"}`} />
                     </button>
                   </div>
-                  <div className="mb-4 rounded-2xl bg-white/55 p-3 text-xs text-zinc-500">
-                    <span className="font-semibold text-[#17151f]">Auto Forwarder: {useForwarder ? "On" : "Off"}</span>
-                    <br />
-                    {useForwarder ? "Fastest path, but may add a forwarder fee." : "Lower fee path. You may need to confirm minting on the destination chain."}
-                  </div>
+                  <div className="mb-4 rounded-2xl bg-white/60 p-3 text-xs text-[#8b8795]"><b className="text-[#17151f]">Auto Forwarder: {useForwarder ? "On" : "Off"}</b><br />{useForwarder ? "Fastest path, but may add a forwarder fee." : "Lower fee path. You may need to confirm minting on the destination chain."}</div>
                   <div className="space-y-3">
                     {bridgeStepDefs.map((step, index) => {
                       const s = bridgeSteps[step.key];
@@ -867,52 +847,75 @@ export default function BridgePage() {
                       return (
                         <div key={step.key} className="flex items-center justify-between gap-3 text-sm">
                           <div className="flex items-center gap-3">
-                            <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${errored ? "bg-red-500 text-white" : done ? "bg-emerald-500 text-white" : active ? "bg-indigo-500 text-white animate-pulse" : "bg-white/10 text-zinc-500"}`}>
-                              {errored ? "!" : done ? "✓" : index + 1}
-                            </span>
-                            <span className={errored ? "text-red-300" : done ? "text-emerald-400" : active ? "text-indigo-300" : "text-zinc-500"}>{step.label}</span>
+                            <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${errored ? "bg-red-500 text-white" : done ? "bg-emerald-500 text-white" : active ? "bg-[var(--brand)] text-white animate-pulse" : "bg-[#eaf0ff] text-[#8b8795]"}`}>{errored ? "!" : done ? "✓" : index + 1}</span>
+                            <span className={errored ? "text-red-500" : done ? "text-emerald-600" : active ? "text-[var(--brand)]" : "text-[#8b8795]"}>{step.label}</span>
                           </div>
-                          <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">{done ? "done" : step.eta}</span>
+                          <span className="text-[10px] uppercase tracking-[0.18em] text-[#8b8795]">{done ? "done" : step.eta}</span>
                         </div>
                       );
                     })}
                   </div>
-                  <p className="mt-4 text-xs text-zinc-500">
-                    {bridgeProgress || "Timeline updates once the bridge starts."}
-                    {liveEta.total ? ` · Total ${formatEtaSeconds(liveEta.total)}` : ""}
-                  </p>
+                  <p className="mt-4 text-xs text-[#8b8795]">{bridgeProgress || "Timeline updates once the bridge starts."}{liveEta.total ? ` · Total ${formatEtaSeconds(liveEta.total)}` : ""}</p>
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={!canSend}
-                className="primary-btn w-full rounded-2xl px-4 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-              >
-                {status === "sending" || status === "confirming" ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    {status === "sending" ? "Sending..." : isBridgeRoute ? "Bridging..." : "Confirming..."}
-                  </span>
-                ) : (
-                  `Send ${token}`
-                )}
+              <button type="submit" disabled={!canSend} className="primary-btn w-full rounded-2xl px-4 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none">
+                {status === "sending" || status === "confirming" ? (status === "sending" ? "Sending..." : isBridgeRoute ? "Bridging..." : "Confirming...") : isBridgeRoute ? "Bridge Now" : `Send ${token}`}
               </button>
-
-              {isBridgeRoute && bridgeProgress && status !== "error" && (
-                <p className="text-center text-sm text-zinc-400">
-                  {bridgeProgress}. CCTP attestation can take a few minutes, especially on testnets.
-                </p>
-              )}
-
-              {status === "error" && error && (
-                <p className="text-center text-sm text-red-400">{error}</p>
-              )}
+              {bridgeProgress && status !== "error" && <p className="text-center text-sm text-[#8b8795]">{bridgeProgress}. CCTP attestation can take a few minutes on testnets.</p>}
+              {status === "error" && error && <p className="text-center text-sm text-red-500">{error}</p>}
             </form>
 
+            {showDestinationPicker && (
+              <div className="fixed inset-0 z-[90] grid place-items-end bg-slate-950/35 p-4" onClick={() => setShowDestinationPicker(false)}>
+                <div className="bridge-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-[#17151f]">Choose destination</h3>
+                    <button type="button" onClick={() => setShowDestinationPicker(false)} className="bridge-icon-btn">✕</button>
+                  </div>
+                  <div className="space-y-2">
+                    {sourceRoutes.map((route) => {
+                      const meta = CHAIN_METADATA[route.toChain];
+                      const selected = route.id === selectedRoute;
+                      return (
+                        <button key={route.id} type="button" onClick={() => { setSelectedRoute(route.id); resetBridgeFeedback(); setShowDestinationPicker(false); }} className={`bridge-destination-row ${selected ? "is-active" : ""}`}>
+                          <span className="bridge-chain-avatar is-destination">{shortChainIcon(meta.label)}</span>
+                          <span className="min-w-0 flex-1 text-left"><b>{meta.label}</b><small>USDC · Bridge</small></span>
+                          <span className="bridge-radio">{selected ? "✓" : ""}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button type="button" onClick={() => setShowDestinationPicker(false)} className="primary-btn mt-4 w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white">Select destination</button>
+                </div>
+              </div>
+            )}
+
+            {showBridgeHistory && (
+              <div className="fixed inset-0 z-[90] grid place-items-end bg-slate-950/35 p-4" onClick={() => setShowBridgeHistory(false)}>
+                <div className="bridge-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+                  <div className="mb-4 flex items-center justify-between">
+                    <div><h3 className="text-lg font-bold text-[#17151f]">Bridge history</h3><p className="text-xs text-[#8b8795]">Ongoing, successful, and failed bridge info</p></div>
+                    <button type="button" onClick={() => setShowBridgeHistory(false)} className="bridge-icon-btn">✕</button>
+                  </div>
+                  <div className="space-y-2">
+                    {(status === "sending" || status === "confirming" || status === "error") && (
+                      <div className="bridge-history-row">
+                        <span className={`bridge-status-dot ${status === "error" ? "is-failed" : "is-ongoing"}`} />
+                        <div><b>{status === "error" ? "Failed bridge" : "Ongoing bridge"}</b><small>{selectedRouteConfig.label} · {bridgeProgress || error || "Waiting for update"}</small></div>
+                      </div>
+                    )}
+                    {bridgeHistory.map((transfer) => (
+                      <a key={transfer.id} href={`${CHAIN_METADATA[selectedRouteConfig.fromChain].explorerUrl}/tx/${transfer.txHash}`} target="_blank" rel="noopener noreferrer" className="bridge-history-row">
+                        <span className="bridge-status-dot is-success" />
+                        <div><b>{formatAmount(BigInt(transfer.value), TOKENS.USDC.decimals)} USDC</b><small>{transfer.routeLabel || "Bridge"} · {formatAddress(transfer.txHash)}</small></div>
+                      </a>
+                    ))}
+                    {status === "idle" && bridgeHistory.length === 0 && <div className="rounded-2xl bg-white/60 p-4 text-sm text-[#8b8795]">No bridge activity yet.</div>}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
