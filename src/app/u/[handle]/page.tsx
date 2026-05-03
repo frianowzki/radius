@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { QRCodeSVG } from "qrcode.react";
 import { AppShell } from "@/components/AppShell";
 import { AvatarImage } from "@/components/AvatarImage";
 import { TokenLogo } from "@/components/TokenLogo";
@@ -28,6 +29,12 @@ export default function PublicProfilePage({ params }: { params: Promise<{ handle
         .finally(() => setLoading(false));
     });
   }, [params]);
+
+  const payLink = useMemo(() => {
+    if (!profile) return "";
+    const target = profile.handle ? `@${profile.handle}` : profile.address;
+    return `${typeof window !== "undefined" ? window.location.origin : ""}/send?to=${encodeURIComponent(target)}`;
+  }, [profile]);
 
   async function copyAddress() {
     if (!profile?.address) return;
@@ -105,23 +112,26 @@ export default function PublicProfilePage({ params }: { params: Promise<{ handle
               </div>
             </div>
 
-            {/* Send payment CTA */}
-            <div className="soft-card rounded-[28px] p-5 text-center">
-              <div className="mb-3 flex items-center justify-center gap-2">
-                <TokenLogo symbol="USDC" size={28} />
-                <TokenLogo symbol="EURC" size={28} />
+            {/* Pay QR */}
+            {payLink && (
+              <div className="soft-card rounded-[28px] p-5 text-center">
+                <div className="mb-3 flex items-center justify-center gap-2">
+                  <TokenLogo symbol="USDC" size={28} />
+                  <TokenLogo symbol="EURC" size={28} />
+                </div>
+                <h3 className="text-lg font-bold">Pay @{profile.handle}</h3>
+                <p className="mt-1 text-xs text-[#8b8795]">Scan to send stablecoins on Arc Testnet</p>
+                <div className="mx-auto mt-4 w-fit rounded-[24px] bg-white p-4 shadow-[0_14px_38px_rgba(143,124,255,.16)]">
+                  <QRCodeSVG value={payLink} size={200} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
+                </div>
+                <Link
+                  href={`/send?to=${encodeURIComponent(profile.handle ? `@${profile.handle}` : profile.address)}`}
+                  className="primary-btn mt-4 inline-block w-full rounded-2xl py-3 text-sm font-semibold text-white"
+                >
+                  Send to @{profile.handle || "user"}
+                </Link>
               </div>
-              <h3 className="text-lg font-bold">Send payment</h3>
-              <p className="mt-1 text-xs text-[#8b8795]">
-                Send USDC or EURC to @{profile.handle || formatAddress(profile.address)} on Arc Testnet
-              </p>
-              <Link
-                href={`/send?to=${encodeURIComponent(profile.handle ? `@${profile.handle}` : profile.address)}`}
-                className="primary-btn mt-4 inline-block w-full rounded-2xl py-3 text-sm font-semibold text-white"
-              >
-                Send to @{profile.handle || "user"}
-              </Link>
-            </div>
+            )}
 
             {/* Share */}
             <div className="text-center">
