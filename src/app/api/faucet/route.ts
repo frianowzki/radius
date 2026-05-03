@@ -8,6 +8,16 @@ const SUPPORTED_BLOCKCHAINS = new Set([
   "ARB-SEPOLIA",
 ]);
 
+// Simple in-memory rate limiter (per-address cooldown).
+// Resets on cold deploy, which is fine for a throttle — not a security boundary.
+const lastDrip = new Map<string, number>();
+const COOLDOWN_MS = 60_000; // 1 drip per address per minute
+const MAX_DRIP_ENTRIES = 5000;
+
+function clientIp(req: Request): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
+
 export async function POST(req: Request) {
   const apiKey = process.env.CIRCLE_API_KEY?.trim();
   if (!apiKey) {
@@ -38,6 +48,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unsupported faucet chain." }, { status: 400 });
   }
 
+  // Rate limit: per-address cooldown + per-IP throttle.
+  const now = Date.now();
+  // Prune stale entries to prevent unbounded memory growth.
+  if (lastDrip.size > MAX_DRIP_ENTRIES) {
+    const staleThreshold = now - COOLDOWN_MS;
+    lastDrip.forEach((ts, key) => {
+      if (ts < staleThreshold) lastDrip.delete(key);
+    });
+  }
+  const addrKey = `${address.toLowerCase()}:${blockchain}:${token}`;
+  const ipKey = `ip:${clientIp(req)}`;
+
+  const lastAddr = lastDrip.get(addrKey) ?? 0;
+  const lastIp = lastDrip.get(ipKey) ?? 0;
+  if (now - lastAddr < COOLDOWN_MS) {
+    return NextResponse.json({ error: "Please wait before requesting another drip for this address." }, { status: 429 });
+  }
+  if (now - lastIp < COOLDOWN_MS / 2) {
+    return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
+  }
+
   const res = await fetch("https://api.circle.com/v1/faucet/drips", {
     method: "POST",
     headers: {
@@ -66,6 +97,10 @@ export async function POST(req: Request) {
       { status: res.status }
     );
   }
+
+  // Only record rate limit after a successful upstream drip.
+  lastDrip.set(addrKey, now);
+  lastDrip.set(ipKey, now);
 
   return NextResponse.json({ ok: true, data });
 }

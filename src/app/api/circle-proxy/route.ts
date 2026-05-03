@@ -24,6 +24,9 @@ const HOP_BY_HOP_HEADERS = new Set([
   "content-length",
   "accept-encoding",
   "content-encoding",
+  // Never forward client Authorization headers — the proxy uses its own server key.
+  "authorization",
+  "cookie",
 ]);
 
 function buildHeaders(req: NextRequest) {
@@ -56,7 +59,7 @@ async function proxy(req: NextRequest) {
   const init: RequestInit = {
     method: req.method,
     headers: buildHeaders(req),
-    redirect: "follow",
+    redirect: "manual",
   };
 
   if (req.method !== "GET" && req.method !== "HEAD") {

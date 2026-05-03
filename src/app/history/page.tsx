@@ -39,6 +39,17 @@ interface TransferEvent {
   localId?: string;
 }
 
+function getTransferNotes(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(localStorage.getItem("radius-transfer-notes") || "{}"); } catch { return {}; }
+}
+function saveTransferNote(txHash: string, note: string) {
+  const notes = getTransferNotes();
+  if (note.trim()) notes[txHash] = note.trim();
+  else delete notes[txHash];
+  localStorage.setItem("radius-transfer-notes", JSON.stringify(notes));
+}
+
 export default function HistoryPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
   const { authenticated, address: authAddress } = useRadiusAuth();
@@ -49,6 +60,9 @@ export default function HistoryPage() {
   const [transfers, setTransfers] = useState<TransferEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<"all" | "sent" | "received">("all");
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState("");
+  const [notes, setNotes] = useState<Record<string, string>>(() => getTransferNotes());
 
   useEffect(() => {
     if (!address) return;
@@ -274,6 +288,53 @@ export default function HistoryPage() {
                       <a href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`} target="_blank" rel="noopener noreferrer">Tx link</a>
                     ) : (
                       <span>Balance<br />update</span>
+                    )}
+                  </div>
+
+                  {/* Transfer notes */}
+                  <div style={{ gridColumn: "1 / -1", paddingTop: 4 }}>
+                    {editingNote === tx.txHash ? (
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <input
+                          autoFocus
+                          value={noteText}
+                          onChange={(e) => setNoteText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              saveTransferNote(tx.txHash, noteText);
+                              setNotes(getTransferNotes());
+                              setEditingNote(null);
+                              setNoteText("");
+                            }
+                            if (e.key === "Escape") { setEditingNote(null); setNoteText(""); }
+                          }}
+                          placeholder="Add a note…"
+                          style={{ flex: 1, fontSize: 12, padding: "4px 8px", borderRadius: 8, border: "1px solid var(--brand, #7a70d8)", outline: "none", background: "rgba(255,255,255,0.7)" }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { saveTransferNote(tx.txHash, noteText); setNotes(getTransferNotes()); setEditingNote(null); setNoteText(""); }}
+                          style={{ fontSize: 11, padding: "4px 10px", borderRadius: 8, background: "var(--brand, #7a70d8)", color: "#fff", border: "none", cursor: "pointer" }}
+                        >Save</button>
+                        <button
+                          type="button"
+                          onClick={() => { setEditingNote(null); setNoteText(""); }}
+                          style={{ fontSize: 11, padding: "4px 10px", borderRadius: 8, background: "transparent", border: "1px solid #ccc", cursor: "pointer" }}
+                        >Cancel</button>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {notes[tx.txHash] && (
+                          <span style={{ fontSize: 11, color: "#8b8795", fontStyle: "italic" }}>📝 {notes[tx.txHash]}</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => { setEditingNote(tx.txHash); setNoteText(notes[tx.txHash] || ""); }}
+                          style={{ fontSize: 10, color: "var(--brand, #7a70d8)", background: "transparent", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}
+                        >
+                          {notes[tx.txHash] ? "Edit note" : "Add note"}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </article>

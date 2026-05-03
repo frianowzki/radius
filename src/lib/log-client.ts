@@ -25,7 +25,7 @@ export function logToServer(input: LogInput) {
     level: input.level || "error",
     message: input.message,
     stack: input.stack,
-    url: window.location.href,
+    url: window.location.pathname + window.location.search,
     userAgent: navigator.userAgent,
     context: input.context,
     timestamp: Date.now(),

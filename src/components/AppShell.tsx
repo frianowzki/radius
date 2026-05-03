@@ -11,7 +11,7 @@ const PaymentRequestNotifier = dynamic(
   { ssr: false }
 );
 
-type NavIconName = "home" | "request" | "swap" | "history" | "profile";
+type NavIconName = "home" | "request" | "history" | "profile";
 
 const NAV_ITEMS: Array<{
   href: string;
@@ -20,7 +20,7 @@ const NAV_ITEMS: Array<{
   special?: boolean;
 }> = [
   { href: "/", label: "Home", icon: "home" },
-  { href: "/swap", label: "Swap", icon: "swap" },
+  { href: "/request", label: "Request", icon: "request" },
   { href: "/send", label: "Radius", special: true },
   { href: "/history", label: "History", icon: "history" },
   { href: "/profile", label: "Profile", icon: "profile" },
@@ -54,17 +54,6 @@ function NavIcon({ name }: { name: NavIconName }) {
         <path d="M12 3.8v11.1" />
         <path d="m7.4 10.3 4.6 4.6 4.6-4.6" />
         <path d="M5.2 16.9v3.3h13.6v-3.3" />
-      </svg>
-    );
-  }
-
-  if (name === "swap") {
-    return (
-      <svg {...shared}>
-        <path d="M7 7h11" />
-        <path d="m14 3 4 4-4 4" />
-        <path d="M17 17H6" />
-        <path d="m10 21-4-4 4-4" />
       </svg>
     );
   }

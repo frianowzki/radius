@@ -2,6 +2,34 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+// Simple IP-based rate limiter for the client log endpoint.
+const logCounts = new Map<string, { count: number; windowStart: number }>();
+const MAX_LOGS_PER_MINUTE = 30;
+const WINDOW_MS = 60_000;
+const MAX_RATE_LIMIT_ENTRIES = 5000;
+
+function pruneRateLimitMap() {
+  if (logCounts.size > MAX_RATE_LIMIT_ENTRIES) {
+    const now = Date.now();
+    logCounts.forEach((entry, key) => {
+      if (now - entry.windowStart > WINDOW_MS) logCounts.delete(key);
+    });
+  }
+}
+
+function isRateLimited(req: Request): boolean {
+  pruneRateLimitMap();
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const now = Date.now();
+  const entry = logCounts.get(ip);
+  if (!entry || now - entry.windowStart > WINDOW_MS) {
+    logCounts.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+  entry.count++;
+  return entry.count > MAX_LOGS_PER_MINUTE;
+}
+
 interface LogPayload {
   level?: string;
   message?: string;
@@ -17,6 +45,10 @@ function clean(value: unknown, max: number) {
 }
 
 export async function POST(req: Request) {
+  if (isRateLimited(req)) {
+    return NextResponse.json({ error: "rate limited" }, { status: 429 });
+  }
+
   let body: LogPayload;
   try { body = (await req.json()) as LogPayload; } catch {
     return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
@@ -27,7 +59,7 @@ export async function POST(req: Request) {
     stack: clean(body.stack, 4000),
     url: clean(body.url, 500),
     userAgent: clean(body.userAgent, 500),
-    context: typeof body.context === "object" && body.context ? body.context : undefined,
+    context: typeof body.context === "object" && body.context ? JSON.parse(JSON.stringify(body.context, null, 0).slice(0, 4000)) : undefined,
     timestamp: typeof body.timestamp === "number" ? body.timestamp : Date.now(),
   };
   // Always log to Vercel runtime stdout for grep-ability.

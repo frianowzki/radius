@@ -185,7 +185,7 @@ export default function BridgePage() {
   const currentBalance = token === "USDC" ? usdcBalance : eurcBalance;
   const currentDecimals = TOKENS[token].decimals;
   const requestedRaw = amount && Number(amount) > 0 ? decimalToUnits(amount, currentDecimals) : BigInt(0);
-  const hasEnoughBalance = typeof currentBalance === "bigint" ? currentBalance >= requestedRaw : true;
+  const hasEnoughBalance = typeof currentBalance === "bigint" ? currentBalance >= requestedRaw : false;
   const manualForwarderMessage = "Manual destination minting is temporarily disabled because Circle App Kit is reverting this mobile route with an invalid destination domain. Keep Auto Forwarder on for now.";
   const manualForwarderSupported = false;
 
@@ -195,6 +195,13 @@ export default function BridgePage() {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = previous; };
   }, [showDestinationPicker]);
+
+  useEffect(() => {
+    if (!showBridgeHistory) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, [showBridgeHistory]);
 
   const directoryEntries = useMemo(() => {
     const query = directoryQuery.trim().toLowerCase();
@@ -909,7 +916,7 @@ export default function BridgePage() {
             )}
 
             {showBridgeHistory && (
-              <div className="fixed inset-0 z-[90] grid place-items-end bg-slate-950/35 p-4" onClick={() => setShowBridgeHistory(false)}>
+              <div className="fixed inset-0 z-[90] grid place-items-end bg-slate-950/55 p-4" onClick={() => setShowBridgeHistory(false)}>
                 <div className="bridge-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <div><h3 className="text-lg font-bold text-[#17151f]">Bridge history</h3><p className="text-xs text-[#8b8795]">Ongoing, successful, and failed bridge info</p></div>

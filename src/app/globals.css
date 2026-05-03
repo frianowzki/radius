@@ -140,6 +140,71 @@ button, input, textarea, select { font: inherit; }
   }
 }
 
+/* Desktop: Center the mobile layout on larger screens */
+@media (min-width: 1024px) {
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .phone-shell {
+    width: min(100%, 430px);
+    min-height: calc(100vh - 48px);
+    border-radius: 36px;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.25);
+  }
+}
+
+/* Landscape phones: better use of horizontal space */
+@media (orientation: landscape) and (max-height: 600px) and (max-width: 1023px) {
+  .phone-shell {
+    width: 100%;
+    max-width: 100%;
+  }
+  .dashboard-reference-screen {
+    padding: 16px 16px 100px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .dashboard-reference-header {
+    grid-column: 1 / -1;
+  }
+  .dashboard-balance-card {
+    grid-column: 1 / -1;
+    min-height: 140px;
+  }
+  .dashboard-actions-grid {
+    grid-column: 1 / -1;
+  }
+  .dashboard-section {
+    margin-bottom: 0;
+  }
+  .bottom-nav {
+    padding: 6px 8px;
+    border-radius: 22px;
+  }
+  .nav-item {
+    padding: 4px 2px;
+  }
+  .nav-item .nav-label {
+    font-size: 10px;
+  }
+  .nav-orb {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Dark mode support for desktop navigation */
+html[data-theme="dark"] .phone-shell > nav.bottom-nav {
+  background: transparent;
+  box-shadow: none;
+  border-color: transparent;
+}
+
 .screen-pad { padding: 18px 22px 96px; }
 .soft-card {
   position: relative;
@@ -1656,6 +1721,33 @@ html[data-theme="dark"] .login-action-primary {
   .login-title { font-size: 58px; }
 }
 
+/* Landscape phones: compact login */
+@media (orientation: landscape) and (max-height: 600px) and (max-width: 1023px) {
+  .login-reference-shell {
+    padding: 24px 24px 100px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: center;
+  }
+  .login-hero {
+    text-align: left;
+  }
+  .login-planet-wrap {
+    width: 180px;
+    height: 180px;
+    margin: 0 0 16px;
+  }
+  .login-planet {
+    width: 90px;
+    height: 90px;
+  }
+  .login-orbit-a { width: 150px; height: 150px; }
+  .login-orbit-b { width: 120px; height: 120px; }
+  .login-title { font-size: 48px; }
+  .login-subtitle { font-size: 14px; }
+}
+
 /* Reference profile screen */
 .profile-reference-screen {
   padding: 18px 18px 108px;
@@ -1906,6 +1998,14 @@ html[data-theme="dark"] .profile-upload-button {
 html[data-theme="dark"] .profile-upload-avatar,
 html[data-theme="dark"] .profile-upload-edit { background: #10182b; }
 html[data-theme="dark"] .profile-upload-edit { color: #7dd3fc; border-color: rgba(125,211,252,.22); }
+
+/* Landscape phones for profile */
+@media (orientation: landscape) and (max-height: 600px) and (max-width: 1023px) {
+  .profile-reference-screen {
+    padding: 16px 16px 100px;
+    grid-template-columns: 1fr 1fr;
+  }
+}
 
 /* Reference dashboard screen */
 .dashboard-reference-screen {
@@ -2391,6 +2491,11 @@ html[data-theme="dark"] .dashboard-contact-empty span { background: rgba(49,90,2
   display: block;
   padding: 8px 10px;
   text-decoration: none;
+  border-radius: 16px;
+  transition: background .15s;
+}
+.history-tx-link:hover {
+  background: rgba(139,92,246,.06);
 }
 .history-tx-link span {
   display: block;
@@ -2435,14 +2540,16 @@ html[data-theme="dark"] .dashboard-contact-empty span { background: rgba(49,90,2
   font-weight: 650;
 }
 html[data-theme="dark"] .history-reference-screen {
-  background: linear-gradient(180deg, #070b18 0%, #050814 100%);
+  background: transparent;
 }
 html[data-theme="dark"] .history-reference-hero {
   background:
-    radial-gradient(circle at 82% 38%, rgba(99,102,241,.22), transparent 22%),
-    linear-gradient(180deg, rgba(9,15,30,.94), rgba(7,12,24,.82));
-  border-color: rgba(255,255,255,.08);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 22px 50px rgba(0,0,0,.38);
+    radial-gradient(circle at 80% 82%, rgba(34,211,238,.42), transparent 22%),
+    radial-gradient(circle at 18% 0%, rgba(124,58,237,.58), transparent 35%),
+    linear-gradient(180deg, rgba(22,24,46,.78), rgba(12,15,31,.68));
+  border-color: rgba(255,255,255,.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 24px 54px rgba(0,0,0,.42);
+  backdrop-filter: blur(20px) saturate(1.15);
 }
 html[data-theme="dark"] .history-reference-hero p { color: #8b7cff; }
 html[data-theme="dark"] .history-reference-hero h1 { color: #fff !important; }
@@ -2460,9 +2567,20 @@ html[data-theme="dark"] .history-reference-filter button.active {
 }
 html[data-theme="dark"] .history-reference-empty,
 html[data-theme="dark"] .history-reference-card {
-  background: rgba(11,18,33,.86);
+  background: rgba(12,18,34,.78);
   border-color: rgba(255,255,255,.08);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 16px 36px rgba(0,0,0,.30);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 18px 42px rgba(0,0,0,.36);
+  backdrop-filter: blur(16px) saturate(1.1);
+}
+
+/* Landscape phones for history */
+@media (orientation: landscape) and (max-height: 600px) and (max-width: 1023px) {
+  .history-reference-screen {
+    padding: 16px 16px 100px;
+  }
+  .history-reference-hero {
+    min-height: 80px;
+  }
 }
 html[data-theme="dark"] .history-card-title-row h2 { color: #fff; }
 html[data-theme="dark"] .history-card-title-row h2 span,
@@ -2485,11 +2603,16 @@ html[data-theme="dark"] .history-token-orb > span { border-color: #0b1221; }
   backdrop-filter: blur(20px) saturate(1.15);
 }
 .profile-qr-header {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 14px;
   margin-bottom: 22px;
+  text-align: center;
+}
+.profile-qr-header > div {
+  text-align: center;
 }
 .profile-qr-header h2 {
   color: #101828;
@@ -3043,7 +3166,7 @@ html[data-theme="dark"] .profile-qr-card,
 html[data-theme="dark"] .assets-modal-card,
 html[data-theme="dark"] .bridge-premium-card,
 html[data-theme="dark"] .bridge-sheet {
-  background: linear-gradient(180deg, rgba(22,24,46,.78), rgba(12,15,31,.68)) !important;
+  background: linear-gradient(180deg, rgba(22,24,46,.92), rgba(12,15,31,.88)) !important;
   border-color: rgba(255,255,255,.10) !important;
   color: #f1f5f9 !important;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 22px 52px rgba(0,0,0,.34) !important;

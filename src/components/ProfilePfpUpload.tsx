@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { AvatarImage } from "@/components/AvatarImage";
 import { useRadiusAuth } from "@/lib/web3auth";
+import { getRegistryProof } from "@/lib/registry-proof";
+import { createWalletClient, custom } from "viem";
+import { arcTestnet } from "@/config/wagmi";
 
 function readAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -27,18 +30,38 @@ export function ProfilePfpUpload({ initialUrl, onUploaded }: { initialUrl?: stri
   }, [initialUrl]);
 
   async function uploadPfp(file: File) {
-    const userId = user?.email || user?.name || address || "local-profile";
+    const userId = address || user?.email || user?.name || "local-profile";
     setFileName(file.name);
     setStatus("Saving...");
 
     const localPreview = await readAsDataUrl(file);
-    localStorage.setItem("pfpUrl", localPreview);
+    try {
+      localStorage.setItem("pfpUrl", localPreview);
+    } catch {
+      // Image too large for localStorage (~5MB limit) — skip local caching.
+    }
     setPfpUrl(localPreview);
 
     try {
+      // Generate wallet signature proof before uploading.
+      let proof = address ? await getRegistryProof(address, "profile") : null;
+      if (!proof && address) {
+        const provider = (globalThis as typeof globalThis & { ethereum?: unknown }).ethereum;
+        if (provider) {
+          try {
+            const wc = createWalletClient({ account: address as `0x${string}`, chain: arcTestnet, transport: custom(provider as never) });
+            proof = await getRegistryProof(address, "profile", {
+              prompt: true,
+              signMessage: (msg: string) => wc.signMessage({ message: msg }),
+            });
+          } catch { /* fall through — upload will fail with 401 */ }
+        }
+      }
+
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("userId", userId);
+      formData.append("userId", address || userId);
+      if (proof) formData.append("proof", JSON.stringify(proof));
 
       const res = await fetch("/api/profile/pfp", { method: "POST", body: formData });
       const data = await res.json().catch(() => ({}));

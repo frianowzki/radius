@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
-import { useAccount, useReadContracts } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { AppShell } from "@/components/AppShell";
@@ -129,21 +129,25 @@ export function DashboardClient() {
   }, [address]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const { data: balances } = useReadContracts({
-    contracts: address ? (["USDC", "EURC"] as const).map((key) => ({
-      address: TOKENS[key].address,
-      abi: ERC20_TRANSFER_ABI,
-      functionName: "balanceOf",
-      args: [address],
-      chainId: arcTestnet.id,
-    })) : [],
-    query: { enabled: !!address },
+  const { data: usdcBalance } = useReadContract({
+    address: TOKENS.USDC.address,
+    abi: ERC20_TRANSFER_ABI,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    chainId: arcTestnet.id,
+    query: { enabled: !!address, refetchInterval: 15_000 },
+  });
+  const { data: eurcBalance } = useReadContract({
+    address: TOKENS.EURC.address,
+    abi: ERC20_TRANSFER_ABI,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    chainId: arcTestnet.id,
+    query: { enabled: !!address, refetchInterval: 15_000 },
   });
 
-  const usdcBalance = balances?.[0]?.result as bigint | undefined;
-  const eurcBalance = balances?.[1]?.result as bigint | undefined;
-  const usdcDisplay = usdcBalance !== undefined ? formatAmount(usdcBalance, TOKENS.USDC.decimals) : "0.00";
-  const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance, TOKENS.EURC.decimals) : "0.00";
+  const usdcDisplay = usdcBalance !== undefined ? formatAmount(usdcBalance as bigint, TOKENS.USDC.decimals) : "0.00";
+  const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance as bigint, TOKENS.EURC.decimals) : "0.00";
   const numericUsdc = Number(usdcDisplay.replace(/,/g, ""));
   const numericEurc = Number(eurcDisplay.replace(/,/g, ""));
   const totalValue = (Number.isFinite(numericUsdc) ? numericUsdc : 0) + (Number.isFinite(numericEurc) ? numericEurc : 0);
@@ -163,7 +167,7 @@ export function DashboardClient() {
   }, [isConnected]);
   const balanceSnapshot = useMemo(() => {
     if (!address || usdcBalance === undefined || eurcBalance === undefined) return null;
-    return { USDC: usdcBalance, EURC: eurcBalance };
+    return { USDC: usdcBalance as bigint, EURC: eurcBalance as bigint };
   }, [address, usdcBalance, eurcBalance]);
 
   useEffect(() => {
@@ -267,13 +271,13 @@ export function DashboardClient() {
         <section className="dashboard-actions-grid">
           {[
             { href: "/send", icon: "send", label: "Send" },
-            { href: "/swap", icon: "swap", label: "Swap" },
+            { href: "/request", icon: "request", label: "Request" },
             { href: "/scan", icon: "scan", label: "Scan" },
             { href: "/contacts", icon: "contacts", label: "Contacts" },
             { href: "/bridge", icon: "bridge", label: "Bridge" },
           ].map((item) => (
             <Link key={item.label} href={item.href} className="dashboard-action-item">
-              <span><QuickActionIcon name={item.icon as "send" | "request" | "swap" | "scan" | "contacts" | "bridge"} /></span>{item.label}
+              <span><QuickActionIcon name={item.icon as "send" | "request" | "scan" | "contacts" | "bridge"} /></span>{item.label}
             </Link>
           ))}
         </section>

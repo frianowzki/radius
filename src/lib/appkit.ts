@@ -24,8 +24,25 @@ export type SwapToken = "USDC" | "EURC";
 
 const CIRCLE_KIT_KEY = process.env.NEXT_PUBLIC_CIRCLE_KIT_KEY?.trim() || "";
 
+function maskKey(key: string): string {
+  if (!key) return "(empty)";
+  if (key.length < 12) return `${key.slice(0, 2)}***(len=${key.length})`;
+  return `${key.slice(0, 8)}...${key.slice(-4)} (len=${key.length})`;
+}
+
+let keyLogged = false;
+function logKitKeyOnce() {
+  if (keyLogged) return;
+  keyLogged = true;
+  if (typeof window !== "undefined") {
+    console.info("[Circle Kit] NEXT_PUBLIC_CIRCLE_KIT_KEY =", maskKey(CIRCLE_KIT_KEY));
+    console.info("[Circle Kit] has KIT_KEY: prefix?", CIRCLE_KIT_KEY.startsWith("KIT_KEY:"));
+  }
+}
+
 function getSwapConfig() {
   if (!CIRCLE_KIT_KEY) throw new Error("Circle Kit key is missing. Add NEXT_PUBLIC_CIRCLE_KIT_KEY to enable swaps.");
+  logKitKeyOnce();
   return {
     kitKey: CIRCLE_KIT_KEY,
     slippageBps: 100,

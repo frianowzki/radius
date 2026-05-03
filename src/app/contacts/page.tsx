@@ -72,6 +72,7 @@ export default function ContactsPage() {
   const [handle, setHandle] = useState("");
   const [note, setNote] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -177,7 +178,14 @@ export default function ContactsPage() {
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   <Link href={`/send?to=${encodeURIComponent(contact.handle ? contact.handle.replace(/^@/, "") : contact.address)}`} className="rounded-2xl bg-[var(--brand)]/10 px-3 py-2.5 text-center text-xs font-semibold text-[var(--brand)]">Send to</Link>
                   <button type="button" onClick={() => startEdit(contact)} className="rounded-2xl bg-emerald-500/12 px-3 py-2.5 text-xs font-semibold text-emerald-600">Edit</button>
-                  <button type="button" onClick={() => handleDelete(contact.id)} className="rounded-2xl bg-red-500/12 px-3 py-2.5 text-xs font-semibold text-red-600">Delete</button>
+                  {deletingId === contact.id ? (
+                    <>
+                      <button type="button" onClick={() => { handleDelete(contact.id); setDeletingId(null); }} className="rounded-2xl bg-red-500/20 px-3 py-2.5 text-xs font-semibold text-red-600">Confirm</button>
+                      <button type="button" onClick={() => setDeletingId(null)} className="rounded-2xl bg-white/60 px-3 py-2.5 text-xs font-semibold text-[#8b8795]">Cancel</button>
+                    </>
+                  ) : (
+                    <button type="button" onClick={() => setDeletingId(contact.id)} className="rounded-2xl bg-red-500/12 px-3 py-2.5 text-xs font-semibold text-red-600">Delete</button>
+                  )}
                 </div>
               </div>
             ))}

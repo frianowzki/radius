@@ -62,7 +62,12 @@ export interface LocalTransferRecord {
 export function getContacts(): Contact[] {
   if (typeof window === "undefined") return [];
   const raw = localStorage.getItem(CONTACTS_KEY);
-  return raw ? JSON.parse(raw) : [];
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
 }
 
 export function saveContacts(contacts: Contact[]) {
@@ -106,6 +111,8 @@ export function clearRadiusLocalSession() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(IDENTITY_KEY);
   localStorage.removeItem(CONTACTS_KEY);
+  localStorage.removeItem(LOCAL_TRANSFERS_KEY);
+  localStorage.removeItem(PAYMENT_REQUESTS_KEY);
   localStorage.removeItem("pfpUrl");
 }
 
@@ -472,12 +479,17 @@ export function saveLocalTransfer(
 }
 
 export function formatAmount(raw: bigint, decimals: number): string {
-  const divisor = 10 ** decimals;
-  const num = Number(raw) / divisor;
-  return num.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 6,
+  let divisor = BigInt(1);
+  for (let i = 0; i < decimals; i++) divisor = divisor * BigInt(10);
+  const whole = raw / divisor;
+  const fraction = raw % divisor;
+  const fractionStr = fraction.toString().padStart(decimals, "0").replace(/0+$/, "");
+  const wholeFormatted = Number(whole).toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   });
+  if (!fractionStr) return `${wholeFormatted}.00`;
+  return `${wholeFormatted}.${fractionStr.slice(0, 6).padEnd(2, "0")}`;
 }
 
 export function formatPreferredRecipientInput(address: string): string {

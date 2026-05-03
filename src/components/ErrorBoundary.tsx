@@ -34,7 +34,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <p className="mx-auto mt-3 max-w-72 text-sm leading-6 text-[#8b8795]">
             We logged this error so we can fix it. Try refreshing or going home.
           </p>
-          <p className="mx-auto mt-3 max-w-72 break-words text-[11px] text-[#a09baa]">{this.state.error.message}</p>
+          <p className="mx-auto mt-3 max-w-72 break-words text-[11px] text-[#a09baa]">{process.env.NODE_ENV === "production" ? "An unexpected error occurred." : this.state.error.message}</p>
           <div className="mx-auto mt-6 grid max-w-64 grid-cols-2 gap-3">
             <button type="button" onClick={this.reset} className="ghost-btn py-3 text-xs">Try again</button>
             <Link href="/" className="primary-btn py-3 text-center text-xs">Go home</Link>

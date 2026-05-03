@@ -55,9 +55,10 @@ export default function SwapPage() {
   }), [balances]);
   const inputBalance = balanceMap[tokenIn];
   const requestedRaw = amount && Number(amount) > 0 ? decimalToUnits(amount, TOKENS[tokenIn].decimals) : BigInt(0);
-  const hasEnoughBalance = typeof inputBalance === "bigint" ? inputBalance >= requestedRaw : true;
+  const hasEnoughBalance = typeof inputBalance === "bigint" ? inputBalance >= requestedRaw : false;
   const isOnArc = activeChainId === arcTestnet.id;
-  const canSwap = isConnected && isOnArc && isAddress(receiver) && Number(amount) > 0 && hasEnoughBalance && status !== "estimating" && status !== "confirming";
+  const validAmount = Number(amount) > 0 && Number.isFinite(Number(amount));
+  const canSwap = isConnected && isOnArc && isAddress(receiver) && validAmount && hasEnoughBalance && status !== "estimating" && status !== "confirming";
   const senderLabel = mounted ? getIdentityLabel(getIdentityProfile()) : "Connected wallet";
 
   async function getActiveProvider() {
@@ -87,7 +88,7 @@ export default function SwapPage() {
   }
 
   async function handleEstimate() {
-    if (!amount || Number(amount) <= 0) return;
+    if (!amount || !validAmount) return;
     setStatus("estimating");
     setError("");
     setEstimateText("");
@@ -108,6 +109,11 @@ export default function SwapPage() {
   async function handleSwap(e: React.FormEvent) {
     e.preventDefault();
     if (!address) return;
+    if (!validAmount) {
+      setStatus("error");
+      setError("Enter a valid positive amount.");
+      return;
+    }
     if (!isOnArc) {
       setStatus("error");
       setError("Switch wallet to Arc Testnet first.");
@@ -186,7 +192,9 @@ export default function SwapPage() {
                 <button type="button" onClick={() => setAmount(formatAmount(inputBalance, TOKENS[tokenIn].decimals).replace(/,/g, ""))} className="font-semibold text-[var(--brand)]">Max</button>
               </div>
             )}
-            {!hasEnoughBalance && amount && Number(amount) > 0 && <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">Insufficient {tokenIn} balance.</p>}
+            {amount && Number(amount) > 0 && !Number.isFinite(Number(amount)) && <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">Enter a valid amount.</p>}
+            {amount && Number(amount) <= 0 && Number.isFinite(Number(amount)) && <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">Amount must be positive.</p>}
+            {!hasEnoughBalance && amount && validAmount && <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">Insufficient {tokenIn} balance.</p>}
           </section>
 
           <section className="bridge-premium-card p-4">

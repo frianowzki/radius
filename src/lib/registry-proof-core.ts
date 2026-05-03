@@ -23,7 +23,7 @@ function validIssuedAt(value: string) {
   const issued = Date.parse(value);
   if (!Number.isFinite(issued)) return false;
   const ageMs = Math.abs(Date.now() - issued);
-  return ageMs <= 24 * 60 * 60 * 1000;
+  return ageMs <= 15 * 60 * 1000;
 }
 
 export async function verifyRegistryProof(owner: string, action: RegistryAction, proof: unknown) {

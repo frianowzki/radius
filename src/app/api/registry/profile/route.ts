@@ -6,6 +6,22 @@ import { normalizeHandle } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
+const writeRateLimit = new Map<string, number>();
+const WRITE_COOLDOWN_MS = 5_000; // 5 seconds between writes per address
+
+function isWriteRateLimited(address: string): boolean {
+  const now = Date.now();
+  const key = address.toLowerCase();
+  const last = writeRateLimit.get(key) ?? 0;
+  if (now - last < WRITE_COOLDOWN_MS) return true;
+  // Prune if too large
+  if (writeRateLimit.size > 5000) {
+    writeRateLimit.forEach((ts, k) => { if (now - ts > 60_000) writeRateLimit.delete(k); });
+  }
+  writeRateLimit.set(key, now);
+  return false;
+}
+
 function jsonNoStore(body: unknown, init?: ResponseInit) {
   const res = NextResponse.json(body, init);
   res.headers.set("Cache-Control", "no-store");
@@ -94,10 +110,13 @@ export async function POST(req: Request) {
   const address = cleanText(body.address, 64);
   const displayName = cleanText(body.displayName, 80);
   const handle = normalizeHandle(cleanText(body.handle, 40));
-  const avatar = cleanText(body.avatar, 600) || undefined;
+  const avatarRaw = cleanText(body.avatar, 600) || undefined;
+  // Only allow http/https image URLs — block javascript: and other XSS vectors.
+  const avatar = avatarRaw && /^https?:\/\//i.test(avatarRaw) ? avatarRaw : undefined;
   const bio = cleanText(body.bio, 180) || undefined;
 
   if (!isAddress(address)) return jsonNoStore({ error: "Invalid wallet address" }, { status: 400 });
+  if (isWriteRateLimited(address)) return jsonNoStore({ error: "Too many requests. Please wait." }, { status: 429 });
   if (!(await verifyRegistryProof(address, "profile", body.proof))) return jsonNoStore({ error: "wallet signature required" }, { status: 401 });
   if (!displayName) return jsonNoStore({ error: "Display name is required" }, { status: 400 });
   if (handle && !HANDLE_RE.test(handle)) {

@@ -5,6 +5,22 @@ import { verifyRegistryProof } from "@/lib/registry-proof-core";
 
 export const runtime = "nodejs";
 
+const writeRateLimit = new Map<string, number>();
+const WRITE_COOLDOWN_MS = 5_000; // 5 seconds between writes per address
+
+function isWriteRateLimited(address: string): boolean {
+  const now = Date.now();
+  const key = address.toLowerCase();
+  const last = writeRateLimit.get(key) ?? 0;
+  if (now - last < WRITE_COOLDOWN_MS) return true;
+  // Prune if too large
+  if (writeRateLimit.size > 5000) {
+    writeRateLimit.forEach((ts, k) => { if (now - ts > 60_000) writeRateLimit.delete(k); });
+  }
+  writeRateLimit.set(key, now);
+  return false;
+}
+
 function jsonNoStore(body: unknown, init?: ResponseInit) {
   const res = NextResponse.json(body, init);
   res.headers.set("Cache-Control", "no-store");
@@ -45,7 +61,9 @@ function sanitize(raw: unknown): ContactPayload | null {
   if (!name) return null;
   const handle = clean(r.handle, 40) || undefined;
   const note = clean(r.note, 180) || undefined;
-  const avatar = clean(r.avatar, 600) || undefined;
+  const avatarRaw = clean(r.avatar, 600) || undefined;
+  // Only allow http/https image URLs — block javascript: and other XSS vectors.
+  const avatar = avatarRaw && /^https?:\/\//i.test(avatarRaw) ? avatarRaw : undefined;
   return { id, name, address, handle, note, avatar };
 }
 
@@ -90,17 +108,21 @@ export async function POST(req: Request) {
   }
   const owner = clean(body.owner, 64);
   if (!isAddress(owner)) return jsonNoStore({ error: "invalid owner address" }, { status: 400 });
+  if (isWriteRateLimited(owner)) return jsonNoStore({ error: "Too many requests. Please wait." }, { status: 429 });
   if (!(await verifyRegistryProof(owner, "contacts", body.proof))) return jsonNoStore({ error: "wallet signature required" }, { status: 401 });
   const incoming = Array.isArray(body.contacts) ? body.contacts : [];
   if (incoming.length > 500) return jsonNoStore({ error: "too many contacts (max 500)" }, { status: 400 });
   const contacts = incoming.map(sanitize).filter((c): c is ContactPayload => !!c);
-  // Dedupe by address (lowercased) keeping last occurrence.
+  // Read existing contacts and merge — incoming wins on address conflicts.
+  const existing = await readTable(owner);
   const byAddress = new Map<string, ContactPayload>();
+  for (const c of existing.contacts) byAddress.set(c.address.toLowerCase(), c);
   for (const c of contacts) byAddress.set(c.address.toLowerCase(), c);
+  const merged = Array.from(byAddress.values()).slice(0, 500);
   const table: ContactsTable = {
     version: 1,
     owner: owner.toLowerCase(),
-    contacts: Array.from(byAddress.values()),
+    contacts: merged,
     updatedAt: Date.now(),
   };
   try {

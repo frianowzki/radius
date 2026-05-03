@@ -44,6 +44,7 @@ function PayContent() {
   const [status, setStatus] = useState<PayStatus>("idle");
   const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
   const [showSaveRecipient, setShowSaveRecipient] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [saveHandle, setSaveHandle] = useState("");
@@ -64,7 +65,7 @@ function PayContent() {
     chainId: arcTestnet.id,
     query: { enabled: Boolean(address && token in TOKENS) },
   });
-  const hasEnoughBalance = typeof tokenBalance === "bigint" ? tokenBalance >= requestedRaw : true;
+  const hasEnoughBalance = typeof tokenBalance === "bigint" ? tokenBalance >= requestedRaw : false;
 
   const validRequest =
     isAddress(recipientAddress) &&
@@ -298,7 +299,7 @@ function PayContent() {
                   </div>
                   <div className="flex justify-between py-3 border-t border-white/8">
                     <span className="pay-muted">Token</span>
-                    <span className="pay-value flex items-center gap-2"><TokenLogo symbol={token} size={22} />{TOKENS[token].name}</span>
+                    <span className="pay-value flex items-center gap-2"><TokenLogo symbol={tokenInfo.symbol || token} size={22} />{tokenInfo.name}</span>
                   </div>
                   {memo && (
                     <div className="flex justify-between py-3 border-t border-white/8">
@@ -332,9 +333,30 @@ function PayContent() {
                 <div className="glass-panel rounded-[28px] p-5 text-center text-sm text-red-500">
                   Insufficient {token} balance for this payment.
                 </div>
+              ) : showConfirm ? (
+                <div className="glass-panel rounded-[28px] p-5 text-center space-y-4">
+                  <p className="text-sm text-zinc-300">Confirm payment of {amount} {token} to {formatContactLabel(recipientAddress)}?</p>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(false)}
+                      className="ghost-btn flex-1 rounded-2xl px-4 py-3 text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowConfirm(false); handlePay(); }}
+                      disabled={status === "sending" || status === "confirming"}
+                      className="primary-btn flex-1 rounded-2xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <button
-                  onClick={handlePay}
+                  onClick={() => setShowConfirm(true)}
                   disabled={status === "sending" || status === "confirming"}
                   className="pay-submit-button primary-btn flow-primary-action w-full rounded-2xl px-4 py-4 font-semibold text-white disabled:opacity-60"
                 >

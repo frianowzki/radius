@@ -11,7 +11,7 @@ import { TOKENS, type TokenKey } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { buildPaymentUrl, decimalToUnits, deletePaymentRequest, expirePaymentRequest, formatAmount, formatPreferredRecipientInput, getLocalTransfers, getPaymentRequests, saveLocalTransfers, savePaymentRequest, savePaymentRequests, type PaymentRequestRecord } from "@/lib/utils";
 import { usePaymentRequestWatcher } from "@/lib/usePaymentRequestWatcher";
-import { fetchRemoteActivity, mergePaymentRequests, mergeTransfers, pushRemoteActivity } from "@/lib/activity-sync";
+import { fetchRemoteActivity, mergePaymentRequests, mergeTransfers, pushRemoteActivity, addDeletedRequestId } from "@/lib/activity-sync";
 
 export default function RequestPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
@@ -29,7 +29,6 @@ export default function RequestPage() {
   const [requests, setRequests] = useState<PaymentRequestRecord[]>([]);
   const [splitMode, setSplitMode] = useState(false);
   const [participants, setParticipants] = useState("2");
-
   const qrValue = useMemo(() => {
     if (paymentUrl) return paymentUrl;
     if (!address || !amount || Number(amount) <= 0) return "";
@@ -108,6 +107,7 @@ export default function RequestPage() {
   }
 
   function removeRequest(id: string) {
+    addDeletedRequestId(id);
     deletePaymentRequest(id);
     refreshRequests();
     pushActivity();
@@ -168,7 +168,7 @@ export default function RequestPage() {
           <>
             <form onSubmit={generate} className="request-form text-center">
               
-              <div className="request-amount-row mt-3 flex items-center justify-center gap-3">
+              <div className="request-amount-row mt-3 flex items-center justify-center gap-3 rounded-[24px] bg-white/55 p-4">
                 <span className="request-currency-symbol text-4xl font-semibold tracking-[-0.06em]">$</span>
                 <input value={amount} onChange={(e) => { setAmount(e.target.value); setPaymentUrl(""); }} inputMode="decimal" className="request-amount-input w-40 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none" />
                 <button type="button" onClick={() => setShowTokenPicker(true)} className="request-token-pill flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} />{token}</button>

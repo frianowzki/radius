@@ -1,7 +1,12 @@
 import { get, put } from "@vercel/blob";
 import { NextResponse } from "next/server";
+import { isAddress } from "viem";
+import { verifyRegistryProof } from "@/lib/registry-proof-core";
 
 export const runtime = "nodejs";
+
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 function safePathPart(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 120);
@@ -9,8 +14,8 @@ function safePathPart(value: string) {
 
 export async function GET(req: Request) {
   const path = new URL(req.url).searchParams.get("path");
-  if (!path || !path.startsWith("pfp/")) {
-    return NextResponse.json({ error: "Missing profile image path" }, { status: 400 });
+  if (!path || !path.startsWith("pfp/") || path.includes("..") || path.includes("\0")) {
+    return NextResponse.json({ error: "Invalid profile image path" }, { status: 400 });
   }
 
   const blob = await get(path, { access: "private", useCache: true }).catch(() => null);
@@ -31,12 +36,35 @@ export async function POST(req: Request) {
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
   const userId = formData.get("userId") as string | null;
+  const proofRaw = formData.get("proof");
 
   if (!file || !userId) {
     return NextResponse.json({ error: "Missing file or userId" }, { status: 400 });
   }
 
-  const pathname = `pfp/${safePathPart(userId)}-${Date.now()}-${safePathPart(file.name)}`;
+  const address = userId.trim();
+  if (!isAddress(address)) {
+    return NextResponse.json({ error: "Invalid wallet address" }, { status: 400 });
+  }
+
+  // Require wallet signature proof — same flow as profile/contacts/activity writes.
+  let proof: unknown = null;
+  if (typeof proofRaw === "string") {
+    try { proof = JSON.parse(proofRaw); } catch { proof = null; }
+  }
+  if (!(await verifyRegistryProof(address, "profile", proof))) {
+    return NextResponse.json({ error: "Wallet signature required" }, { status: 401 });
+  }
+
+  // Validate file size and type.
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json({ error: "File too large (max 2 MB)" }, { status: 400 });
+  }
+  if (!ALLOWED_TYPES.has(file.type)) {
+    return NextResponse.json({ error: "Unsupported image type (JPEG, PNG, WebP, GIF)" }, { status: 400 });
+  }
+
+  const pathname = `pfp/${safePathPart(address.toLowerCase())}-${Date.now()}-${safePathPart(file.name)}`;
   await put(pathname, file, {
     access: "private",
     addRandomSuffix: false,

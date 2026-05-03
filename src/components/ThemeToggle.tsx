@@ -13,7 +13,9 @@ function applyTheme(theme: Theme) {
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window === "undefined") return "light";
-    return localStorage.getItem("radius-theme") === "dark" ? "dark" : "light";
+    const saved = localStorage.getItem("radius-theme");
+    if (saved === "dark" || saved === "light") return saved;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
 
   const nextTheme = theme === "dark" ? "light" : "dark";

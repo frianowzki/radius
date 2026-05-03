@@ -16,7 +16,8 @@ export async function fetchRemoteActivity(owner: string): Promise<RemoteActivity
     const res = await fetch(`/api/registry/activity?owner=${encodeURIComponent(owner)}`, { cache: "no-store" });
     if (!res.ok) return null;
     return (await res.json()) as RemoteActivityResponse;
-  } catch {
+  } catch (err) {
+    console.warn("[activity-sync] fetchRemoteActivity failed:", err);
     return null;
   }
 }
@@ -32,15 +33,35 @@ export async function pushRemoteActivity(owner: string, data: { requests: Paymen
     });
     if (!res.ok) return null;
     return (await res.json()) as RemoteActivityResponse;
-  } catch {
+  } catch (err) {
+    console.warn("[activity-sync] pushRemoteActivity failed:", err);
     return null;
   }
 }
 
+export function getDeletedRequestIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem("radius-deleted-request-ids");
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw) as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+export function addDeletedRequestId(id: string) {
+  const set = getDeletedRequestIds();
+  set.add(id);
+  localStorage.setItem("radius-deleted-request-ids", JSON.stringify([...set]));
+}
+
 export function mergePaymentRequests(local: PaymentRequestRecord[], remote: PaymentRequestRecord[]): PaymentRequestRecord[] {
+  const deleted = getDeletedRequestIds();
   const byId = new Map<string, PaymentRequestRecord>();
   for (const request of [...remote, ...local]) {
     if (!request?.id) continue;
+    if (deleted.has(request.id)) continue;
     const existing = byId.get(request.id);
     if (!existing || (request.paidAt || request.createdAt || 0) >= (existing.paidAt || existing.createdAt || 0)) {
       byId.set(request.id, request);

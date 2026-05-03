@@ -164,7 +164,7 @@ export default function ProfilePage() {
                 <h2>My pay QR</h2>
                 <span>{profile.handle ? `@${profile.handle}` : "address-based"}</span>
               </div>
-              <button type="button" onClick={() => setHidePayQr((v) => !v)} aria-label={hidePayQr ? "Show My Pay QR" : "Hide My Pay QR"} className="profile-qr-toggle grid h-10 w-10 place-items-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)]">
+              <button type="button" onClick={() => setHidePayQr((v) => !v)} aria-label={hidePayQr ? "Show My Pay QR" : "Hide My Pay QR"} className="profile-qr-toggle absolute right-0 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)]">
                 <EyeIcon hidden={hidePayQr} />
               </button>
             </div>

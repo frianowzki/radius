@@ -16,7 +16,8 @@ export async function fetchRemoteContacts(owner: string): Promise<RemoteContacts
     if (!res.ok) return null;
     const data = (await res.json()) as RemoteContactsResponse;
     return data;
-  } catch {
+  } catch (err) {
+    console.warn("[contacts-sync] fetchRemoteContacts failed:", err);
     return null;
   }
 }
@@ -32,17 +33,28 @@ export async function pushRemoteContacts(owner: string, contacts: Contact[], opt
     });
     if (!res.ok) return null;
     return (await res.json()) as RemoteContactsResponse;
-  } catch {
+  } catch (err) {
+    console.warn("[contacts-sync] pushRemoteContacts failed:", err);
     return null;
   }
 }
 
-/** Merge local + remote, preferring the most-recently edited copy per address. */
+/** Merge local + remote, preferring local. Remote-only contacts (deleted locally) are excluded. */
 export function mergeContacts(local: Contact[], remote: Contact[]): Contact[] {
   const byAddress = new Map<string, Contact>();
-  for (const c of [...remote, ...local]) {
+  const localAddresses = new Set<string>();
+  for (const c of local) {
     if (!c?.address) continue;
     byAddress.set(c.address.toLowerCase(), c);
+    localAddresses.add(c.address.toLowerCase());
+  }
+  // Only add remote contacts that also exist in local (were not deleted)
+  for (const c of remote) {
+    if (!c?.address) continue;
+    const key = c.address.toLowerCase();
+    if (!byAddress.has(key) && localAddresses.has(key)) {
+      byAddress.set(key, c);
+    }
   }
   return Array.from(byAddress.values());
 }

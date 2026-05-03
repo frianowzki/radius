@@ -15,7 +15,7 @@ function parseCached(raw: string | null): RegistryProof | null {
   if (!raw) return null;
   try {
     const proof = JSON.parse(raw) as RegistryProof;
-    if (!proof.issuedAt || Math.abs(Date.now() - Date.parse(proof.issuedAt)) > 23 * 60 * 60 * 1000) return null;
+    if (!proof.issuedAt || Math.abs(Date.now() - Date.parse(proof.issuedAt)) > 14 * 60 * 1000) return null;
     return proof;
   } catch {
     return null;

@@ -78,7 +78,7 @@ export default function SendPage() {
   const isOnArc = activeChainId === arcTestnet.id;
   const requestedRaw = amount && Number(amount) > 0 ? decimalToUnits(amount, TOKENS[token].decimals) : BigInt(0);
   const selectedBalance = balanceByToken[token];
-  const hasEnoughBalance = typeof selectedBalance === "bigint" ? selectedBalance >= requestedRaw : true;
+  const hasEnoughBalance = typeof selectedBalance === "bigint" ? selectedBalance >= requestedRaw : false;
   const canSend = isConnected && isOnArc && !!amount && Number(amount) > 0 && hasEnoughBalance && status !== "sending" && status !== "confirming";
 
   const directoryEntries = useMemo(() => {
@@ -291,7 +291,7 @@ export default function SendPage() {
 
             <div className="send-amount-card flow-card glass-panel rounded-[28px] p-5">
               <label className="mb-3 block text-sm font-medium text-zinc-400">Amount</label>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 rounded-[24px] bg-white/55 p-4">
                 <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="min-w-0 flex-1 bg-transparent text-5xl font-semibold tracking-tight outline-none" />
                 <span className="inline-flex items-center gap-2 rounded-full border border-[var(--brand)]/20 bg-[var(--brand)]/8 px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
                   <TokenLogo symbol={token} size={20} />
