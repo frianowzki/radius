@@ -1032,10 +1032,10 @@ html[data-theme="dark"] .request-amount-input {
 html[data-theme="dark"] .request-amount-row {
   margin-inline: auto;
   width: fit-content;
-  border-radius: 999px;
-  padding: 8px 10px;
-  background: rgba(255,255,255,.045);
-  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 24px !important;
+  padding: 12px 16px;
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.1);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
 }
 html[data-theme="dark"] .request-amount-input {
