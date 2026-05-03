@@ -54,7 +54,8 @@ export default function SendPage() {
   const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
   const [directoryQuery, setDirectoryQuery] = useState("");
-  const [showDirectory, setShowDirectory] = useState(true);
+  const [showDirectory, setShowDirectory] = useState(false);
+  const [showTokenPicker, setShowTokenPicker] = useState(false);
   const [showSaveRecipient, setShowSaveRecipient] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [saveHandle, setSaveHandle] = useState("");
@@ -249,14 +250,16 @@ export default function SendPage() {
 
             <div className="flow-card glass-panel rounded-[28px] p-5">
               <label className="mb-3 block text-sm font-medium text-zinc-400">Token</label>
-              <div className="grid grid-cols-2 gap-2">
-                {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
-                  <button key={key} type="button" onClick={() => setToken(key)} className={`frosted-choice ${token === key ? "active" : ""}`}>
-                    <div className="flex items-center gap-2 font-semibold"><TokenLogo symbol={key} size={24} />{TOKENS[key].symbol}</div>
-                    {balanceByToken[key] !== undefined && <div className="mt-1 text-xs opacity-70">Balance: {formatAmount(balanceByToken[key]!, TOKENS[key].decimals)}</div>}
-                  </button>
-                ))}
-              </div>
+              <button type="button" onClick={() => setShowTokenPicker(true)} className="frosted-choice w-full active">
+                <div className="flex items-center gap-3">
+                  <TokenLogo symbol={token} size={34} />
+                  <div>
+                    <p className="font-bold">{token}</p>
+                    <p className="text-xs opacity-70">{TOKENS[token].name}</p>
+                  </div>
+                  {balanceByToken[token] !== undefined && <div className="ml-auto text-xs opacity-70">Balance: {formatAmount(balanceByToken[token]!, TOKENS[token].decimals)}</div>}
+                </div>
+              </button>
             </div>
 
             <div className="flow-card compact glass-panel rounded-[28px] p-5 text-sm">
@@ -272,16 +275,8 @@ export default function SendPage() {
 
             <div className="flow-card glass-panel rounded-[28px] p-5">
               <div className="mb-3 flex items-center justify-between"><label className="text-sm font-medium text-zinc-400">Recipient</label><span className="text-xs text-zinc-500">Address or username</span></div>
-              <input className="radius-input font-mono text-sm" value={recipient} onChange={(e) => { setRecipient(e.target.value); setDirectoryQuery(e.target.value); setShowDirectory(true); }} placeholder="0x... or username" />
+              <input className="radius-input font-mono text-sm focus:border-[rgba(27,22,43,.08)] focus:shadow-none" value={recipient} onChange={(e) => { setRecipient(e.target.value); }} placeholder="0x... or username" />
               <button type="button" onClick={() => { setDirectoryQuery(""); setShowDirectory(true); }} className="ghost-btn mt-3 w-full text-xs">Choose from contacts</button>
-              {showDirectory && directoryEntries.length === 0 && !recipient && (
-                <p className="mt-3 rounded-2xl bg-white/55 p-3 text-xs text-zinc-500">No saved contacts yet. Paste an address or username to send.</p>
-              )}
-              {showDirectory && directoryEntries.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {directoryEntries.slice(0, 4).map((entry) => entry.address && <button key={`${entry.kind}-${entry.address}`} type="button" onClick={() => handleSelectDirectoryEntry(entry)} className="w-full rounded-2xl bg-white/60 p-3 text-left text-sm"><ProfileChip contact={entry.kind === "contact" ? { id: entry.address, name: entry.name, address: entry.address, handle: entry.handle, avatar: entry.avatar, note: entry.note } : undefined} address={entry.address} /></button>)}
-                </div>
-              )}
               {registryRecipient && !resolvedRecipient.contact && (
                 <button type="button" onClick={() => { setRecipient(registryRecipient.handle || registryRecipient.address); setShowDirectory(false); }} className="mt-3 w-full rounded-2xl bg-white/60 p-3 text-left text-sm">
                   <ProfileChip contact={{ id: registryRecipient.address, name: registryRecipient.displayName, address: registryRecipient.address, handle: registryRecipient.handle, avatar: registryRecipient.avatar, note: registryRecipient.bio }} address={registryRecipient.address} />
@@ -293,7 +288,7 @@ export default function SendPage() {
               <label className="mb-3 block text-sm font-medium text-zinc-400">Amount</label>
               <div className="flex items-center gap-3 rounded-[24px] bg-white/55 p-4">
                 <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="min-w-0 flex-1 bg-transparent text-5xl font-semibold tracking-tight outline-none" />
-                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--brand)]/20 bg-[var(--brand)]/8 px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
+                <span className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)]/8 px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
                   <TokenLogo symbol={token} size={20} />
                   {token}
                 </span>
@@ -341,6 +336,51 @@ export default function SendPage() {
                 <button type="button" onClick={() => setShowConfirm(false)} className="ghost-btn text-sm">Cancel</button>
                 <button type="button" onClick={executeSend} className="primary-btn text-sm">Confirm</button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {showTokenPicker && (
+          <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4" onClick={() => setShowTokenPicker(false)}>
+            <div className="soft-card bg-white w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-bold">Choose token</h3>
+                <button type="button" onClick={() => setShowTokenPicker(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button>
+              </div>
+              <div className="space-y-3">
+                {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
+                  <button key={key} type="button" onClick={() => { setToken(key); setShowTokenPicker(false); }} className={`frosted-choice w-full ${token === key ? "active" : ""}`}>
+                    <div className="flex items-center gap-3">
+                      <TokenLogo symbol={key} size={34} />
+                      <div>
+                        <p className="font-bold">{key}</p>
+                        <p className="text-xs opacity-70">{TOKENS[key].name}</p>
+                      </div>
+                      {balanceByToken[key] !== undefined && <div className="ml-auto text-xs opacity-70">Balance: {formatAmount(balanceByToken[key]!, TOKENS[key].decimals)}</div>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showDirectory && (
+          <div className="fixed inset-0 z-[90] grid place-items-center bg-black/40 p-4" onClick={() => setShowDirectory(false)}>
+            <div className="soft-card bg-white w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-bold">Contacts</h3>
+                <button type="button" onClick={() => setShowDirectory(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button>
+              </div>
+              <input className="radius-input font-mono text-sm mb-3" value={directoryQuery} onChange={(e) => setDirectoryQuery(e.target.value)} placeholder="Search contacts..." />
+              {directoryEntries.length === 0 && (
+                <p className="rounded-2xl bg-white/55 p-3 text-xs text-zinc-500">No saved contacts yet.</p>
+              )}
+              {directoryEntries.length > 0 && (
+                <div className="space-y-2">
+                  {directoryEntries.map((entry) => entry.address && <button key={`${entry.kind}-${entry.address}`} type="button" onClick={() => handleSelectDirectoryEntry(entry)} className="w-full rounded-2xl bg-white/60 p-3 text-left text-sm"><ProfileChip contact={entry.kind === "contact" ? { id: entry.address, name: entry.name, address: entry.address, handle: entry.handle, avatar: entry.avatar, note: entry.note } : undefined} address={entry.address} /></button>)}
+                </div>
+              )}
             </div>
           </div>
         )}

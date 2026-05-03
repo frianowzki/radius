@@ -8,6 +8,7 @@ import { useAccount } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { addContact, formatAddress, getContacts, removeContact, saveContacts, updateContact, type Contact } from "@/lib/utils";
 import { fetchRemoteContacts, mergeContacts, pushRemoteContacts } from "@/lib/contacts-sync";
+import { fetchRegistryProfile } from "@/lib/registry-client";
 
 function SyncStatusIcon({ status }: { status: "idle" | "syncing" | "synced" | "error" }) {
   if (status === "syncing") {
@@ -23,6 +24,11 @@ function SyncStatusIcon({ status }: { status: "idle" | "syncing" | "synced" | "e
 }
 
 function ContactAvatar({ contact }: { contact: Contact }) {
+  if (contact.avatar) {
+    return (
+      <img src={contact.avatar} alt={contact.name} className="h-12 w-12 rounded-2xl object-cover shadow-sm" />
+    );
+  }
   return (
     <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#3b82f6] text-sm font-bold text-white shadow-sm">
       {(contact.avatar || contact.name).slice(0, 1).toUpperCase()}
@@ -73,6 +79,9 @@ export default function ContactsPage() {
   const [note, setNote] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [globalResults, setGlobalResults] = useState<{ address: string; displayName: string; handle?: string; avatar?: string }[]>([]);
+  const [globalSearching, setGlobalSearching] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -134,12 +143,57 @@ export default function ContactsPage() {
 
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search contacts" className="radius-input text-sm" />
 
+        <div className="relative">
+          <input
+            value={globalSearch}
+            onChange={(e) => {
+              setGlobalSearch(e.target.value);
+              const q = e.target.value.trim().replace(/^@/, "");
+              if (q.length < 2) { setGlobalResults([]); return; }
+              setGlobalSearching(true);
+              fetchRegistryProfile({ handle: q })
+                .then((profile) => {
+                  if (profile) setGlobalResults([profile]);
+                  else setGlobalResults([]);
+                })
+                .catch(() => setGlobalResults([]))
+                .finally(() => setGlobalSearching(false));
+            }}
+            placeholder="Search Radius users"
+            className="radius-input text-sm"
+          />
+          {globalResults.length > 0 && (
+            <div className="absolute left-0 right-0 top-full z-10 mt-1 space-y-1 rounded-2xl border border-[var(--brand)]/20 bg-white p-3 shadow-lg">
+              {globalResults.map((r) => (
+                <div key={r.address} className="flex items-center justify-between gap-2 rounded-xl bg-[var(--brand)]/5 p-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold">{r.displayName}</p>
+                    {r.handle && <p className="truncate text-xs text-[#8b8795]">@{r.handle}</p>}
+                    <p className="truncate font-mono text-[10px] text-[#8b8795]">{formatAddress(r.address)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addContact(r.displayName, r.address, { handle: r.handle, avatar: r.avatar });
+                      const next = getContacts();
+                      setContacts(next);
+                      setGlobalSearch("");
+                      setGlobalResults([]);
+                      if (owner) pushRemoteContacts(owner, next);
+                    }}
+                    className="shrink-0 rounded-full bg-[var(--brand)] px-3 py-1.5 text-xs font-semibold text-white"
+                  >Add</button>
+                </div>
+              ))}
+            </div>
+          )}
+          {globalSearching && <p className="mt-1 text-xs text-[#8b8795]">Searching…</p>}
+        </div>
+
         {showForm && (
           <form onSubmit={handleAdd} className="soft-card rounded-[28px] p-5 space-y-3">
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="radius-input text-sm" />
             <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="0x wallet address" className="radius-input font-mono text-sm" />
-            <input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@username optional" className="radius-input text-sm" />
-            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note optional" className="radius-input text-sm" />
             <button type="submit" disabled={!name.trim() || !isAddress(address)} className="primary-btn w-full text-sm disabled:opacity-40">{editingId ? "Save changes" : "Save contact"}</button>
           </form>
         )}

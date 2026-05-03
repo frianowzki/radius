@@ -270,7 +270,7 @@ export default function HistoryPage() {
                     </div>
                     <p className="history-from">{isSent ? "To" : "From"} {formatContactLabel(counterparty)}</p>
                     {tx.txHash.startsWith("0x") ? (
-                      <a className="history-counterparty-chip history-tx-link" href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`} target="_blank" rel="noopener noreferrer">
+                      <a className="history-counterparty-chip history-tx-link px-4 py-1.5" href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`} target="_blank" rel="noopener noreferrer">
                         <span>Tx hash</span>
                         <strong>{formatContactLabel(tx.txHash)}</strong>
                       </a>
@@ -287,7 +287,7 @@ export default function HistoryPage() {
                     {tx.txHash.startsWith("0x") ? (
                       <a href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`} target="_blank" rel="noopener noreferrer">Tx link</a>
                     ) : (
-                      <span>Balance<br />update</span>
+                      <span />
                     )}
                   </div>
 

@@ -203,6 +203,11 @@ export default function BridgePage() {
     return () => { document.body.style.overflow = previous; };
   }, [showBridgeHistory]);
 
+  useEffect(() => {
+    if (!address || recipient) return;
+    queueMicrotask(() => setRecipient(address));
+  }, [address]);
+
   const directoryEntries = useMemo(() => {
     const query = directoryQuery.trim().toLowerCase();
     if (!mounted) return [] as DirectoryEntry[];
@@ -676,7 +681,7 @@ export default function BridgePage() {
                   className="bridge-icon-btn"
                   aria-label="Open bridge history"
                 >
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/><path d="M12 7v5l3 2"/></svg>
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </button>
               </div>
 
@@ -775,7 +780,7 @@ export default function BridgePage() {
                       setShowDirectory(true);
                       resetBridgeFeedback();
                     }}
-                    className="bridge-input mb-3 w-full rounded-2xl px-4 py-3 text-sm"
+                    className="bridge-input mb-3 w-full rounded-[20px] px-4 py-3 text-sm focus:border-[rgba(27,22,43,.08)] focus:shadow-none"
                   />
                   {showDirectory && directoryEntries.length > 0 && (
                     <div className="max-h-44 space-y-1.5 overflow-y-auto">
@@ -802,8 +807,17 @@ export default function BridgePage() {
                     setRecipient(e.target.value);
                     resetBridgeFeedback();
                   }}
-                  className="bridge-input w-full rounded-2xl px-4 py-3 font-mono text-sm"
+                  className="bridge-input w-full rounded-[20px] px-4 py-3 font-mono text-sm focus:border-[rgba(27,22,43,.08)] focus:shadow-none"
                 />
+                {address && recipient.toLowerCase() !== address.toLowerCase() && (
+                  <button
+                    type="button"
+                    onClick={() => { setRecipient(address); resetBridgeFeedback(); }}
+                    className="mt-2 w-full rounded-xl bg-[var(--brand)]/10 px-3 py-2 text-xs font-semibold text-[var(--brand)]"
+                  >
+                    Bridge to self ({formatAddress(address)})
+                  </button>
+                )}
                 {recipient && !validRecipient && <p className="mt-2 text-xs text-red-500">Enter a valid address or saved @username.</p>}
                 {isBridgeRoute && token !== "USDC" && <p className="mt-2 text-xs text-amber-600">Crosschain route currently supports USDC only.</p>}
               </div>
@@ -848,20 +862,20 @@ export default function BridgePage() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (!manualForwarderSupported) return;
+                        if (!wagmiConnected) return;
                         setUseForwarder((v) => !v);
                         resetBridgeFeedback();
                       }}
-                      disabled={!manualForwarderSupported}
+                      disabled={!wagmiConnected}
                       className={`bridge-forwarder-toggle ${useForwarder ? "is-on" : ""}`}
                       aria-pressed={useForwarder}
-                      aria-label={manualForwarderSupported ? (useForwarder ? "Disable Auto Forwarder" : "Enable Auto Forwarder") : "Auto Forwarder required"}
+                      aria-label={wagmiConnected ? (useForwarder ? "Disable Auto Forwarder" : "Enable Auto Forwarder") : "Auto Forwarder required for embedded wallets"}
                     >
                       <span />
                     </button>
                   </div>
-                  <div className="mb-4 rounded-2xl bg-white/60 p-3 text-xs text-[#8b8795]"><b className="text-[#17151f]">Auto Forwarder: {useForwarder ? "On" : "Off"}</b><br />{manualForwarderSupported ? (useForwarder ? "Fastest path, but may add a forwarder fee." : "Lower fee path. You may need to confirm minting on the destination chain.") : "Required for mobile embedded-wallet bridge routes right now."}</div>
-                  {!manualForwarderSupported && <p className="mb-4 rounded-2xl bg-amber-500/10 p-3 text-xs font-medium text-amber-600">{manualForwarderMessage}</p>}
+                  <div className="mb-4 rounded-2xl bg-white/60 p-3 text-xs text-[#8b8795]"><b className="text-[#17151f]">Auto Forwarder: {useForwarder ? "On" : "Off"}</b><br />{!wagmiConnected ? "Auto Forwarder is required for embedded wallets." : useForwarder ? "Fastest path, but may add a forwarder fee." : "Lower fee path. You may need to confirm minting on the destination chain."}</div>
+                  {!wagmiConnected && <p className="mb-4 rounded-2xl bg-amber-500/10 p-3 text-xs font-medium text-amber-600">Auto Forwarder is required for embedded wallets.</p>}
                   <div className="space-y-3">
                     {bridgeStepDefs.map((step, index) => {
                       const s = bridgeSteps[step.key];

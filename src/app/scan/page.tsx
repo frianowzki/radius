@@ -133,17 +133,15 @@ export default function ScanPage() {
         ) : (
           <div className="soft-card rounded-[30px] p-6 text-center">
             <div className="scan-qr-icon mx-auto grid h-36 w-36 place-items-center rounded-[30px] border-2 border-dashed border-[var(--brand)]/30 bg-white/40 text-[var(--brand)]">
-              <div className="grid grid-cols-3 gap-2" aria-hidden="true">
-                <span className="h-7 w-7 rounded-lg border-[3px] border-current" />
-                <span className="h-7 w-7 rounded-lg border-[3px] border-current" />
-                <span className="h-7 w-7" />
-                <span className="h-7 w-7 rounded-lg border-[3px] border-current" />
-                <span className="h-7 w-7 rounded-md bg-current" />
-                <span className="h-7 w-7 rounded-md bg-current" />
-                <span className="h-7 w-7" />
-                <span className="h-7 w-7 rounded-md bg-current" />
-                <span className="h-7 w-7 rounded-lg border-[3px] border-current" />
-              </div>
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="3" height="3"/>
+                <rect x="18" y="14" width="3" height="3"/>
+                <rect x="14" y="18" width="3" height="3"/>
+                <rect x="18" y="18" width="3" height="3"/>
+              </svg>
             </div>
             <h2 className="mt-6 text-2xl font-semibold tracking-[-0.04em]">Scan QR code</h2>
             <p className="mt-3 text-sm leading-6 text-[#8b8795]">

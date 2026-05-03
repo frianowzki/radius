@@ -142,14 +142,14 @@ export default function ProfilePage() {
           <div className="profile-address-pill">{address ? formatAddress(address) : "No wallet connected"}</div>
           {address && (
             <div className="profile-hero-actions">
-              <button type="button" onClick={copyAddress}>
+              <button type="button" onClick={copyAddress} className="bg-[var(--brand)]/15 text-white rounded-[14px]">
                 {copiedAddress ? (
                   <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied</>
                 ) : (
                   <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy address</>
                 )}
               </button>
-              <button type="button" onClick={disconnectAll}>
+              <button type="button" onClick={disconnectAll} className="bg-[var(--brand)]/15 text-white rounded-[14px]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Disconnect
               </button>
@@ -167,8 +167,8 @@ export default function ProfilePage() {
 
         {address && (
           <section className="profile-qr-card">
-            <div className="profile-qr-header">
-              <div>
+            <div className="profile-qr-header text-center">
+              <div className="flex flex-col items-center">
                 <h2>My pay QR</h2>
                 <span>{profile.handle ? `@${profile.handle}` : "address-based"}</span>
               </div>

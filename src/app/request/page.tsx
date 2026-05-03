@@ -173,13 +173,13 @@ export default function RequestPage() {
                 <input value={amount} onChange={(e) => { setAmount(e.target.value); setPaymentUrl(""); }} inputMode="decimal" className="request-amount-input w-40 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none" />
                 <button type="button" onClick={() => setShowTokenPicker(true)} className="request-token-pill flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} />{token}</button>
               </div>
-              <p className="request-estimate mt-2 text-xs text-[#b2adba]">≈ {amount || "0.00"} {token}</p>
+              {/* estimate removed */}
 
               <div className="request-main-card soft-card mx-auto mt-7 rounded-[28px] p-5">
                 {!qrValue && <p className="mb-3 text-xs text-[#9a94a3]">Enter an amount to generate QR.</p>}
                 <div ref={qrWrapRef} className="request-qr-frame relative mx-auto w-fit rounded-[24px] bg-white p-4 shadow-[0_14px_38px_rgba(143,124,255,.16)]">
                   {qrValue ? <QRCodeSVG value={qrValue} size={218} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin /> : <div className="h-[218px] w-[218px] rounded-2xl bg-[#f7f5fb]" />}
-                  {qrValue && <div className="radius-qr-logo absolute left-1/2 top-1/2 z-10 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-2xl bg-white text-2xl font-black text-[#7a70d8] shadow-lg">R</div>}
+                  {qrValue && <div className="radius-qr-logo absolute left-1/2 top-1/2 z-10 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center overflow-hidden rounded-2xl shadow-lg"><span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#6366f1] to-[#3b82f6] text-white text-lg font-black">R</span></div>}
                 </div>
                 <p className="mt-3 text-xs text-[#9a94a3]">{qrValue ? "Scan to pay" : "QR appears here after amount is set"}</p>
 
@@ -303,10 +303,10 @@ export default function RequestPage() {
 
             {showTokenPicker && (
               <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4" onClick={() => setShowTokenPicker(false)}>
-                <div className="soft-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+                <div className="soft-card bg-white w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-bold">Choose token</h3>
-                    <button type="button" onClick={() => setShowTokenPicker(false)} className="ghost-btn px-3 py-2 text-xs">Close</button>
+                    <button type="button" onClick={() => setShowTokenPicker(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button>
                   </div>
                   <div className="space-y-3">
                     {(Object.keys(TOKENS) as TokenKey[]).map((key) => (

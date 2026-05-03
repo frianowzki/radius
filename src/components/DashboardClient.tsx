@@ -14,7 +14,6 @@ import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { arcTestnet } from "@/config/wagmi";
 import { showRadiusNotification } from "@/lib/notifications";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, getPaymentRequests, saveLocalTransfers, savePaymentRequests, formatContactLabel, markMatchingPaymentRequestPaid, saveLocalTransfer } from "@/lib/utils";
@@ -79,7 +78,6 @@ function LoginScreen() {
 
           <h1 className="login-title">Radius</h1>
           <p className="login-subtitle">P2P stablecoin payments on Arc Testnet</p>
-          <div className="login-theme-slot"><ThemeToggle /></div>
         </section>
 
         <div className="login-actions">
@@ -236,7 +234,7 @@ export function DashboardClient() {
             <div className="dashboard-logo">Radius</div>
             <h1>Hello, {profileName} <span className="dashboard-wave" aria-hidden="true">👋</span></h1>
           </div>
-          <ThemeToggle className="dashboard-theme-toggle" />
+
         </header>
 
         {activityNotice && (
@@ -255,13 +253,13 @@ export function DashboardClient() {
             <span>Total Balance</span>
             <button type="button" aria-label={hideBalance ? "Show balance" : "Hide balance"} onClick={() => setHideBalance((v) => !v)}><EyeIcon hidden={hideBalance} /></button>
           </div>
-          <p className={`dashboard-total ${hideBalance ? "balance-hidden" : ""}`}>${visibleTotal}</p>
+          <p className={`dashboard-total tracking-wide ${hideBalance ? "balance-hidden" : ""}`}>${"\u00A0"}{visibleTotal}</p>
           <div className="dashboard-balance-actions">
-            <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">
+            <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer" className="bg-white/30 backdrop-blur-sm rounded-[18px]">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3.8s6 6.4 6 10.5a6 6 0 0 1-12 0C6 10.2 12 3.8 12 3.8Z"/><path d="M9.5 15.2a2.8 2.8 0 0 0 2.8 2.8"/></svg>
               Faucets
             </a>
-            <button type="button" onClick={() => setShowReceiveAddress(true)}>
+            <button type="button" onClick={() => setShowReceiveAddress(true)} className="bg-white/30 backdrop-blur-sm rounded-[18px]">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
               Receive
             </button>
@@ -276,7 +274,7 @@ export function DashboardClient() {
             { href: "/contacts", icon: "contacts", label: "Contacts" },
             { href: "/bridge", icon: "bridge", label: "Bridge" },
           ].map((item) => (
-            <Link key={item.label} href={item.href} className="dashboard-action-item">
+            <Link key={item.label} href={item.href} className="dashboard-action-item !bg-white/40">
               <span><QuickActionIcon name={item.icon as "send" | "request" | "scan" | "contacts" | "bridge"} /></span>{item.label}
             </Link>
           ))}
