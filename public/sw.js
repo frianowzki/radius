@@ -2,7 +2,7 @@
 // Strategy: network-first for navigations (so app updates roll out quickly),
 // stale-while-revalidate for static assets, and bypass for API/RPC/cross-origin.
 
-const VERSION = "radius-v4";
+const VERSION = "radius-v5";
 const STATIC_CACHE = `${VERSION}-static`;
 const CORE = ["/", "/manifest.webmanifest", "/icon.svg"];
 

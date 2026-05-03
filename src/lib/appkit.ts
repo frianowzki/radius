@@ -20,6 +20,18 @@ export async function createBrowserAppKitAdapter(provider: EIP1193Provider) {
 }
 
 export type BridgeSpeed = "FAST" | "SLOW";
+export type SwapToken = "USDC" | "EURC";
+
+const CIRCLE_KIT_KEY = process.env.NEXT_PUBLIC_CIRCLE_KIT_KEY?.trim() || "";
+
+function getSwapConfig() {
+  if (!CIRCLE_KIT_KEY) throw new Error("Circle Kit key is missing. Add NEXT_PUBLIC_CIRCLE_KIT_KEY to enable swaps.");
+  return {
+    kitKey: CIRCLE_KIT_KEY,
+    slippageBps: 100,
+    allowanceStrategy: "approve" as const,
+  };
+}
 
 export interface BridgeEstimateSummary {
   /** Best-effort total bridge ETA in seconds, when the SDK provides one. */
@@ -80,6 +92,50 @@ function parseBridgeProgress(payload: unknown): BridgeProgressEvent {
     txHash,
     errorMessage,
   };
+}
+
+export async function estimateSwapTransfer(
+  provider: EIP1193Provider,
+  tokenIn: SwapToken,
+  tokenOut: SwapToken,
+  amountIn: string
+) {
+  const adapter = await createBrowserAppKitAdapter(provider);
+  const kit = await getAppKit();
+
+  return (kit as { estimateSwap: (params: unknown) => Promise<unknown> }).estimateSwap({
+    from: { adapter, chain: "Arc_Testnet" },
+    tokenIn,
+    tokenOut,
+    amountIn,
+    config: getSwapConfig(),
+  });
+}
+
+export async function executeSwapTransfer(
+  provider: EIP1193Provider,
+  tokenIn: SwapToken,
+  tokenOut: SwapToken,
+  amountIn: string
+) {
+  const adapter = await createBrowserAppKitAdapter(provider);
+  const kit = await getAppKit();
+
+  return (kit as { swap: (params: unknown) => Promise<unknown> }).swap({
+    from: { adapter, chain: "Arc_Testnet" },
+    tokenIn,
+    tokenOut,
+    amountIn,
+    config: getSwapConfig(),
+  });
+}
+
+export function getSwapErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : typeof error === "string" ? error : "Swap failed";
+  if (/kit key/i.test(message)) return message;
+  if (/insufficient/i.test(message)) return "Insufficient balance for this swap.";
+  if (/user rejected|denied|rejected/i.test(message)) return "Transaction rejected.";
+  return message.slice(0, 220);
 }
 
 export async function estimateBridgeTransfer(

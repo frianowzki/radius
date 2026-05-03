@@ -266,13 +266,13 @@ export default function DashboardPage() {
         <section className="dashboard-actions-grid">
           {[
             { href: "/send", icon: "send", label: "Send" },
-            { href: "/request", icon: "request", label: "Request" },
+            { href: "/swap", icon: "swap", label: "Swap" },
             { href: "/scan", icon: "scan", label: "Scan" },
             { href: "/contacts", icon: "contacts", label: "Contacts" },
             { href: "/bridge", icon: "bridge", label: "Bridge" },
           ].map((item) => (
             <Link key={item.label} href={item.href} className="dashboard-action-item">
-              <span><QuickActionIcon name={item.icon as "send" | "request" | "scan" | "contacts" | "bridge"} /></span>{item.label}
+              <span><QuickActionIcon name={item.icon as "send" | "request" | "swap" | "scan" | "contacts" | "bridge"} /></span>{item.label}
             </Link>
           ))}
         </section>
