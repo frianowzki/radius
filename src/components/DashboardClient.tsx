@@ -255,11 +255,11 @@ export function DashboardClient() {
           </div>
           <p className={`dashboard-total tracking-wide ${hideBalance ? "balance-hidden" : ""}`}>${"\u00A0"}{visibleTotal}</p>
           <div className="dashboard-balance-actions">
-            <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer" className="bg-white/30 backdrop-blur-sm rounded-[18px]">
+            <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer" className="bg-white/20 backdrop-blur-sm rounded-xl">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3.8s6 6.4 6 10.5a6 6 0 0 1-12 0C6 10.2 12 3.8 12 3.8Z"/><path d="M9.5 15.2a2.8 2.8 0 0 0 2.8 2.8"/></svg>
               Faucets
             </a>
-            <button type="button" onClick={() => setShowReceiveAddress(true)} className="bg-white/30 backdrop-blur-sm rounded-[18px]">
+            <button type="button" onClick={() => setShowReceiveAddress(true)} className="bg-white/20 backdrop-blur-sm rounded-xl">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
               Receive
             </button>
@@ -274,7 +274,7 @@ export function DashboardClient() {
             { href: "/contacts", icon: "contacts", label: "Contacts" },
             { href: "/bridge", icon: "bridge", label: "Bridge" },
           ].map((item) => (
-            <Link key={item.label} href={item.href} className="dashboard-action-item !bg-white/40">
+            <Link key={item.label} href={item.href} className="dashboard-action-item rounded-2xl bg-white/20">
               <span><QuickActionIcon name={item.icon as "send" | "request" | "scan" | "contacts" | "bridge"} /></span>{item.label}
             </Link>
           ))}
