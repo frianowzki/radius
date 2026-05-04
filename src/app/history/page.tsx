@@ -183,7 +183,7 @@ export default function HistoryPage() {
           }
         }
 
-        const merged = [...events, ...localEvents].filter((event, index, all) => {
+        const merged = [...events, ...localEvents.filter((e) => !e.txHash.startsWith("balance-"))].filter((event, index, all) => {
           if (!event.txHash) return true;
           return (
             all.findIndex(
@@ -270,9 +270,9 @@ export default function HistoryPage() {
                     </div>
                     <p className="history-from">{isSent ? "To" : "From"} {formatContactLabel(counterparty)}</p>
                     {tx.txHash.startsWith("0x") ? (
-                      <a className="history-counterparty-chip history-tx-link px-4 py-1.5" href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`} target="_blank" rel="noopener noreferrer">
-                        <span>Tx hash</span>
-                        <strong>{formatContactLabel(tx.txHash)}</strong>
+                      <a className="history-counterparty-chip history-tx-link inline-flex items-center gap-2 px-5 py-1" href={`${arcTestnet.blockExplorers.default.url}/tx/${tx.txHash}`} target="_blank" rel="noopener noreferrer">
+                        <strong className="text-xs font-medium">{formatContactLabel(tx.txHash)}</strong>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                       </a>
                     ) : (
                       <div className="history-counterparty-chip">

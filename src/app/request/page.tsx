@@ -168,9 +168,9 @@ export default function RequestPage() {
           <>
             <form onSubmit={generate} className="request-form text-center">
               
-              <div className="request-amount-row mt-3 flex items-center justify-center gap-3 rounded-[24px] bg-white/55 p-4">
+              <div className="request-amount-row mt-3 flex items-center justify-center gap-3 rounded-[24px] border-0 bg-white/55 p-4">
                 <span className="request-currency-symbol text-4xl font-semibold tracking-[-0.06em]">$</span>
-                <input value={amount} onChange={(e) => { setAmount(e.target.value); setPaymentUrl(""); }} inputMode="decimal" className="request-amount-input w-40 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none" />
+                <input value={amount} onChange={(e) => { setAmount(e.target.value); setPaymentUrl(""); }} inputMode="decimal" className="request-amount-input w-40 border-0 bg-transparent text-center text-4xl font-semibold tracking-[-0.06em] outline-none ring-0 focus:ring-0" />
                 <button type="button" onClick={() => setShowTokenPicker(true)} className="request-token-pill flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold shadow-sm"><TokenLogo symbol={token} size={22} />{token}</button>
               </div>
               {/* estimate removed */}
@@ -179,7 +179,7 @@ export default function RequestPage() {
                 {!qrValue && <p className="mb-3 text-xs text-[#9a94a3]">Enter an amount to generate QR.</p>}
                 <div ref={qrWrapRef} className="request-qr-frame relative mx-auto w-fit rounded-[24px] bg-white p-4 shadow-[0_14px_38px_rgba(143,124,255,.16)]">
                   {qrValue ? <QRCodeSVG value={qrValue} size={218} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin /> : <div className="h-[218px] w-[218px] rounded-2xl bg-[#f7f5fb]" />}
-                  {qrValue && <div className="radius-qr-logo absolute left-1/2 top-1/2 z-10 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center overflow-hidden rounded-2xl shadow-lg"><span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#6366f1] to-[#3b82f6] text-white text-lg font-black">R</span></div>}
+                  {qrValue && <div className="radius-qr-logo absolute left-1/2 top-1/2 z-10 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center overflow-hidden rounded-2xl shadow-lg"><span className="flex h-full w-full items-center justify-center rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#3b82f6]"><span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#818cf8] to-[#3b82f6] shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)]"><span className="absolute top-0.5 left-0.5 h-1.5 w-1.5 rounded-full bg-white/60" /></span></span></div>}
                 </div>
                 <p className="mt-3 text-xs text-[#9a94a3]">{qrValue ? "Scan to pay" : "QR appears here after amount is set"}</p>
 
@@ -303,10 +303,10 @@ export default function RequestPage() {
 
             {showTokenPicker && (
               <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4" onClick={() => setShowTokenPicker(false)}>
-                <div className="soft-card bg-white w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+                <div className="bg-white w-full max-w-sm rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-bold">Choose token</h3>
-                    <button type="button" onClick={() => setShowTokenPicker(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button>
+                    <button type="button" onClick={() => setShowTokenPicker(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">❌</button>
                   </div>
                   <div className="space-y-3">
                     {(Object.keys(TOKENS) as TokenKey[]).map((key) => (

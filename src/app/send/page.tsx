@@ -248,20 +248,6 @@ export default function SendPage() {
               </div>
             </div>
 
-            <div className="flow-card glass-panel rounded-[28px] p-5">
-              <label className="mb-3 block text-sm font-medium text-zinc-400">Token</label>
-              <button type="button" onClick={() => setShowTokenPicker(true)} className="frosted-choice w-full active">
-                <div className="flex items-center gap-3">
-                  <TokenLogo symbol={token} size={34} />
-                  <div>
-                    <p className="font-bold">{token}</p>
-                    <p className="text-xs opacity-70">{TOKENS[token].name}</p>
-                  </div>
-                  {balanceByToken[token] !== undefined && <div className="ml-auto text-xs opacity-70">Balance: {formatAmount(balanceByToken[token]!, TOKENS[token].decimals)}</div>}
-                </div>
-              </button>
-            </div>
-
             <div className="flow-card compact glass-panel rounded-[28px] p-5 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500">Network</span>
@@ -275,7 +261,7 @@ export default function SendPage() {
 
             <div className="flow-card glass-panel rounded-[28px] p-5">
               <div className="mb-3 flex items-center justify-between"><label className="text-sm font-medium text-zinc-400">Recipient</label><span className="text-xs text-zinc-500">Address or username</span></div>
-              <input className="radius-input font-mono text-sm focus:border-[rgba(27,22,43,.08)] focus:shadow-none" value={recipient} onChange={(e) => { setRecipient(e.target.value); }} placeholder="0x... or username" />
+              <input className="radius-input font-mono text-sm border-0 ring-0 focus:ring-0 focus:border-[rgba(27,22,43,.08)] focus:shadow-none" value={recipient} onChange={(e) => { setRecipient(e.target.value); }} placeholder="0x... or username" />
               <button type="button" onClick={() => { setDirectoryQuery(""); setShowDirectory(true); }} className="ghost-btn mt-3 w-full text-xs">Choose from contacts</button>
               {registryRecipient && !resolvedRecipient.contact && (
                 <button type="button" onClick={() => { setRecipient(registryRecipient.handle || registryRecipient.address); setShowDirectory(false); }} className="mt-3 w-full rounded-2xl bg-white/60 p-3 text-left text-sm">
@@ -286,12 +272,12 @@ export default function SendPage() {
 
             <div className="send-amount-card flow-card glass-panel rounded-[28px] p-5">
               <label className="mb-3 block text-sm font-medium text-zinc-400">Amount</label>
-              <div className="flex items-center gap-3 rounded-[24px] bg-white/55 p-4">
-                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="min-w-0 flex-1 bg-transparent text-5xl font-semibold tracking-tight outline-none" />
-                <span className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)]/8 px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
+              <div className="flex items-center gap-3 rounded-[24px] border-0 bg-white/55 p-4">
+                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="min-w-0 flex-1 border-0 bg-transparent text-5xl font-semibold tracking-tight outline-none ring-0 focus:ring-0" />
+                <button type="button" onClick={() => setShowTokenPicker(true)} className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)]/8 px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
                   <TokenLogo symbol={token} size={20} />
                   {token}
-                </span>
+                </button>
               </div>
               {balanceByToken[token] !== undefined && (
                 <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-500">
@@ -342,10 +328,10 @@ export default function SendPage() {
 
         {showTokenPicker && (
           <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4" onClick={() => setShowTokenPicker(false)}>
-            <div className="soft-card bg-white w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white w-full max-w-sm rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold">Choose token</h3>
-                <button type="button" onClick={() => setShowTokenPicker(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button>
+                <button type="button" onClick={() => setShowTokenPicker(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">❌</button>
               </div>
               <div className="space-y-3">
                 {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
@@ -367,10 +353,10 @@ export default function SendPage() {
 
         {showDirectory && (
           <div className="fixed inset-0 z-[90] grid place-items-center bg-black/40 p-4" onClick={() => setShowDirectory(false)}>
-            <div className="soft-card bg-white w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold">Contacts</h3>
-                <button type="button" onClick={() => setShowDirectory(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button>
+                <button type="button" onClick={() => setShowDirectory(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">❌</button>
               </div>
               <input className="radius-input font-mono text-sm mb-3" value={directoryQuery} onChange={(e) => setDirectoryQuery(e.target.value)} placeholder="Search contacts..." />
               {directoryEntries.length === 0 && (

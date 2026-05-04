@@ -90,7 +90,7 @@ export default function BridgePage() {
   const mounted = useMounted();
   const senderLabel = mounted ? getIdentityLabel(getIdentityProfile()) : "Connected wallet";
   const [directoryQuery, setDirectoryQuery] = useState("");
-  const [showDirectory, setShowDirectory] = useState(true);
+  const [showDirectory, setShowDirectory] = useState(false);
   const [showSaveRecipient, setShowSaveRecipient] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [saveHandle, setSaveHandle] = useState("");
@@ -203,10 +203,12 @@ export default function BridgePage() {
     return () => { document.body.style.overflow = previous; };
   }, [showBridgeHistory]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- set default recipient when address changes */
   useEffect(() => {
     if (!address || recipient) return;
     queueMicrotask(() => setRecipient(address));
-  }, [address]);
+  }, [address, recipient]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const directoryEntries = useMemo(() => {
     const query = directoryQuery.trim().toLowerCase();
@@ -770,35 +772,6 @@ export default function BridgePage() {
 
               <div className="bridge-premium-card p-4">
                 <label className="mb-2 block text-xs font-semibold text-[#8b8795]">Recipient</label>
-                <div className="bridge-info-card mb-3 rounded-[20px] p-3">
-                  <input
-                    type="text"
-                    placeholder="Search people or @username"
-                    value={directoryQuery}
-                    onChange={(e) => {
-                      setDirectoryQuery(e.target.value);
-                      setShowDirectory(true);
-                      resetBridgeFeedback();
-                    }}
-                    className="bridge-input mb-3 w-full rounded-[20px] px-4 py-3 text-sm focus:border-[rgba(27,22,43,.08)] focus:shadow-none"
-                  />
-                  {showDirectory && directoryEntries.length > 0 && (
-                    <div className="max-h-44 space-y-1.5 overflow-y-auto">
-                      {directoryEntries.map((entry) => (
-                        <button
-                          key={`${entry.kind}-${entry.handle || entry.address || entry.name}`}
-                          type="button"
-                          onClick={() => handleSelectDirectoryEntry(entry)}
-                          disabled={entry.kind === "self" || !entry.address}
-                          className="bridge-directory-row flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm disabled:opacity-60"
-                        >
-                          <span className="font-medium text-[#17151f]">{entry.name}</span>
-                          <span className="text-xs text-[#8b8795]">{entry.kind === "self" ? "You" : entry.address ? formatAddress(entry.address) : ""}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
                 <input
                   type="text"
                   placeholder="0x... or @username"
@@ -807,8 +780,47 @@ export default function BridgePage() {
                     setRecipient(e.target.value);
                     resetBridgeFeedback();
                   }}
-                  className="bridge-input w-full rounded-[20px] px-4 py-3 font-mono text-sm focus:border-[rgba(27,22,43,.08)] focus:shadow-none"
+                  className="bridge-input w-full rounded-[20px] border-0 px-4 py-3 font-mono text-sm ring-0 focus:ring-0"
                 />
+                <button
+                  type="button"
+                  onClick={() => { setDirectoryQuery(""); setShowDirectory((v) => !v); }}
+                  className="ghost-btn mt-3 w-full text-xs"
+                >
+                  {showDirectory ? "Hide contacts" : "Choose from contacts"}
+                </button>
+                {showDirectory && (
+                  <div className="bridge-info-card mt-3 rounded-[20px] p-3">
+                    <input
+                      type="text"
+                      placeholder="Search people or @username"
+                      value={directoryQuery}
+                      onChange={(e) => {
+                        setDirectoryQuery(e.target.value);
+                      }}
+                      className="bridge-input mb-2 w-full rounded-[20px] border-0 px-4 py-3 text-sm ring-0 focus:ring-0"
+                    />
+                    {directoryEntries.length > 0 && (
+                      <div className="max-h-44 space-y-1.5 overflow-y-auto">
+                        {directoryEntries.map((entry) => (
+                          <button
+                            key={`${entry.kind}-${entry.handle || entry.address || entry.name}`}
+                            type="button"
+                            onClick={() => handleSelectDirectoryEntry(entry)}
+                            disabled={entry.kind === "self" || !entry.address}
+                            className="bridge-directory-row flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm disabled:opacity-60"
+                          >
+                            <span className="font-medium text-[#17151f]">{entry.name}</span>
+                            <span className="text-xs text-[#8b8795]">{entry.kind === "self" ? "You" : entry.address ? formatAddress(entry.address) : ""}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {directoryEntries.length === 0 && (
+                      <p className="text-xs text-[#8b8795]">No contacts found.</p>
+                    )}
+                  </div>
+                )}
                 {address && recipient.toLowerCase() !== address.toLowerCase() && (
                   <button
                     type="button"
@@ -909,7 +921,7 @@ export default function BridgePage() {
                 <div className="bridge-sheet bridge-destination-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-bold text-[#17151f]">Choose destination</h3>
-                    <button type="button" onClick={() => setShowDestinationPicker(false)} className="bridge-icon-btn">✕</button>
+                    <button type="button" onClick={() => setShowDestinationPicker(false)} className="bridge-icon-btn">❌</button>
                   </div>
                   <div className="space-y-2">
                     {sourceRoutes.map((route) => {
@@ -931,10 +943,10 @@ export default function BridgePage() {
 
             {showBridgeHistory && (
               <div className="fixed inset-0 z-[90] grid place-items-end bg-slate-950/55 p-4" onClick={() => setShowBridgeHistory(false)}>
-                <div className="bridge-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+                <div className="bridge-sheet w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <div><h3 className="text-lg font-bold text-[#17151f]">Bridge history</h3><p className="text-xs text-[#8b8795]">Ongoing, successful, and failed bridge info</p></div>
-                    <button type="button" onClick={() => setShowBridgeHistory(false)} className="bridge-icon-btn">✕</button>
+                    <button type="button" onClick={() => setShowBridgeHistory(false)} className="bridge-icon-btn">❌</button>
                   </div>
                   <div className="space-y-2">
                     {(status === "sending" || status === "confirming" || status === "error") && (

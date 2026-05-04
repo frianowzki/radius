@@ -1881,17 +1881,17 @@ html[data-theme="dark"] .login-action-primary {
 }
 .profile-hero-actions button {
   min-height: 42px;
-  border-radius: 10px;
+  border-radius: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  background: rgba(99,102,241,.12);
-  color: #4f46e5;
+  background: rgba(255,255,255,.32);
+  color: #fff;
   font-size: 13px;
   font-weight: 780;
-  border: 1px solid rgba(99,102,241,.15);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.70);
+  border: 1px solid rgba(255,255,255,.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.20);
 }
 .profile-form-card {
   padding: 14px 12px 16px;
@@ -2102,7 +2102,7 @@ html[data-theme="dark"] .profile-upload-edit { color: #7dd3fc; border-color: rgb
   font-size: 37px;
   line-height: .9;
   font-weight: 850;
-  letter-spacing: -.07em;
+  letter-spacing: .02em;
 }
 .dashboard-eq {
   position: relative;
@@ -2126,12 +2126,12 @@ html[data-theme="dark"] .profile-upload-edit { color: #7dd3fc; border-color: rgb
   align-items: center;
   justify-content: center;
   gap: 7px;
-  border-radius: 8px;
-  background: rgba(255,255,255,.94);
+  border-radius: 16px;
+  background: rgba(255,255,255,.35);
   color: #1a2750;
   font-size: 13px;
   font-weight: 780;
-  box-shadow: 0 8px 18px rgba(30,27,75,.12);
+  box-shadow: 0 8px 18px rgba(30,27,75,.08);
 }
 .dashboard-balance-actions button { border: 0; cursor: pointer; }
 .dashboard-actions-grid {
@@ -2152,7 +2152,7 @@ html[data-theme="dark"] .profile-upload-edit { color: #7dd3fc; border-color: rgb
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: rgba(255,255,255,.64);
+  background: rgba(255,255,255,.48);
   color: #174bd8;
   border: 1px solid rgba(226,232,240,.64);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.76), 0 8px 18px rgba(30,58,138,.07);
@@ -2635,16 +2635,18 @@ html[data-theme="dark"] .profile-public-btn:hover {
 }
 .profile-qr-header h2 {
   color: #101828;
-  font-size: 25px;
+  font-size: 22px;
   line-height: 1;
-  font-weight: 880;
-  letter-spacing: -.045em;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  text-align: center;
 }
 .profile-qr-header span {
   min-width: 0;
   color: #8b8795;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 560;
+  letter-spacing: .02em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

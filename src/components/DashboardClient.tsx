@@ -253,13 +253,13 @@ export function DashboardClient() {
             <span>Total Balance</span>
             <button type="button" aria-label={hideBalance ? "Show balance" : "Hide balance"} onClick={() => setHideBalance((v) => !v)}><EyeIcon hidden={hideBalance} /></button>
           </div>
-          <p className={`dashboard-total tracking-wide ${hideBalance ? "balance-hidden" : ""}`}>${"\u00A0"}{visibleTotal}</p>
+          <p className={`dashboard-total tracking-wide ${hideBalance ? "balance-hidden" : ""}`}><span className="mr-1">$</span>{"\u00A0"}{visibleTotal}</p>
           <div className="dashboard-balance-actions">
-            <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer" className="bg-white/20 backdrop-blur-sm rounded-xl">
+            <a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer" className="rounded-2xl bg-white/30">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3.8s6 6.4 6 10.5a6 6 0 0 1-12 0C6 10.2 12 3.8 12 3.8Z"/><path d="M9.5 15.2a2.8 2.8 0 0 0 2.8 2.8"/></svg>
               Faucets
             </a>
-            <button type="button" onClick={() => setShowReceiveAddress(true)} className="bg-white/20 backdrop-blur-sm rounded-xl">
+            <button type="button" onClick={() => setShowReceiveAddress(true)} className="rounded-2xl bg-white/30">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
               Receive
             </button>
