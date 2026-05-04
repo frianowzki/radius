@@ -3,6 +3,7 @@
 import type { EIP1193Provider } from "viem";
 import { getRegistryProof } from "@/lib/registry-proof";
 import type { Contact } from "@/lib/utils";
+import { dispatchSyncResult } from "@/lib/sync-status";
 
 export interface RemoteContactsResponse {
   owner: string;
@@ -25,16 +26,27 @@ export async function fetchRemoteContacts(owner: string): Promise<RemoteContacts
 export async function pushRemoteContacts(owner: string, contacts: Contact[], options?: { provider?: EIP1193Provider | null; prompt?: boolean; signMessage?: (message: string) => Promise<string> }): Promise<RemoteContactsResponse | null> {
   try {
     const proof = await getRegistryProof(owner, "contacts", options);
-    if (!proof) return null;
+    if (!proof) {
+      dispatchSyncResult("contacts", "skipped");
+      return null;
+    }
     const res = await fetch(`/api/registry/contacts`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ owner, contacts, proof }),
     });
-    if (!res.ok) return null;
-    return (await res.json()) as RemoteContactsResponse;
+    if (!res.ok) {
+      const msg = `Contacts sync failed (${res.status})`;
+      dispatchSyncResult("contacts", "error", msg);
+      return null;
+    }
+    const result = (await res.json()) as RemoteContactsResponse;
+    dispatchSyncResult("contacts", "ok");
+    return result;
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "Contacts sync failed";
     console.warn("[contacts-sync] pushRemoteContacts failed:", err);
+    dispatchSyncResult("contacts", "error", msg);
     return null;
   }
 }

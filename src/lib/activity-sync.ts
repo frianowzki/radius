@@ -3,6 +3,7 @@
 import type { EIP1193Provider } from "viem";
 import { getRegistryProof } from "@/lib/registry-proof";
 import type { LocalTransferRecord, PaymentRequestRecord } from "@/lib/utils";
+import { dispatchSyncResult } from "@/lib/sync-status";
 
 export interface RemoteActivityResponse {
   owner: string;
@@ -25,16 +26,27 @@ export async function fetchRemoteActivity(owner: string): Promise<RemoteActivity
 export async function pushRemoteActivity(owner: string, data: { requests: PaymentRequestRecord[]; transfers: LocalTransferRecord[] }, options?: { provider?: EIP1193Provider | null; prompt?: boolean; signMessage?: (message: string) => Promise<string> }): Promise<RemoteActivityResponse | null> {
   try {
     const proof = await getRegistryProof(owner, "activity", options);
-    if (!proof) return null;
+    if (!proof) {
+      dispatchSyncResult("activity", "skipped");
+      return null;
+    }
     const res = await fetch(`/api/registry/activity`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ owner, ...data, proof }),
     });
-    if (!res.ok) return null;
-    return (await res.json()) as RemoteActivityResponse;
+    if (!res.ok) {
+      const msg = `Sync failed (${res.status})`;
+      dispatchSyncResult("activity", "error", msg);
+      return null;
+    }
+    const result = (await res.json()) as RemoteActivityResponse;
+    dispatchSyncResult("activity", "ok");
+    return result;
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "Sync failed";
     console.warn("[activity-sync] pushRemoteActivity failed:", err);
+    dispatchSyncResult("activity", "error", msg);
     return null;
   }
 }

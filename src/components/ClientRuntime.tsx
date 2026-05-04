@@ -11,6 +11,10 @@ const ServiceWorkerRegistrar = dynamic(
   () => import("@/components/ServiceWorkerRegistrar").then((m) => m.ServiceWorkerRegistrar),
   { ssr: false }
 );
+const SyncToast = dynamic(
+  () => import("@/components/SyncToast").then((m) => m.SyncToast),
+  { ssr: false }
+);
 
 export function ClientRuntime() {
   const [ready, setReady] = useState(false);
@@ -29,6 +33,7 @@ export function ClientRuntime() {
     <>
       <GlobalErrorListeners />
       <ServiceWorkerRegistrar />
+      <SyncToast />
     </>
   );
 }
