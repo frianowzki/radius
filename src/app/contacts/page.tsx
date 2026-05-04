@@ -229,16 +229,26 @@ export default function ContactsPage() {
                     {contact.note && <p className="mt-1 truncate text-xs text-[#8b8795]">{contact.note}</p>}
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  <Link href={`/send?to=${encodeURIComponent(contact.handle ? contact.handle.replace(/^@/, "") : contact.address)}`} className="rounded-2xl bg-[var(--brand)]/10 px-3 py-2.5 text-center text-xs font-semibold text-[var(--brand)]">Send to</Link>
-                  <button type="button" onClick={() => startEdit(contact)} className="rounded-2xl bg-emerald-500/12 px-3 py-2.5 text-xs font-semibold text-emerald-600">Edit</button>
+                <div className="mt-4 flex items-center gap-2">
+                  <Link href={`/send?to=${encodeURIComponent(contact.handle ? contact.handle.replace(/^@/, "") : contact.address)}`} aria-label="Send to" title="Send to" className="grid h-9 w-9 place-items-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)]">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  </Link>
+                  <button type="button" onClick={() => startEdit(contact)} aria-label="Edit" title="Edit" className="grid h-9 w-9 place-items-center rounded-full bg-emerald-500/12 text-emerald-600">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
+                  </button>
                   {deletingId === contact.id ? (
                     <>
-                      <button type="button" onClick={() => { handleDelete(contact.id); setDeletingId(null); }} className="rounded-2xl bg-red-500/20 px-3 py-2.5 text-xs font-semibold text-red-600">Confirm</button>
-                      <button type="button" onClick={() => setDeletingId(null)} className="rounded-2xl bg-white/60 px-3 py-2.5 text-xs font-semibold text-[#8b8795]">Cancel</button>
+                      <button type="button" onClick={() => { handleDelete(contact.id); setDeletingId(null); }} aria-label="Confirm delete" title="Confirm delete" className="grid h-9 w-9 place-items-center rounded-full bg-red-500/20 text-red-600">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      </button>
+                      <button type="button" onClick={() => setDeletingId(null)} aria-label="Cancel" title="Cancel" className="grid h-9 w-9 place-items-center rounded-full bg-white/60 text-[#8b8795]">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
                     </>
                   ) : (
-                    <button type="button" onClick={() => setDeletingId(contact.id)} className="rounded-2xl bg-red-500/12 px-3 py-2.5 text-xs font-semibold text-red-600">Delete</button>
+                    <button type="button" onClick={() => setDeletingId(contact.id)} aria-label="Delete" title="Delete" className="grid h-9 w-9 place-items-center rounded-full bg-red-500/12 text-red-600">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    </button>
                   )}
                 </div>
               </div>

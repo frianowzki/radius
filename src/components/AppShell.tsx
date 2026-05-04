@@ -107,7 +107,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className={`nav-item${active ? " active" : ""}${item.special ? " nav-item-special" : ""}`}
               >
                 {item.special ? (
-                  <span className="nav-orb" aria-hidden="true">R</span>
+                  <span className="nav-orb" aria-hidden="true">
+                    <span className="nav-orb-inner" />
+                  </span>
                 ) : item.icon ? (
                   <span className="nav-icon"><NavIcon name={item.icon} /></span>
                 ) : null}

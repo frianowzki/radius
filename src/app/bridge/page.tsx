@@ -203,12 +203,10 @@ export default function BridgePage() {
     return () => { document.body.style.overflow = previous; };
   }, [showBridgeHistory]);
 
-  /* eslint-disable react-hooks/set-state-in-effect -- set default recipient when address changes */
   useEffect(() => {
     if (!address || recipient) return;
     queueMicrotask(() => setRecipient(address));
   }, [address, recipient]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const directoryEntries = useMemo(() => {
     const query = directoryQuery.trim().toLowerCase();

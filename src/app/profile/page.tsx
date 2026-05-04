@@ -127,9 +127,19 @@ export default function ProfilePage() {
   return (
     <AppShell>
       <div className="profile-reference-screen">
-        <section className="profile-hero-card">
+        <section className="profile-hero-card relative">
           <div className="profile-stars" aria-hidden="true" />
           <div className="profile-orbit-line" aria-hidden="true" />
+          {payLink && (
+            <button
+              type="button"
+              onClick={() => { if (navigator.share) { navigator.share({ title: `${profile.displayName ?? "Radius"} on Radius`, url: payLink }).catch(() => undefined); } else { navigator.clipboard.writeText(payLink); } }}
+              aria-label="Share profile"
+              className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-white/20 text-white shadow-sm"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+          )}
           <div className="profile-hero-avatar">
             <AvatarImage src={profile.avatar} fallback={profile.handle || profile.displayName || user?.name || "R"} />
             <span className="profile-verified" aria-hidden="true">
@@ -167,10 +177,10 @@ export default function ProfilePage() {
 
         {address && (
           <section className="profile-qr-card">
-            <div className="profile-qr-header text-center">
+            <div className="profile-qr-header relative flex items-center justify-center text-center">
               <div className="flex flex-col items-center">
-                <h2>My pay QR</h2>
-                <span>{profile.handle ? `@${profile.handle}` : "address-based"}</span>
+                <h2 className="text-center">My pay QR</h2>
+                <span className="text-center">{profile.handle ? `@${profile.handle}` : "address-based"}</span>
               </div>
               <button type="button" onClick={() => setHidePayQr((v) => !v)} aria-label={hidePayQr ? "Show My Pay QR" : "Hide My Pay QR"} className="profile-qr-toggle absolute right-0 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)]">
                 <EyeIcon hidden={hidePayQr} />

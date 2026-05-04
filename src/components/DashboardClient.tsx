@@ -101,11 +101,13 @@ export function DashboardClient() {
   const [identity, setIdentity] = useState<{ displayName?: string; authMode?: string }>({ displayName: "Arc user", authMode: "wallet" });
   const [contacts, setContacts] = useState<{ id: string; name: string; handle?: string; address: string; avatar?: string }[]>([]);
   const [recentTransfers, setRecentTransfers] = useState<ReturnType<typeof getLocalTransfers>>([]);
+  const [waveKey, setWaveKey] = useState(0);
 
   /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage on mount (client-only) to avoid SSR mismatch */
   useEffect(() => {
     setIdentity(getIdentityProfile());
     setContacts(getContacts().slice(0, 5));
+    setWaveKey((k) => k + 1);
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -232,7 +234,7 @@ export function DashboardClient() {
         <header className="dashboard-reference-header">
           <div>
             <div className="dashboard-logo">Radius</div>
-            <h1>Hello, {profileName} <span className="dashboard-wave" aria-hidden="true">👋</span></h1>
+            <h1>Hello, {profileName} <span key={waveKey} className="dashboard-wave" aria-hidden="true">👋</span></h1>
           </div>
 
         </header>
@@ -274,7 +276,7 @@ export function DashboardClient() {
             { href: "/contacts", icon: "contacts", label: "Contacts" },
             { href: "/bridge", icon: "bridge", label: "Bridge" },
           ].map((item) => (
-            <Link key={item.label} href={item.href} className="dashboard-action-item rounded-2xl bg-white/20">
+            <Link key={item.label} href={item.href} className="dashboard-action-item rounded-2xl">
               <span><QuickActionIcon name={item.icon as "send" | "request" | "scan" | "contacts" | "bridge"} /></span>{item.label}
             </Link>
           ))}
