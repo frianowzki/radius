@@ -55,11 +55,29 @@ interface TransferPayload {
   createdAt: number;
 }
 
+type ScheduleCadence = "daily" | "weekly" | "monthly";
+
+interface ScheduledPaymentPayload {
+  id: string;
+  recipient: string;
+  amount: string;
+  token: TokenKey;
+  memo?: string;
+  cadence: ScheduleCadence;
+  startAt: number;
+  nextRunAt: number;
+  lastRunAt?: number;
+  paused?: boolean;
+  createdAt: number;
+  autoConfirm?: boolean;
+}
+
 interface ActivityTable {
   version: 1;
   owner: string;
   requests: PaymentRequestPayload[];
   transfers: TransferPayload[];
+  scheduled: ScheduledPaymentPayload[];
   updatedAt: number;
 }
 
@@ -132,8 +150,36 @@ function sanitizeTransfer(raw: unknown): TransferPayload | null {
   };
 }
 
+function sanitizeScheduled(raw: unknown): ScheduledPaymentPayload | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const id = clean(r.id, 80);
+  const recipient = clean(r.recipient, 80);
+  const token = sanitizeToken(r.token);
+  const amount = clean(r.amount, 40);
+  const cadence = r.cadence === "daily" || r.cadence === "weekly" || r.cadence === "monthly" ? r.cadence : null;
+  const startAt = Number(r.startAt) || 0;
+  const nextRunAt = Number(r.nextRunAt) || 0;
+  const createdAt = Number(r.createdAt) || Date.now();
+  if (!id || !recipient || !token || !amount || !cadence || !startAt) return null;
+  return {
+    id,
+    recipient,
+    amount,
+    token,
+    memo: clean(r.memo, 180) || undefined,
+    cadence,
+    startAt,
+    nextRunAt,
+    lastRunAt: Number(r.lastRunAt) || undefined,
+    paused: !!r.paused || undefined,
+    createdAt,
+    autoConfirm: !!r.autoConfirm || undefined,
+  };
+}
+
 async function readTable(owner: string): Promise<ActivityTable> {
-  const empty: ActivityTable = { version: 1, owner: owner.toLowerCase(), requests: [], transfers: [], updatedAt: 0 };
+  const empty: ActivityTable = { version: 1, owner: owner.toLowerCase(), requests: [], transfers: [], scheduled: [], updatedAt: 0 };
   if (!process.env.BLOB_READ_WRITE_TOKEN) return empty;
   const blob = await get(path(owner), { access: "private", useCache: false }).catch(() => null);
   if (!blob || blob.statusCode !== 200) return empty;
@@ -143,6 +189,7 @@ async function readTable(owner: string): Promise<ActivityTable> {
     owner: owner.toLowerCase(),
     requests: Array.isArray(parsed.requests) ? parsed.requests.map(sanitizeRequest).filter(Boolean) : [],
     transfers: Array.isArray(parsed.transfers) ? parsed.transfers.map(sanitizeTransfer).filter(Boolean) : [],
+    scheduled: Array.isArray(parsed.scheduled) ? parsed.scheduled.map(sanitizeScheduled).filter(Boolean) : [],
     updatedAt: Number(parsed.updatedAt) || 0,
   } as ActivityTable;
 }
@@ -163,7 +210,7 @@ export async function GET(req: Request) {
   const owner = url.searchParams.get("owner");
   if (!owner || !isAddress(owner)) return jsonNoStore({ error: "owner address required" }, { status: 400 });
   const table = await readTable(owner);
-  return jsonNoStore({ owner: table.owner, requests: table.requests, transfers: table.transfers, updatedAt: table.updatedAt });
+  return jsonNoStore({ owner: table.owner, requests: table.requests, transfers: table.transfers, scheduled: table.scheduled, updatedAt: table.updatedAt });
 }
 
 export async function POST(req: Request) {
@@ -185,16 +232,23 @@ export async function POST(req: Request) {
   }
   const byTransfer = new Map<string, TransferPayload>();
   for (const t of transfers) byTransfer.set(`${t.txHash.toLowerCase()}-${t.direction}`, t);
+  const allScheduled = [...current.scheduled, ...(Array.isArray(body.scheduled) ? body.scheduled : []).map(sanitizeScheduled).filter((s): s is ScheduledPaymentPayload => !!s)];
+  const byScheduled = new Map<string, ScheduledPaymentPayload>();
+  for (const s of allScheduled) {
+    const prev = byScheduled.get(s.id);
+    if (!prev || s.createdAt >= prev.createdAt) byScheduled.set(s.id, s);
+  }
   const table: ActivityTable = {
     version: 1,
     owner: owner.toLowerCase(),
     requests: Array.from(byRequest.values()).sort((a, b) => b.createdAt - a.createdAt).slice(0, 300),
     transfers: Array.from(byTransfer.values()).sort((a, b) => b.createdAt - a.createdAt).slice(0, 500),
+    scheduled: Array.from(byScheduled.values()).sort((a, b) => b.createdAt - a.createdAt).slice(0, 50),
     updatedAt: Date.now(),
   };
   try {
     await writeTable(table);
-    return jsonNoStore({ owner: table.owner, requests: table.requests, transfers: table.transfers, updatedAt: table.updatedAt });
+    return jsonNoStore({ owner: table.owner, requests: table.requests, transfers: table.transfers, scheduled: table.scheduled, updatedAt: table.updatedAt });
   } catch (err) {
     const message = err instanceof Error ? err.message : "activity registry unavailable";
     return jsonNoStore({ error: message }, { status: 503 });

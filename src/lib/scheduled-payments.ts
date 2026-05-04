@@ -39,6 +39,11 @@ function writeAll(records: ScheduledPaymentRecord[]) {
   localStorage.setItem(KEY, JSON.stringify(records));
 }
 
+/** Overwrite the full scheduled payments list (used by sync merge). */
+export function replaceAllScheduledPayments(records: ScheduledPaymentRecord[]) {
+  writeAll(records);
+}
+
 export function saveScheduledPayment(
   input: Omit<ScheduledPaymentRecord, "id" | "nextRunAt" | "createdAt"> & { id?: string }
 ): ScheduledPaymentRecord {

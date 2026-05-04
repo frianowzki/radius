@@ -3,12 +3,14 @@
 import type { EIP1193Provider } from "viem";
 import { getRegistryProof } from "@/lib/registry-proof";
 import type { LocalTransferRecord, PaymentRequestRecord } from "@/lib/utils";
+import type { ScheduledPaymentRecord } from "@/lib/scheduled-payments";
 import { dispatchSyncResult } from "@/lib/sync-status";
 
 export interface RemoteActivityResponse {
   owner: string;
   requests: PaymentRequestRecord[];
   transfers: LocalTransferRecord[];
+  scheduled: ScheduledPaymentRecord[];
   updatedAt: number;
 }
 
@@ -23,7 +25,7 @@ export async function fetchRemoteActivity(owner: string): Promise<RemoteActivity
   }
 }
 
-export async function pushRemoteActivity(owner: string, data: { requests: PaymentRequestRecord[]; transfers: LocalTransferRecord[] }, options?: { provider?: EIP1193Provider | null; prompt?: boolean; signMessage?: (message: string) => Promise<string> }): Promise<RemoteActivityResponse | null> {
+export async function pushRemoteActivity(owner: string, data: { requests: PaymentRequestRecord[]; transfers: LocalTransferRecord[]; scheduled?: ScheduledPaymentRecord[] }, options?: { provider?: EIP1193Provider | null; prompt?: boolean; signMessage?: (message: string) => Promise<string> }): Promise<RemoteActivityResponse | null> {
   try {
     const proof = await getRegistryProof(owner, "activity", options);
     if (!proof) {
@@ -91,4 +93,14 @@ export function mergeTransfers(local: LocalTransferRecord[], remote: LocalTransf
     if (!existing || (transfer.createdAt || 0) >= (existing.createdAt || 0)) byKey.set(key, transfer);
   }
   return Array.from(byKey.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+export function mergeScheduled(local: ScheduledPaymentRecord[], remote: ScheduledPaymentRecord[]): ScheduledPaymentRecord[] {
+  const byId = new Map<string, ScheduledPaymentRecord>();
+  for (const item of [...remote, ...local]) {
+    if (!item?.id) continue;
+    const existing = byId.get(item.id);
+    if (!existing || item.createdAt >= existing.createdAt) byId.set(item.id, item);
+  }
+  return Array.from(byId.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 }

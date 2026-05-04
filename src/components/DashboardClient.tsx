@@ -16,6 +16,7 @@ import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
 import { arcTestnet } from "@/config/wagmi";
 import { showRadiusNotification } from "@/lib/notifications";
+import { useIncomingPaymentNotifications, requestNotificationPermission } from "@/lib/incoming-payments";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, getPaymentRequests, saveLocalTransfers, savePaymentRequests, formatContactLabel, markMatchingPaymentRequestPaid, saveLocalTransfer } from "@/lib/utils";
 import { dueSchedules, type ScheduledPaymentRecord } from "@/lib/scheduled-payments";
 import { fetchRemoteActivity, mergePaymentRequests, mergeTransfers, pushRemoteActivity } from "@/lib/activity-sync";
@@ -158,6 +159,11 @@ export function DashboardClient() {
   const visibleEurc = hideBalance ? "••••••" : eurcDisplay;
   const [activityNotice, setActivityNotice] = useState("");
   const [dueScheduleList, setDueScheduleList] = useState<ScheduledPaymentRecord[]>([]);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | null>(null);
+  useEffect(() => {
+    if (typeof Notification !== "undefined") setNotifPermission(Notification.permission);
+  }, []);
+  useIncomingPaymentNotifications();
   useEffect(() => {
     if (!isConnected) return;
     const update = () => setDueScheduleList(dueSchedules());
@@ -227,9 +233,20 @@ export function DashboardClient() {
 
   if (!isConnected) return <LoginScreen />;
 
+  async function handleEnableNotifications() {
+    const perm = await requestNotificationPermission();
+    setNotifPermission(perm);
+  }
+
   return (
     <AppShell>
       <OnboardingWizard />
+      {notifPermission === "default" && (
+        <div className="dashboard-alert" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <span>Enable browser notifications to get alerts for incoming payments.</span>
+          <button type="button" onClick={handleEnableNotifications} className="primary-btn" style={{ whiteSpace: "nowrap", padding: "6px 14px", fontSize: 12 }}>Enable</button>
+        </div>
+      )}
       <div className="dashboard-reference-screen">
         <header className="dashboard-reference-header">
           <div>

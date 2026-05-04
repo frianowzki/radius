@@ -35,6 +35,7 @@ export default function SendPage() {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [scheduleId, setScheduleId] = useState<string | null>(null);
+  const [memo, setMemo] = useState('');
   const [autorunRequested, setAutorunRequested] = useState(false);
   /* eslint-disable react-hooks/set-state-in-effect -- hydrate URL params on mount to avoid SSR mismatch */
   useEffect(() => {
@@ -47,6 +48,8 @@ export default function SendPage() {
     if (amt) setAmount(amt);
     const sid = params.get("schedule");
     if (sid) setScheduleId(sid);
+    const m = params.get("memo");
+    if (m) setMemo(m);
     if (params.get("autorun") === "1") setAutorunRequested(true);
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -173,7 +176,7 @@ export default function SendPage() {
       setTxHash(hash);
       setStatus("confirming");
       await publicClient.waitForTransactionReceipt({ hash });
-      saveLocalTransfer({ from: address, to: resolvedRecipientAddress, value: parsedAmount.toString(), token, txHash: hash, direction: "sent", routeLabel: "Arc → Arc" });
+      saveLocalTransfer({ from: address, to: resolvedRecipientAddress, value: parsedAmount.toString(), token, txHash: hash, direction: "sent", routeLabel: memo.trim() || "Arc → Arc" });
       void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
       if (scheduleId) {
         try { advanceSchedule(scheduleId, Date.now()); } catch { /* noop */ }
@@ -204,6 +207,7 @@ export default function SendPage() {
   function resetForm() {
     setAmount("");
     setRecipient("");
+    setMemo("");
     setStatus("idle");
     setTxHash("");
     setError("");
@@ -218,6 +222,9 @@ export default function SendPage() {
               <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Payment sent</p>
               <h2 className="text-3xl font-semibold tracking-tight text-glow">Sent on Arc.</h2>
               <p className="mt-3 text-sm leading-6 text-zinc-400">{amount} {token} sent to {recipientLabel}.</p>
+              {memo.trim() && (
+                <p className="mt-2 text-sm text-zinc-500">Memo: {memo.trim()}</p>
+              )}
               {showSaveRecipient && resolvedRecipientAddress && (
                 <div className="mt-5 space-y-3 rounded-[24px] bg-white/70 p-4">
                   <p className="text-sm font-semibold">Save this recipient</p>
@@ -231,7 +238,7 @@ export default function SendPage() {
                 {txHash && <a href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`} target="_blank" className="primary-btn text-center text-sm">View tx</a>}
               </div>
             </div>
-            <ReceiptCard title="Arc Flow" amount={amount} token={token} status="Settled" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={recipientLabel} note="Arc Testnet" shareText={validRecipient ? `Sent ${amount} ${token} on Arc to ${recipientLabel}` : undefined} txHash={txHash} explorerUrl={txHash ? `${arcTestnet.blockExplorers.default.url}/tx/${txHash}` : undefined} />
+            <ReceiptCard title="Arc Flow" amount={amount} token={token} status="Settled" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={recipientLabel} note="Arc Testnet" shareText={validRecipient ? `Sent ${amount} ${token} on Arc to ${recipientLabel}${memo.trim() ? ` — "${memo.trim()}"` : ""}` : undefined} txHash={txHash} explorerUrl={txHash ? `${arcTestnet.blockExplorers.default.url}/tx/${txHash}` : undefined} />
           </div>
         ) : (
           <form onSubmit={handleSend} className="send-flow space-y-5">
@@ -290,6 +297,11 @@ export default function SendPage() {
               )}
             </div>
 
+            <div className="flow-card glass-panel rounded-[28px] p-5">
+              <label className="mb-3 block text-sm font-medium text-zinc-400">Memo (optional)</label>
+              <input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="What's this for?" className="radius-input font-mono text-sm border-0 ring-0 focus:ring-0 focus:border-[rgba(27,22,43,.08)] focus:shadow-none" maxLength={200} />
+            </div>
+
             {readyToSend && (
               <div className="review-card glass-panel rounded-[28px] p-5 text-sm">
                 <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Review before sending</p>
@@ -298,6 +310,9 @@ export default function SendPage() {
                   <div className="flex justify-between gap-4"><span className="text-zinc-500">Amount</span><span className="font-medium">{amount} {token}</span></div>
                   <div className="flex justify-between gap-4"><span className="text-zinc-500">Network</span><span className="font-medium text-emerald-500">Arc Testnet</span></div>
                   <div className="flex justify-between gap-4"><span className="text-zinc-500">Network fee</span><span className="font-medium">Wallet estimate</span></div>
+                  {memo.trim() && (
+                    <div className="flex justify-between gap-4"><span className="text-zinc-500">Memo</span><span className="min-w-0 text-right font-medium break-words">{memo.trim()}</span></div>
+                  )}
                 </div>
               </div>
             )}
@@ -317,6 +332,9 @@ export default function SendPage() {
                 <div className="flex justify-between gap-4"><span className="text-[#8b8795]">To</span><span className="min-w-0 text-right font-semibold break-words">{recipientLabel}</span></div>
                 <div className="flex justify-between gap-4"><span className="text-[#8b8795]">Network</span><span className="font-semibold">Arc Testnet</span></div>
                 <div className="flex justify-between gap-4"><span className="text-[#8b8795]">Fee</span><span className="font-semibold">Shown in wallet</span></div>
+                {memo.trim() && (
+                  <div className="flex justify-between gap-4"><span className="text-[#8b8795]">Memo</span><span className="min-w-0 text-right font-semibold break-words">{memo.trim()}</span></div>
+                )}
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <button type="button" onClick={() => setShowConfirm(false)} className="ghost-btn text-sm">Cancel</button>

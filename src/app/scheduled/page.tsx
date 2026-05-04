@@ -11,11 +11,13 @@ import { TokenLogo } from "@/components/TokenLogo";
 import {
   getScheduledPayments,
   removeScheduledPayment,
+  replaceAllScheduledPayments,
   saveScheduledPayment,
   setSchedulePaused,
   type ScheduleCadence,
   type ScheduledPaymentRecord,
 } from "@/lib/scheduled-payments";
+import { fetchRemoteActivity, mergeScheduled, pushRemoteActivity } from "@/lib/activity-sync";
 
 const CADENCES: { id: ScheduleCadence; label: string }[] = [
   { id: "daily", label: "Daily" },
@@ -32,9 +34,10 @@ function formatDate(ts: number) {
 }
 
 export default function ScheduledPage() {
-  const { isConnected: wagmiConnected } = useAccount();
-  const { authenticated } = useRadiusAuth();
+  const { isConnected: wagmiConnected, address: wagmiAddress } = useAccount();
+  const { authenticated, address: radiusAddress } = useRadiusAuth();
   const isConnected = wagmiConnected || authenticated;
+  const address = wagmiAddress || radiusAddress;
   const [items, setItems] = useState<ScheduledPaymentRecord[]>([]);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
@@ -58,7 +61,28 @@ export default function ScheduledPage() {
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  /* Sync scheduled payments with registry on mount / address change */
+  useEffect(() => {
+    if (!address) return;
+    let cancelled = false;
+    (async () => {
+      const remote = await fetchRemoteActivity(address);
+      if (cancelled || !remote) return;
+      const local = getScheduledPayments();
+      const merged = mergeScheduled(local, remote.scheduled ?? []);
+      replaceAllScheduledPayments(merged);
+      setItems(merged);
+    })();
+    return () => { cancelled = true; };
+  }, [address]);
+
   function refresh() { setItems(getScheduledPayments()); }
+
+  function pushSync() {
+    if (!address) return;
+    const current = getScheduledPayments();
+    pushRemoteActivity(address, { requests: [], transfers: [], scheduled: current }).catch(() => {});
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,11 +98,13 @@ export default function ScheduledPage() {
     });
     setRecipient(""); setAmount(""); setMemo(""); setAutoConfirm(false);
     refresh();
+    pushSync();
   }
 
   function toggleAutoConfirm(item: ScheduledPaymentRecord) {
     saveScheduledPayment({ ...item, autoConfirm: !item.autoConfirm });
     refresh();
+    pushSync();
   }
 
   function buildSendHref(item: ScheduledPaymentRecord) {
@@ -159,8 +185,8 @@ export default function ScheduledPage() {
                         <button type="button" onClick={() => toggleAutoConfirm(item)} className={`px-3 py-2 text-xs rounded-2xl font-bold ${item.autoConfirm ? "bg-[var(--brand)]/12 text-[var(--brand)]" : "ghost-btn"}`}>
                           {item.autoConfirm ? "Auto on" : "Auto off"}
                         </button>
-                        <button type="button" onClick={() => { setSchedulePaused(item.id, !item.paused); refresh(); }} className="ghost-btn px-3 py-2 text-xs">{item.paused ? "Resume" : "Pause"}</button>
-                        <button type="button" onClick={() => { removeScheduledPayment(item.id); refresh(); }} className="ghost-btn px-3 py-2 text-xs">Delete</button>
+                        <button type="button" onClick={() => { setSchedulePaused(item.id, !item.paused); refresh(); pushSync(); }} className="ghost-btn px-3 py-2 text-xs">{item.paused ? "Resume" : "Pause"}</button>
+                        <button type="button" onClick={() => { removeScheduledPayment(item.id); refresh(); pushSync(); }} className="ghost-btn px-3 py-2 text-xs">Delete</button>
                       </div>
                     </div>
                   );
