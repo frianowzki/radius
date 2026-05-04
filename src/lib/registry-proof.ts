@@ -11,11 +11,18 @@ function getInjectedProvider(): EIP1193Provider | null {
   return (globalThis as typeof globalThis & { ethereum?: EIP1193Provider }).ethereum ?? null;
 }
 
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 function parseCached(raw: string | null): RegistryProof | null {
   if (!raw) return null;
   try {
     const proof = JSON.parse(raw) as RegistryProof;
-    if (!proof.issuedAt || Math.abs(Date.now() - Date.parse(proof.issuedAt)) > 14 * 60 * 1000) return null;
+    if (!proof.issuedAt || !proof.nonce) return null;
+    if (Math.abs(Date.now() - Date.parse(proof.issuedAt)) > 14 * 60 * 1000) return null;
     return proof;
   } catch {
     return null;
@@ -30,7 +37,8 @@ export async function getRegistryProof(owner: string, action: RegistryAction, op
   if (!options?.prompt) return null;
 
   const issuedAt = new Date().toISOString();
-  const message = registryProofMessage(owner, action, issuedAt);
+  const nonce = generateNonce();
+  const message = registryProofMessage(owner, action, issuedAt, nonce);
   let signature: string;
 
   if (options?.signMessage) {
@@ -46,7 +54,7 @@ export async function getRegistryProof(owner: string, action: RegistryAction, op
     }
   }
 
-  const proof: RegistryProof = { owner, action, issuedAt, signature: signature as `0x${string}` };
+  const proof: RegistryProof = { owner, action, issuedAt, nonce, signature: signature as `0x${string}` };
   sessionStorage.setItem(key, JSON.stringify(proof));
   return proof;
 }
