@@ -14,6 +14,7 @@ import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
+import { NotificationBell } from "@/components/NotificationBell";
 import { arcTestnet } from "@/config/wagmi";
 import { showRadiusNotification } from "@/lib/notifications";
 import { useIncomingPaymentNotifications, requestNotificationPermission } from "@/lib/incoming-payments";
@@ -253,9 +254,12 @@ export function DashboardClient() {
             <div className="dashboard-logo">Radius</div>
             <h1>Hello, {profileName} <span key={waveKey} className="dashboard-wave" aria-hidden="true">👋</span></h1>
           </div>
-          <Link href="/scan" aria-label="Scan QR" className="grid h-10 w-10 place-items-center rounded-full bg-white/20 text-[#1e293b] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>
-          </Link>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <Link href="/scan" aria-label="Scan QR" className="grid h-10 w-10 place-items-center rounded-full bg-white/20 text-[#1e293b] shadow-sm">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>
+            </Link>
+          </div>
         </header>
 
         {activityNotice && (
