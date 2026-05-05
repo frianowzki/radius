@@ -35,6 +35,12 @@ export default function ProfilePage() {
   /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage on mount to avoid SSR mismatch */
   useEffect(() => {
     const p = getIdentityProfile();
+    if (!p.avatar) {
+      try {
+        const cachedPfp = localStorage.getItem("pfpUrl");
+        if (cachedPfp) p.avatar = cachedPfp;
+      } catch { /* ignore */ }
+    }
     setProfile(p);
     setDisplayName(p.displayName);
     setHandle(p.handle || "");
