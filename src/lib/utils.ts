@@ -13,7 +13,6 @@ export interface UserIdentityProfile {
   displayName: string;
   handle?: string;
   avatar?: string;
-  banner?: string;
   bio?: string;
   authMode?: "wallet" | "social-coming-soon";
 }
@@ -89,7 +88,6 @@ export function getIdentityProfile(): UserIdentityProfile {
       displayName: parsed.displayName || "Arc user",
       handle: parsed.handle ? normalizeHandle(parsed.handle) : undefined,
       avatar: parsed.avatar || undefined,
-      banner: parsed.banner || undefined,
       bio: parsed.bio || undefined,
       authMode: parsed.authMode || "wallet",
     };
