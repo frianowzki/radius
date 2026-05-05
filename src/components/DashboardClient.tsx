@@ -295,19 +295,13 @@ export function DashboardClient() {
           {[
             { href: "/send", icon: "send", label: "Send" },
             { href: "/request", icon: "request", label: "Request" },
-            { href: "#", icon: "swap", label: "Swap", disabled: true },
+            { href: "/swap", icon: "swap", label: "Swap" },
             { href: "/contacts", icon: "contacts", label: "Contacts" },
             { href: "/bridge", icon: "bridge", label: "Bridge" },
           ].map((item) => (
-            item.disabled ? (
-              <span key={item.label} className="dashboard-action-item rounded-2xl opacity-40 cursor-not-allowed">
-                <span><QuickActionIcon name={item.icon as "send" | "request" | "swap" | "contacts" | "bridge"} /></span>{item.label}
-              </span>
-            ) : (
-              <Link key={item.label} href={item.href} className="dashboard-action-item rounded-2xl">
-                <span><QuickActionIcon name={item.icon as "send" | "request" | "swap" | "contacts" | "bridge"} /></span>{item.label}
-              </Link>
-            )
+            <Link key={item.label} href={item.href} className="dashboard-action-item rounded-2xl">
+              <span><QuickActionIcon name={item.icon as "send" | "request" | "swap" | "contacts" | "bridge"} /></span>{item.label}
+            </Link>
           ))}
         </section>
 
