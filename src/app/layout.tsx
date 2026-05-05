@@ -21,6 +21,20 @@ export const metadata: Metadata = {
   description: "Peer-to-peer stablecoin payments on Arc Testnet",
   applicationName: "Radius",
   manifest: "/manifest.webmanifest",
+  openGraph: {
+    title: "Radius — P2P Stablecoin Payments",
+    description: "Send and receive stablecoins peer-to-peer on Arc Testnet. Social wallets, instant settlement.",
+    url: "https://radius-gules.vercel.app",
+    siteName: "Radius",
+    type: "website",
+    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "Radius" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Radius — P2P Stablecoin Payments",
+    description: "Send and receive stablecoins peer-to-peer on Arc Testnet. Social wallets, instant settlement.",
+    images: ["/icon-512.png"],
+  },
   appleWebApp: {
     capable: true,
     title: "Radius",

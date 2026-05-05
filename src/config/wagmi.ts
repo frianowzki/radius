@@ -4,7 +4,6 @@ import {
   metaMaskWallet,
   rabbyWallet,
   coinbaseWallet,
-  walletConnectWallet,
   safeWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 import { createStorage, http } from "wagmi";
@@ -105,7 +104,6 @@ export const config = getDefaultConfig({
         metaMaskWallet,
         rabbyWallet,
         coinbaseWallet,
-        walletConnectWallet,
         safeWallet,
       ],
     },
