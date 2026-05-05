@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function AvatarImage({
   src,
@@ -13,6 +13,11 @@ export function AvatarImage({
 }) {
   const [failed, setFailed] = useState(false);
   const letter = (fallback || "R").slice(0, 1).toUpperCase();
+
+  // Reset failed state when src changes so a new URL gets a fresh attempt
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
 
   if (!src || failed) return <span>{letter}</span>;
 
