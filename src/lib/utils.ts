@@ -97,14 +97,28 @@ export function getIdentityProfile(): UserIdentityProfile {
 }
 
 export function saveIdentityProfile(profile: UserIdentityProfile) {
-  localStorage.setItem(
-    IDENTITY_KEY,
-    JSON.stringify({
-      ...profile,
-      handle: profile.handle ? normalizeHandle(profile.handle) : undefined,
-      authMode: profile.authMode || "wallet",
-    })
-  );
+  const payload = JSON.stringify({
+    ...profile,
+    handle: profile.handle ? normalizeHandle(profile.handle) : undefined,
+    authMode: profile.authMode || "wallet",
+  });
+  try {
+    localStorage.setItem(IDENTITY_KEY, payload);
+  } catch {
+    // Likely QuotaExceeded — retry without avatar (which can be a multi-MB data: URL)
+    try {
+      const { avatar: _avatar, ...rest } = profile;
+      void _avatar;
+      const slimPayload = JSON.stringify({
+        ...rest,
+        handle: rest.handle ? normalizeHandle(rest.handle) : undefined,
+        authMode: rest.authMode || "wallet",
+      });
+      localStorage.setItem(IDENTITY_KEY, slimPayload);
+    } catch {
+      // Give up silently — caller can keep in-memory state.
+    }
+  }
 }
 
 export function clearRadiusLocalSession() {

@@ -74,13 +74,17 @@ export default function ProfilePage() {
       .then((remote) => {
         if (!remote || cancelled) return;
         const remoteIdentity = registryProfileToIdentity(remote);
-        const local = getIdentityProfile();
-        const next = { ...remoteIdentity, avatar: remoteIdentity.avatar || local.avatar };
-        saveIdentityProfile(next);
-        setProfile(next);
-        setDisplayName(next.displayName);
-        setHandle(next.handle || "");
-        setBio(next.bio || "");
+        let cachedPfp: string | null = null;
+        try { cachedPfp = localStorage.getItem("pfpUrl"); } catch { /* ignore */ }
+        setProfile((prev) => {
+          const preservedAvatar = remoteIdentity.avatar || prev.avatar || cachedPfp || undefined;
+          const next = { ...remoteIdentity, avatar: preservedAvatar };
+          try { saveIdentityProfile(next); } catch { /* quota — keep in-memory state */ }
+          return next;
+        });
+        setDisplayName(remoteIdentity.displayName);
+        setHandle(remoteIdentity.handle || "");
+        setBio(remoteIdentity.bio || "");
       })
       .catch(() => undefined);
     return () => { cancelled = true; };
@@ -89,7 +93,10 @@ export default function ProfilePage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!displayName.trim() || !address) return;
-    const next = { displayName: displayName.trim(), handle: normalizedHandle || undefined, avatar: profile.avatar, bio: bio.trim() || undefined, authMode: "wallet" as const };
+    let cachedPfp: string | null = null;
+    try { cachedPfp = localStorage.getItem("pfpUrl"); } catch { /* ignore */ }
+    const effectiveAvatar = profile.avatar || cachedPfp || undefined;
+    const next = { displayName: displayName.trim(), handle: normalizedHandle || undefined, avatar: effectiveAvatar, bio: bio.trim() || undefined, authMode: "wallet" as const };
     saveIdentityProfile(next);
     setProfile(next);
     setRegistryStatus("Saving global profile...");
