@@ -64,7 +64,9 @@ export default function ProfilePage() {
     fetchRegistryProfile({ address })
       .then((remote) => {
         if (!remote || cancelled) return;
-        const next = registryProfileToIdentity(remote);
+        const remoteIdentity = registryProfileToIdentity(remote);
+        const local = getIdentityProfile();
+        const next = { ...remoteIdentity, avatar: remoteIdentity.avatar || local.avatar };
         saveIdentityProfile(next);
         setProfile(next);
         setDisplayName(next.displayName);
@@ -84,7 +86,8 @@ export default function ProfilePage() {
     setRegistryStatus("Saving global profile...");
     try {
       const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle, avatar: next.avatar, bio: next.bio }, { provider: authProvider, signMessage, prompt: true });
-      const synced = registryProfileToIdentity(remote);
+      const remoteIdentity = registryProfileToIdentity(remote);
+      const synced = { ...remoteIdentity, avatar: remoteIdentity.avatar || next.avatar };
       saveIdentityProfile(synced);
       setProfile(synced);
       setRegistryStatus("Global profile saved");
@@ -103,7 +106,8 @@ export default function ProfilePage() {
     setRegistryStatus("Syncing global picture...");
     try {
       const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle, avatar: url, bio: next.bio }, { provider: authProvider, signMessage, prompt: true });
-      const synced = registryProfileToIdentity(remote);
+      const remoteIdentity = registryProfileToIdentity(remote);
+      const synced = { ...remoteIdentity, avatar: remoteIdentity.avatar || url };
       saveIdentityProfile(synced);
       setProfile(synced);
       setRegistryStatus("Global picture saved");
