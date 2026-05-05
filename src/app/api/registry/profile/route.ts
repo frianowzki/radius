@@ -111,8 +111,8 @@ export async function POST(req: Request) {
   const displayName = cleanText(body.displayName, 80);
   const handle = normalizeHandle(cleanText(body.handle, 40));
   const avatarRaw = cleanText(body.avatar, 600) || undefined;
-  // Only allow http/https image URLs — block javascript: and other XSS vectors.
-  const avatar = avatarRaw && /^https?:\/\//i.test(avatarRaw) ? avatarRaw : undefined;
+  // Allow http(s) URLs and our own /api/profile/pfp endpoint — block javascript: and other XSS vectors.
+  const avatar = avatarRaw && (/^https?:\/\//i.test(avatarRaw) || /^\/api\/profile\/pfp(\?|$)/i.test(avatarRaw)) ? avatarRaw : undefined;
   const bio = cleanText(body.bio, 180) || undefined;
 
   if (!isAddress(address)) return jsonNoStore({ error: "Invalid wallet address" }, { status: 400 });
