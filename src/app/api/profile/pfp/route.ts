@@ -13,23 +13,32 @@ function safePathPart(value: string) {
 }
 
 export async function GET(req: Request) {
-  const path = new URL(req.url).searchParams.get("path");
-  if (!path || !path.startsWith("pfp/") || path.includes("..") || path.includes("\0")) {
-    return NextResponse.json({ error: "Invalid profile image path" }, { status: 400 });
-  }
+  try {
+    const path = new URL(req.url).searchParams.get("path");
+    if (!path || !path.startsWith("pfp/") || path.includes("..") || path.includes("\0")) {
+      return NextResponse.json({ error: "Invalid profile image path" }, { status: 400 });
+    }
 
-  const blob = await get(path, { access: "private", useCache: true }).catch(() => null);
-  if (!blob || blob.statusCode !== 200) {
-    return NextResponse.json({ error: "Profile image not found" }, { status: 404 });
-  }
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      return NextResponse.json({ error: "Server storage not configured" }, { status: 503 });
+    }
 
-  return new Response(blob.stream, {
-    headers: {
-      "content-type": blob.blob.contentType || "image/jpeg",
-      "cache-control": "public, max-age=300, stale-while-revalidate=3600",
-      etag: blob.blob.etag,
-    },
-  });
+    const blob = await get(path, { access: "private", useCache: true }).catch(() => null);
+    if (!blob || blob.statusCode !== 200) {
+      return NextResponse.json({ error: "Profile image not found" }, { status: 404 });
+    }
+
+    return new Response(blob.stream, {
+      headers: {
+        "content-type": blob.blob.contentType || "image/jpeg",
+        "cache-control": "public, max-age=300, stale-while-revalidate=3600",
+        etag: blob.blob.etag,
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
@@ -68,14 +77,14 @@ export async function POST(req: Request) {
     }
 
     const pathname = `pfp/${safePathPart(address.toLowerCase())}-${Date.now()}-${safePathPart(file.name)}`;
-    const result = await put(pathname, file, {
-      access: "public",
+    await put(pathname, file, {
+      access: "private",
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: file.type || "application/octet-stream",
     });
 
-    return NextResponse.json({ url: result.url, path: pathname });
+    return NextResponse.json({ url: `/api/profile/pfp?path=${encodeURIComponent(pathname)}`, path: pathname });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown upload error";
     return NextResponse.json({ error: message }, { status: 500 });
