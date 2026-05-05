@@ -207,23 +207,11 @@ export default function SwapPage() {
         <form onSubmit={handleSwap} className="space-y-4">
           <header className="bridge-v2-header">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--brand)]">Lunex stableswap</p>
               <h1 className="text-2xl font-black tracking-tight text-[#17151f]">Swap</h1>
-              <p className="mt-1 text-xs text-[#8b8795]">USDC ↔ EURC on Arc Testnet · {feePercent}% fee</p>
             </div>
           </header>
 
-          {/* Pool stats */}
-          {poolUsdc !== undefined && poolEurc !== undefined && (
-            <section className="bridge-premium-card p-4">
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#8b8795]">Pool reserves</p>
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold">{formatAmount(poolUsdc, 6)} USDC</span>
-                <span className="text-[#8b8795]">·</span>
-                <span className="font-semibold">{formatAmount(poolEurc, 6)} EURC</span>
-              </div>
-            </section>
-          )}
+
 
           {/* Token pair */}
           <section className="bridge-premium-card p-4">
