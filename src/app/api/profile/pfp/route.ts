@@ -33,44 +33,51 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const formData = await req.formData();
-  const file = formData.get("file") as File | null;
-  const userId = formData.get("userId") as string | null;
-  const proofRaw = formData.get("proof");
+  try {
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
+    const userId = formData.get("userId") as string | null;
+    const proofRaw = formData.get("proof");
 
-  if (!file || !userId) {
-    return NextResponse.json({ error: "Missing file or userId" }, { status: 400 });
-  }
+    if (!file || !userId) {
+      return NextResponse.json({ error: "Missing file or userId" }, { status: 400 });
+    }
 
-  const address = userId.trim();
-  if (!isAddress(address)) {
-    return NextResponse.json({ error: "Invalid wallet address" }, { status: 400 });
-  }
+    const address = userId.trim();
+    if (!isAddress(address)) {
+      return NextResponse.json({ error: "Invalid wallet address" }, { status: 400 });
+    }
 
-  // Require wallet signature proof — same flow as profile/contacts/activity writes.
-  let proof: unknown = null;
-  if (typeof proofRaw === "string") {
-    try { proof = JSON.parse(proofRaw); } catch { proof = null; }
-  }
-  if (!(await verifyRegistryProof(address, "profile", proof))) {
-    return NextResponse.json({ error: "Wallet signature required" }, { status: 401 });
-  }
+    let proof: unknown = null;
+    if (typeof proofRaw === "string") {
+      try { proof = JSON.parse(proofRaw); } catch { proof = null; }
+    }
+    if (!(await verifyRegistryProof(address, "profile", proof))) {
+      return NextResponse.json({ error: "Wallet signature required" }, { status: 401 });
+    }
 
-  // Validate file size and type.
-  if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json({ error: "File too large (max 2 MB)" }, { status: 400 });
-  }
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return NextResponse.json({ error: "Unsupported image type (JPEG, PNG, WebP, GIF)" }, { status: 400 });
-  }
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: "File too large (max 2 MB)" }, { status: 400 });
+    }
+    if (!ALLOWED_TYPES.has(file.type)) {
+      return NextResponse.json({ error: "Unsupported image type (JPEG, PNG, WebP, GIF)" }, { status: 400 });
+    }
 
-  const pathname = `pfp/${safePathPart(address.toLowerCase())}-${Date.now()}-${safePathPart(file.name)}`;
-  await put(pathname, file, {
-    access: "private",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: file.type || "application/octet-stream",
-  });
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      return NextResponse.json({ error: "Server storage not configured (BLOB_READ_WRITE_TOKEN missing)" }, { status: 503 });
+    }
 
-  return NextResponse.json({ url: `/api/profile/pfp?path=${encodeURIComponent(pathname)}`, path: pathname });
+    const pathname = `pfp/${safePathPart(address.toLowerCase())}-${Date.now()}-${safePathPart(file.name)}`;
+    const result = await put(pathname, file, {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: file.type || "application/octet-stream",
+    });
+
+    return NextResponse.json({ url: result.url, path: pathname });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown upload error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

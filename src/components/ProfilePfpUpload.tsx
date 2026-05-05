@@ -72,11 +72,11 @@ export function ProfilePfpUpload({ initialUrl, onUploaded }: { initialUrl?: stri
         setStatus("Uploaded globally");
       } else {
         onUploaded?.(localPreview);
-        setStatus("Saved locally");
+        setStatus(data.error ? `Saved locally: ${data.error}` : "Saved locally");
       }
-    } catch {
+    } catch (err) {
       onUploaded?.(localPreview);
-      setStatus("Saved locally");
+      setStatus(err instanceof Error ? `Saved locally: ${err.message}` : "Saved locally");
     }
   }
 
