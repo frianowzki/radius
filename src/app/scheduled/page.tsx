@@ -8,6 +8,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AppShell } from "@/components/AppShell";
 import { TOKENS, type TokenKey } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
+import { formatContactLabel, getContacts, type Contact } from "@/lib/utils";
 import {
   getScheduledPayments,
   removeScheduledPayment,
@@ -33,12 +34,20 @@ function formatDate(ts: number) {
   }
 }
 
+function resolveRecipientLabel(recipient: string, contacts: Contact[]): string {
+  if (recipient.startsWith("@")) return recipient;
+  const match = contacts.find((c) => c.address?.toLowerCase() === recipient.toLowerCase());
+  if (match?.name) return match.name;
+  return formatContactLabel(recipient);
+}
+
 export default function ScheduledPage() {
   const { isConnected: wagmiConnected, address: wagmiAddress } = useAccount();
   const { authenticated, address: radiusAddress } = useRadiusAuth();
   const isConnected = wagmiConnected || authenticated;
   const address = wagmiAddress || radiusAddress;
   const [items, setItems] = useState<ScheduledPaymentRecord[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [token, setToken] = useState<TokenKey>("USDC");
@@ -55,6 +64,7 @@ export default function ScheduledPage() {
   /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage on mount */
   useEffect(() => {
     setItems(getScheduledPayments());
+    setContacts(getContacts());
     setNow(Date.now());
     const t = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => window.clearInterval(t);
@@ -159,40 +169,66 @@ export default function ScheduledPage() {
               <p className="text-[11px] text-[#8b8795]">Auto-confirm fires the tx on arrival but your wallet still has to sign — no silent execution.</p>
             </form>
 
-            <section className="soft-card rounded-[28px] p-5 space-y-3">
-              <p className="text-sm font-bold">Active schedules</p>
-              {items.length === 0 ? (
-                <p className="rounded-2xl bg-white/50 p-4 text-sm text-[#8b8795]">No schedules yet.</p>
-              ) : (
-                items.map((item) => {
-                  const due = !item.paused && item.nextRunAt <= now;
-                  return (
-                    <div key={item.id} className="rounded-2xl bg-white/55 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <TokenLogo symbol={item.token} size={30} />
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-bold">{item.amount} {item.token} → {item.recipient}</p>
-                            <p className="text-xs text-[#8b8795]">{item.cadence} · next {formatDate(item.nextRunAt)}</p>
-                          </div>
-                        </div>
-                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${item.paused ? "bg-zinc-500/10 text-zinc-500" : due ? "bg-emerald-500/12 text-emerald-600" : "bg-amber-500/12 text-amber-600"}`}>
-                          {item.paused ? "paused" : due ? "due" : "scheduled"}
-                        </span>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Link href={buildSendHref(item)} className="primary-btn px-3 py-2 text-xs">{due ? "Run now" : "Run early"}</Link>
-                        <button type="button" onClick={() => toggleAutoConfirm(item)} className={`px-3 py-2 text-xs rounded-2xl font-bold ${item.autoConfirm ? "bg-[var(--brand)]/12 text-[var(--brand)]" : "ghost-btn"}`}>
-                          {item.autoConfirm ? "Auto on" : "Auto off"}
-                        </button>
-                        <button type="button" onClick={() => { setSchedulePaused(item.id, !item.paused); refresh(); pushSync(); }} className="ghost-btn px-3 py-2 text-xs">{item.paused ? "Resume" : "Pause"}</button>
-                        <button type="button" onClick={() => { removeScheduledPayment(item.id); refresh(); pushSync(); }} className="ghost-btn px-3 py-2 text-xs">Delete</button>
+            {(() => {
+              const due = items.filter((i) => !i.paused && i.nextRunAt <= now);
+              const upcoming = items.filter((i) => !i.paused && i.nextRunAt > now);
+              const paused = items.filter((i) => i.paused);
+              const renderCard = (item: ScheduledPaymentRecord, status: "due" | "upcoming" | "paused") => (
+                <div key={item.id} className="rounded-2xl bg-white/55 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <TokenLogo symbol={item.token} size={32} />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold">{item.amount} {item.token} <span className="text-[#8b8795] font-medium">to</span> {resolveRecipientLabel(item.recipient, contacts)}</p>
+                        <p className="text-[11px] text-[#8b8795]">{item.cadence} · next {formatDate(item.nextRunAt)}{item.lastRunAt ? ` · last ran ${formatDate(item.lastRunAt)}` : ""}</p>
+                        {item.memo && <p className="truncate text-[11px] text-[#9a94a3]">“{item.memo}”</p>}
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </section>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${status === "paused" ? "bg-zinc-500/10 text-zinc-500" : status === "due" ? "bg-emerald-500/12 text-emerald-600" : "bg-amber-500/12 text-amber-600"}`}>
+                      {status}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link href={buildSendHref(item)} className="primary-btn px-3 py-2 text-xs">{status === "due" ? "Run now" : "Run early"}</Link>
+                    <button type="button" onClick={() => toggleAutoConfirm(item)} className={`px-3 py-2 text-xs rounded-2xl font-bold ${item.autoConfirm ? "bg-[var(--brand)]/12 text-[var(--brand)]" : "ghost-btn"}`}>
+                      {item.autoConfirm ? "Auto on" : "Auto off"}
+                    </button>
+                    <button type="button" onClick={() => { setSchedulePaused(item.id, !item.paused); refresh(); pushSync(); }} className="ghost-btn px-3 py-2 text-xs">{item.paused ? "Resume" : "Pause"}</button>
+                    <button type="button" onClick={() => { removeScheduledPayment(item.id); refresh(); pushSync(); }} className="ghost-btn px-3 py-2 text-xs">Delete</button>
+                  </div>
+                </div>
+              );
+              if (items.length === 0) {
+                return (
+                  <section className="soft-card rounded-[28px] p-5 space-y-3">
+                    <p className="text-sm font-bold">Active schedules</p>
+                    <p className="rounded-2xl bg-white/50 p-4 text-sm text-[#8b8795]">No schedules yet.</p>
+                  </section>
+                );
+              }
+              return (
+                <>
+                  {due.length > 0 && (
+                    <section className="soft-card rounded-[28px] p-5 space-y-3">
+                      <p className="text-sm font-bold">Due now <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-bold text-white">{due.length}</span></p>
+                      {due.map((i) => renderCard(i, "due"))}
+                    </section>
+                  )}
+                  {upcoming.length > 0 && (
+                    <section className="soft-card rounded-[28px] p-5 space-y-3">
+                      <p className="text-sm font-bold">Upcoming <span className="text-[#8b8795] font-medium">({upcoming.length})</span></p>
+                      {upcoming.map((i) => renderCard(i, "upcoming"))}
+                    </section>
+                  )}
+                  {paused.length > 0 && (
+                    <section className="soft-card rounded-[28px] p-5 space-y-3">
+                      <p className="text-sm font-bold text-[#8b8795]">Paused ({paused.length})</p>
+                      {paused.map((i) => renderCard(i, "paused"))}
+                    </section>
+                  )}
+                </>
+              );
+            })()}
           </>
         )}
       </div>
