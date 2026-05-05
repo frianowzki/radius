@@ -1874,7 +1874,7 @@ html[data-theme="dark"] .login-action-primary {
   padding: 10px 18px;
   background: rgba(255,255,255,.32);
   border: 1px solid rgba(255,255,255,.22);
-  color: #0f172a;
+  color: white;
   font-family: var(--font-geist-mono), monospace;
   font-size: 12px;
   font-weight: 760;
@@ -1894,7 +1894,7 @@ html[data-theme="dark"] .login-action-primary {
   justify-content: center;
   gap: 7px;
   background: rgba(255,255,255,.32);
-  color: #0f172a;
+  color: white;
   font-size: 13px;
   font-weight: 780;
   border: 1px solid rgba(255,255,255,.22);
@@ -2135,7 +2135,7 @@ html[data-theme="dark"] .profile-upload-edit { color: #7dd3fc; border-color: rgb
   gap: 7px;
   border-radius: 16px;
   background: rgba(255,255,255,.35);
-  color: #1a2750;
+  color: white;
   font-size: 13px;
   font-weight: 780;
   box-shadow: 0 8px 18px rgba(30,27,75,.08);
