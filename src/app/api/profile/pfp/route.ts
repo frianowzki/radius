@@ -5,7 +5,7 @@ import { verifyRegistryProof } from "@/lib/registry-proof-core";
 
 export const runtime = "nodejs";
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 function safePathPart(value: string) {
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: "File too large (max 2 MB)" }, { status: 400 });
+      return NextResponse.json({ error: "File too large (max 4 MB)" }, { status: 400 });
     }
     if (!ALLOWED_TYPES.has(file.type)) {
       return NextResponse.json({ error: "Unsupported image type (JPEG, PNG, WebP, GIF)" }, { status: 400 });
