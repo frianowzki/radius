@@ -24,7 +24,6 @@ export function useIncomingPaymentNotifications() {
     if (!address || !publicClient) return;
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
 
-    let timer: ReturnType<typeof setInterval>;
     let running = false;
 
     const currentAddress = address;
@@ -71,7 +70,7 @@ export function useIncomingPaymentNotifications() {
       running = false;
     }
 
-    timer = setInterval(check, POLL_MS);
+    const timer = setInterval(check, POLL_MS);
     check();
     return () => clearInterval(timer);
   }, [address, publicClient]);

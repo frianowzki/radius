@@ -7,6 +7,7 @@ export interface RegistryProfile {
   displayName: string;
   handle?: string;
   avatar?: string;
+  banner?: string;
   bio?: string;
   updatedAt: number;
 }
@@ -16,6 +17,7 @@ export function registryProfileToIdentity(profile: RegistryProfile): UserIdentit
     displayName: profile.displayName || "Arc user",
     handle: profile.handle,
     avatar: profile.avatar && !profile.avatar.startsWith("data:") ? profile.avatar : undefined,
+    banner: profile.banner && !profile.banner.startsWith("data:") ? profile.banner : undefined,
     bio: profile.bio,
     authMode: "wallet",
   };
@@ -39,13 +41,14 @@ export async function saveRegistryProfile(input: {
   displayName: string;
   handle?: string;
   avatar?: string;
+  banner?: string;
   bio?: string;
 }, options?: { provider?: EIP1193Provider | null; prompt?: boolean; signMessage?: (message: string) => Promise<string> }): Promise<RegistryProfile> {
   const proof = await getRegistryProof(input.address, "profile", { provider: options?.provider, prompt: options?.prompt ?? true, signMessage: options?.signMessage });
   const res = await fetch("/api/registry/profile", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ...input, avatar: input.avatar?.startsWith("data:") ? undefined : input.avatar, proof }),
+    body: JSON.stringify({ ...input, avatar: input.avatar?.startsWith("data:") ? undefined : input.avatar, banner: input.banner?.startsWith("data:") ? undefined : input.banner, proof }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || "Could not save registry profile");

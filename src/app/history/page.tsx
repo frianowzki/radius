@@ -225,9 +225,6 @@ export default function HistoryPage() {
             <h1>Every transfer should read like a receipt feed.</h1>
             <span>Not charts, not noise, just clear sent and received payment moments across your Arc stablecoin activity.</span>
           </div>
-          <div className="history-receipt-orb" aria-hidden="true">
-            <span>▤</span>
-          </div>
         </section>
 
         <div className="history-reference-filter">

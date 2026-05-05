@@ -139,7 +139,6 @@ export default function ScanPage() {
                 <rect x="3" y="14" width="7" height="7" rx="1"/><path d="M5 16h3v3H5z"/>
                 <rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/>
                 <rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>
-                <path d="M11 3v18M3 11h18"/>
               </svg>
             </div>
             <h2 className="mt-6 text-2xl font-semibold tracking-[-0.04em]">Scan QR code</h2>

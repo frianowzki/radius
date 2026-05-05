@@ -86,6 +86,11 @@ export default function PublicProfilePage({ params }: { params: Promise<{ handle
           <div className="mx-auto max-w-md space-y-5">
             {/* Hero card */}
             <div className="soft-card rounded-[28px] p-6 text-center">
+              {profile.banner && (
+                <div className="mb-4 -mx-6 -mt-6 overflow-hidden rounded-t-[28px]">
+                  <img src={profile.banner} alt="" className="h-32 w-full object-cover" />
+                </div>
+              )}
               <div className="mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full ring-4 ring-[var(--brand)]/20">
                 <AvatarImage
                   src={profile.avatar}

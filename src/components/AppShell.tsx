@@ -113,7 +113,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 ) : item.icon ? (
                   <span className="nav-icon"><NavIcon name={item.icon} /></span>
                 ) : null}
-                <span className="nav-label">{item.label}</span>
+                {!item.special && <span className="nav-label">{item.label}</span>}
               </Link>
             );
           })}

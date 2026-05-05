@@ -59,7 +59,7 @@ export async function GET(request: Request) {
           </div>
           {memo && (
             <span style={{ fontSize: '22px', fontWeight: 400, color: '#94a3b8', maxWidth: '600px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              "{memo}"
+              &ldquo;{memo}&rdquo;
             </span>
           )}
         </div>

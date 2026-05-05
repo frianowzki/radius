@@ -1872,13 +1872,13 @@ html[data-theme="dark"] .login-action-primary {
   margin: 16px auto 0;
   border-radius: 999px;
   padding: 10px 18px;
-  background: rgba(255,255,255,.32);
-  border: 1px solid rgba(255,255,255,.22);
-  color: rgba(255,255,255,.90);
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(0,0,0,.14);
+  color: rgba(255,255,255,.96);
   font-family: var(--font-geist-mono), monospace;
   font-size: 12px;
   font-weight: 760;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.20);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
 }
 .profile-hero-actions {
   margin-top: 14px;
@@ -1893,7 +1893,7 @@ html[data-theme="dark"] .login-action-primary {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  background: rgba(255,255,255,.32);
+  background: rgba(0,0,0,.22);
   color: #fff;
   font-size: 13px;
   font-weight: 780;
@@ -2493,18 +2493,20 @@ html[data-theme="dark"] .dashboard-contact-empty span { background: rgba(49,90,2
 }
 .history-counterparty-chip {
   margin-top: 14px;
-  max-width: 180px;
+  max-width: 260px;
   overflow: hidden;
-  border-radius: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 999px;
   background: rgba(255,255,255,.54);
   border: 1px solid rgba(15,23,42,.06);
 }
 .history-counterparty-chip > * { padding: 8px 10px !important; }
 .history-tx-link {
   display: block;
-  padding: 8px 10px;
+  padding: 6px 12px;
   text-decoration: none;
-  border-radius: 16px;
+  border-radius: 999px;
   transition: background .15s;
 }
 .history-tx-link:hover {

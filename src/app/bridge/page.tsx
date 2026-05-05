@@ -168,21 +168,13 @@ export default function BridgePage() {
             args: [address],
             chainId: expectedSourceChainId,
           },
-          {
-            address: TOKENS.EURC.address,
-            abi: ERC20_TRANSFER_ABI,
-            functionName: "balanceOf",
-            args: [address],
-            chainId: arcTestnet.id,
-          },
         ]
       : [],
     query: { enabled: !!address },
   });
 
   const usdcBalance = balances?.[0]?.result as bigint | undefined;
-  const eurcBalance = balances?.[1]?.result as bigint | undefined;
-  const currentBalance = token === "USDC" ? usdcBalance : eurcBalance;
+  const currentBalance = usdcBalance;
   const currentDecimals = TOKENS[token].decimals;
   const requestedRaw = amount && Number(amount) > 0 ? decimalToUnits(amount, currentDecimals) : BigInt(0);
   const hasEnoughBalance = typeof currentBalance === "bigint" ? currentBalance >= requestedRaw : false;
@@ -687,7 +679,7 @@ export default function BridgePage() {
 
               <div className="bridge-premium-card p-3">
                 <div className="grid grid-cols-2 gap-2">
-                  {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
+                  {(["USDC"] as TokenKey[]).map((key) => (
                     <button
                       key={key}
                       type="button"
@@ -806,10 +798,17 @@ export default function BridgePage() {
                             type="button"
                             onClick={() => handleSelectDirectoryEntry(entry)}
                             disabled={entry.kind === "self" || !entry.address}
-                            className="bridge-directory-row flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm disabled:opacity-60"
+                            className="bridge-directory-row flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm disabled:opacity-60"
                           >
-                            <span className="font-medium text-[#17151f]">{entry.name}</span>
-                            <span className="text-xs text-[#8b8795]">{entry.kind === "self" ? "You" : entry.address ? formatAddress(entry.address) : ""}</span>
+                            {entry.avatar ? (
+                              <img src={entry.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
+                            ) : (
+                              <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--brand)]/10 text-xs font-bold text-[var(--brand)]">{entry.name.charAt(0).toUpperCase()}</span>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <span className="block truncate font-medium text-[#17151f]">{entry.name}</span>
+                              <span className="block truncate text-xs text-[#8b8795]">{entry.kind === "self" ? "You" : entry.address ? formatAddress(entry.address) : ""}</span>
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -915,7 +914,7 @@ export default function BridgePage() {
             </form>
 
             {showDestinationPicker && (
-              <div className="modal-backdrop fixed inset-0 z-[90] grid place-items-end bg-slate-950/70 p-4" onClick={() => setShowDestinationPicker(false)}>
+              <div className="modal-backdrop fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/70 p-4" onClick={() => setShowDestinationPicker(false)}>
                 <div className="bridge-sheet bridge-destination-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-bold text-[#17151f]">Choose destination</h3>
@@ -940,7 +939,7 @@ export default function BridgePage() {
             )}
 
             {showBridgeHistory && (
-              <div className="fixed inset-0 z-[90] grid place-items-end bg-slate-950/55 p-4" onClick={() => setShowBridgeHistory(false)}>
+              <div className="fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/55 p-4" onClick={() => setShowBridgeHistory(false)}>
                 <div className="bridge-sheet w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <div><h3 className="text-lg font-bold text-[#17151f]">Bridge history</h3><p className="text-xs text-[#8b8795]">Ongoing, successful, and failed bridge info</p></div>

@@ -159,10 +159,10 @@ export function DashboardClient() {
   const visibleEurc = hideBalance ? "••••••" : eurcDisplay;
   const [activityNotice, setActivityNotice] = useState("");
   const [dueScheduleList, setDueScheduleList] = useState<ScheduledPaymentRecord[]>([]);
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission | null>(null);
-  useEffect(() => {
-    if (typeof Notification !== "undefined") setNotifPermission(Notification.permission);
-  }, []);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | null>(() => {
+    if (typeof Notification === "undefined") return null;
+    return Notification.permission;
+  });
   useIncomingPaymentNotifications();
   useEffect(() => {
     if (!isConnected) return;
@@ -253,7 +253,9 @@ export function DashboardClient() {
             <div className="dashboard-logo">Radius</div>
             <h1>Hello, {profileName} <span key={waveKey} className="dashboard-wave" aria-hidden="true">👋</span></h1>
           </div>
-
+          <Link href="/scan" aria-label="Scan QR" className="grid h-10 w-10 place-items-center rounded-full bg-white/20 text-[#1e293b] shadow-sm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>
+          </Link>
         </header>
 
         {activityNotice && (
@@ -289,13 +291,19 @@ export function DashboardClient() {
           {[
             { href: "/send", icon: "send", label: "Send" },
             { href: "/request", icon: "request", label: "Request" },
-            { href: "/scan", icon: "scan", label: "Scan" },
+            { href: "#", icon: "swap", label: "Swap", disabled: true },
             { href: "/contacts", icon: "contacts", label: "Contacts" },
             { href: "/bridge", icon: "bridge", label: "Bridge" },
           ].map((item) => (
-            <Link key={item.label} href={item.href} className="dashboard-action-item rounded-2xl">
-              <span><QuickActionIcon name={item.icon as "send" | "request" | "scan" | "contacts" | "bridge"} /></span>{item.label}
-            </Link>
+            item.disabled ? (
+              <span key={item.label} className="dashboard-action-item rounded-2xl opacity-40 cursor-not-allowed">
+                <span><QuickActionIcon name={item.icon as "send" | "request" | "swap" | "contacts" | "bridge"} /></span>{item.label}
+              </span>
+            ) : (
+              <Link key={item.label} href={item.href} className="dashboard-action-item rounded-2xl">
+                <span><QuickActionIcon name={item.icon as "send" | "request" | "swap" | "contacts" | "bridge"} /></span>{item.label}
+              </Link>
+            )
           ))}
         </section>
 

@@ -45,6 +45,11 @@ export default function ProfilePage() {
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [registryStatus, setRegistryStatus] = useState("");
   const [hidePayQr, setHidePayQr] = useState(true);
+  const [bannerStatus, setBannerStatus] = useState("");
+  const [bannerPreview, setBannerPreview] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return getIdentityProfile().banner || "";
+  });
 
   const mounted = useMounted();
   const payTarget = (profile.handle && `@${profile.handle.replace(/^@+/, "")}`) || address || "";
@@ -52,6 +57,10 @@ export default function ProfilePage() {
     if (!mounted || !payTarget) return "";
     return `${window.location.origin}/send?to=${encodeURIComponent(payTarget)}`;
   }, [mounted, payTarget]);
+  const publicProfileLink = useMemo(() => {
+    if (!mounted || !profile.handle) return "";
+    return `${window.location.origin}/u/${encodeURIComponent(profile.handle)}`;
+  }, [mounted, profile.handle]);
 
   const normalizedHandle = handle.trim().replace(/^@+/, "").toLowerCase();
   useEffect(() => {
@@ -66,6 +75,7 @@ export default function ProfilePage() {
         setDisplayName(next.displayName);
         setHandle(next.handle || "");
         setBio(next.bio || "");
+        setBannerPreview(next.banner || "");
       })
       .catch(() => undefined);
     return () => { cancelled = true; };
@@ -74,12 +84,12 @@ export default function ProfilePage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!displayName.trim() || !address) return;
-    const next = { displayName: displayName.trim(), handle: normalizedHandle || undefined, avatar: profile.avatar, bio: bio.trim() || undefined, authMode: "wallet" as const };
+    const next = { displayName: displayName.trim(), handle: normalizedHandle || undefined, avatar: profile.avatar, banner: bannerPreview || undefined, bio: bio.trim() || undefined, authMode: "wallet" as const };
     saveIdentityProfile(next);
     setProfile(next);
     setRegistryStatus("Saving global profile...");
     try {
-      const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle, avatar: next.avatar, bio: next.bio }, { provider: authProvider, signMessage, prompt: true });
+      const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle, avatar: next.avatar, banner: next.banner, bio: next.bio }, { provider: authProvider, signMessage, prompt: true });
       const synced = registryProfileToIdentity(remote);
       saveIdentityProfile(synced);
       setProfile(synced);
@@ -130,10 +140,10 @@ export default function ProfilePage() {
         <section className="profile-hero-card relative">
           <div className="profile-stars" aria-hidden="true" />
           <div className="profile-orbit-line" aria-hidden="true" />
-          {payLink && (
+          {publicProfileLink && (
             <button
               type="button"
-              onClick={() => { if (navigator.share) { navigator.share({ title: `${profile.displayName ?? "Radius"} on Radius`, url: payLink }).catch(() => undefined); } else { navigator.clipboard.writeText(payLink); } }}
+              onClick={() => { if (navigator.share) { navigator.share({ title: `${profile.displayName ?? "Radius"} on Radius`, url: publicProfileLink }).catch(() => undefined); } else { navigator.clipboard.writeText(publicProfileLink); } }}
               aria-label="Share profile"
               className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-white/20 text-white shadow-sm"
             >
@@ -202,6 +212,36 @@ export default function ProfilePage() {
           <div>
             <p className="mb-2 text-xs font-bold text-[#8b8795]">Profile picture</p>
             <ProfilePfpUpload initialUrl={profile.avatar} onUploaded={handleAvatarUploaded} />
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-bold text-[#8b8795]">Banner image</p>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              className="hidden"
+              id="banner-input"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const maxSize = 2 * 1024 * 1024;
+                if (file.size > maxSize) { setBannerStatus("Image too large. Max 2MB."); return; }
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const dataUrl = String(reader.result);
+                  setBannerPreview(dataUrl);
+                  setBannerStatus("Banner selected — save profile to apply.");
+                  try { localStorage.setItem("radius-banner", dataUrl); } catch { /* ignore */ }
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+            <label htmlFor="banner-input" className="profile-upload-button">▧ Choose banner image</label>
+            {bannerPreview && (
+              <div className="mt-2 overflow-hidden rounded-2xl">
+                <img src={bannerPreview} alt="Banner preview" className="h-24 w-full object-cover" />
+              </div>
+            )}
+            <p className="mt-1 text-[11px] text-[#8b8795]">{bannerStatus || "PNG/JPG/WebP supported, max 2MB"}</p>
           </div>
           <div>
             <label className="mb-2 block text-xs font-bold text-[#8b8795]">Display name</label>
