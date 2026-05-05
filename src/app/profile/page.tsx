@@ -38,7 +38,10 @@ export default function ProfilePage() {
     if (!p.avatar) {
       try {
         const cachedPfp = localStorage.getItem("pfpUrl");
-        if (cachedPfp) p.avatar = cachedPfp;
+        if (cachedPfp) {
+          p.avatar = cachedPfp;
+          saveIdentityProfile(p);
+        }
       } catch { /* ignore */ }
     }
     setProfile(p);
