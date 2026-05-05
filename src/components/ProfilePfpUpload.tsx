@@ -89,7 +89,7 @@ export function ProfilePfpUpload({ initialUrl, onUploaded }: { initialUrl?: stri
       <div className="min-w-0 flex-1">
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadPfp(file); }} />
         <button type="button" onClick={() => inputRef.current?.click()} className="profile-upload-button">▧ Choose profile picture</button>
-        <p className="mt-1 truncate text-[11px] text-[#8b8795]">{fileName || status || "PNG/JPG supported"}</p>
+        <p className="mt-1 truncate text-[11px] text-[#8b8795]">{status || fileName || "PNG/JPG supported"}</p>
       </div>
     </div>
   );
