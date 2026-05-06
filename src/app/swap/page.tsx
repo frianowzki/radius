@@ -327,15 +327,8 @@ export default function SwapPage() {
 
             {/* Flip button — overlaps From/To cards */}
             <div className="relative z-10 flex justify-center" style={{ marginTop: "-22px", marginBottom: "-22px" }}>
-              <button
-                type="button"
-                onClick={flipTokens}
-                className="swap-flip-btn"
-                aria-label="Switch swap direction"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M7 4l4-2v16" /><path d="M11 2l-4 2" /><path d="M17 20l-4 2V6" /><path d="M13 22l4-2" />
-                </svg>
+              <button type="button" onClick={flipTokens} className="bridge-switch-btn" aria-label="Switch swap direction">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
               </button>
             </div>
 
