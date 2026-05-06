@@ -185,7 +185,7 @@ export default function SwapPage() {
         token: tokenIn,
         txHash: swapHash,
         direction: "sent",
-        routeLabel: `Swap ${tokenIn} → ${tokenOut} via Lunex`,
+        routeLabel: `Swap ${tokenIn} → ${tokenOut} via Radius`,
       });
       void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
       setStatus("success");
@@ -235,7 +235,7 @@ export default function SwapPage() {
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-zinc-500">Route</span>
-                    <span className="font-medium text-zinc-700">Lunex StableSwap</span>
+                    <span className="font-medium text-zinc-700">Radius</span>
                   </div>
                 </div>
               )}
@@ -269,7 +269,7 @@ export default function SwapPage() {
                   <p className="mb-1 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Swap</p>
                   <h2 className="text-2xl font-black tracking-tight text-glow">Stablecoin Swap</h2>
                   <p className="mt-2 max-w-xs text-sm leading-6 text-zinc-400">
-                    Swap USDC ↔ EURC instantly via the Lunex StableSwap pool on Arc Testnet.
+                    Swap USDC ↔ EURC instantly via Radius on Arc Testnet.
                   </p>
                 </div>
               </div>
@@ -329,16 +329,16 @@ export default function SwapPage() {
               )}
             </div>
 
-            {/* Flip button */}
-            <div className="flex justify-center -my-2">
+            {/* Flip button — overlaps From/To cards */}
+            <div className="relative z-10 flex justify-center" style={{ marginTop: "-22px", marginBottom: "-22px" }}>
               <button
                 type="button"
                 onClick={flipTokens}
-                className="grid h-11 w-11 place-items-center rounded-full border border-white/70 bg-gradient-to-b from-blue-400 to-blue-600 text-white shadow-lg shadow-blue-500/25 transition-transform hover:scale-105 active:scale-95"
+                className="grid h-12 w-12 place-items-center rounded-full border-[3px] border-white bg-gradient-to-b from-blue-400 to-blue-600 text-white shadow-xl shadow-blue-500/30 transition-transform hover:scale-110 active:scale-95"
                 aria-label="Switch swap direction"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 5v14" /><path d="m19 12-7 7-7-7" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m7 4 4-2v16" /><path d="M11 2 7 4" /><path d="m17 20-4 2V6" /><path d="M13 22l4-2" />
                 </svg>
               </button>
             </div>
@@ -418,6 +418,8 @@ export default function SwapPage() {
                       : `Swap to ${tokenOut}`}
               </button>
             )}
+
+            <p className="text-center text-[11px] font-medium tracking-wide text-zinc-400">Powered by Radius Dex</p>
           </form>
         )}
       </div>
