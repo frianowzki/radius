@@ -3351,10 +3351,13 @@ html[data-theme="dark"] .bridge-forwarder-toggle span { background: #ffffff; box
   overflow-y: auto;
   overscroll-behavior: contain;
   touch-action: pan-y;
-  background: #ffffff !important;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.bridge-destination-sheet::-webkit-scrollbar { display: none; }
+.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
 html[data-theme="dark"] .bridge-destination-sheet {
-  background: #0d1326 !important;
   border-color: rgba(148,163,184,.22) !important;
 }
 html[data-theme="dark"] .bridge-destination-sheet .bridge-destination-row {
