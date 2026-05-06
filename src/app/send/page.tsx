@@ -217,7 +217,7 @@ export default function SendPage() {
     <AppShell>
       <div className="screen-pad">
         {status === "success" ? (
-          <div className="space-y-5">
+          <div className="success-fade-in space-y-5">
             <div className="glass-panel-strong rounded-[32px] p-6">
               <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Payment sent</p>
               <h2 className="text-3xl font-semibold tracking-tight text-glow">Sent on Arc.</h2>
@@ -324,7 +324,7 @@ export default function SendPage() {
         )}
 
         {showConfirm && (
-          <div className="fixed inset-0 z-[90] grid place-items-end bg-black/35 p-4 backdrop-blur-md" onClick={() => setShowConfirm(false)}>
+          <div role="dialog" aria-modal="true" className="fixed inset-0 z-[90] grid place-items-end bg-black/35 p-4 backdrop-blur-md" onClick={() => setShowConfirm(false)}>
             <div className="frost-modal w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand)]">Confirm send</p>
               <h3 className="mt-2 text-2xl font-bold">Send {amount} {token}?</h3>
@@ -345,11 +345,11 @@ export default function SendPage() {
         )}
 
         {showTokenPicker && (
-          <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4 backdrop-blur-md" onClick={() => setShowTokenPicker(false)}>
+          <div role="dialog" aria-modal="true" className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4 backdrop-blur-md" onClick={() => setShowTokenPicker(false)}>
             <div className="frost-modal w-full max-w-sm rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold">Choose token</h3>
-                <button type="button" onClick={() => setShowTokenPicker(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">❌</button>
+                <button type="button" onClick={() => setShowTokenPicker(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
               </div>
               <div className="space-y-3">
                 {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
@@ -370,11 +370,11 @@ export default function SendPage() {
         )}
 
         {showDirectory && (
-          <div className="fixed inset-0 z-[90] grid place-items-center bg-black/40 p-4 backdrop-blur-md" onClick={() => setShowDirectory(false)}>
+          <div role="dialog" aria-modal="true" className="fixed inset-0 z-[90] grid place-items-center bg-black/40 p-4 backdrop-blur-md" onClick={() => setShowDirectory(false)}>
             <div className="frost-modal w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold">Contacts</h3>
-                <button type="button" onClick={() => setShowDirectory(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">❌</button>
+                <button type="button" onClick={() => setShowDirectory(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
               </div>
               <input className="radius-input font-mono text-sm mb-3" value={directoryQuery} onChange={(e) => setDirectoryQuery(e.target.value)} placeholder="Search contacts..." />
               {directoryEntries.length === 0 && (

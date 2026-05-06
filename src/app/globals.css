@@ -3375,3 +3375,148 @@ html[data-theme="dark"] .profile-qr-toggle {
   color: #ffffff !important;
 }
 html[data-theme="dark"] .profile-qr-toggle svg { color: #ffffff !important; }
+
+/* ─── Smooth UI polish ─── */
+
+/* Global smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* No text-select on interactive elements */
+button, .bottom-nav, .bridge-switch-btn, .primary-btn, .ghost-btn, .bridge-icon-btn, .bridge-forwarder-toggle, nav a { user-select: none; -webkit-user-select: none; }
+
+/* Modal / sheet entrance animation */
+.modal-backdrop,
+.fixed.inset-0.z-\[90\] {
+  animation: modalFadeIn 200ms ease-out;
+}
+.modal-backdrop > div:last-child,
+.fixed.inset-0.z-\[90\] > div:last-child {
+  animation: sheetSlideUp 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheetSlideUp {
+  from { opacity: 0; transform: translateY(32px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Notification dropdown animation */
+.notification-dropdown {
+  animation: dropdownPop 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes dropdownPop {
+  from { opacity: 0; transform: scale(0.95) translateY(-6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Hover states on dashboard items */
+.dashboard-activity-row,
+.dashboard-asset-row,
+.dashboard-action-item {
+  transition: background-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.dashboard-activity-row:hover,
+.dashboard-asset-row:hover {
+  background-color: rgba(255,255,255,.54);
+}
+html[data-theme="dark"] .dashboard-activity-row:hover,
+html[data-theme="dark"] .dashboard-asset-row:hover {
+  background-color: rgba(255,255,255,.08);
+}
+.dashboard-action-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(37,99,235,.12);
+}
+.dashboard-action-item:active {
+  transform: scale(0.96);
+}
+
+/* Hover on history cards */
+.history-reference-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.history-reference-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.06);
+}
+
+/* Hover on bridge rows */
+.bridge-destination-row,
+.bridge-history-row {
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+.bridge-destination-row:hover,
+.bridge-history-row:hover {
+  background: rgba(37,99,235,.06);
+}
+.bridge-destination-row:active,
+.bridge-history-row:active {
+  transform: scale(0.98);
+}
+
+/* Success state crossfade */
+.success-fade-in {
+  animation: successFade 400ms ease-out;
+}
+@keyframes successFade {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Button tap feedback */
+.primary-btn, .ghost-btn {
+  transition: transform 0.12s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.primary-btn:active, .ghost-btn:active {
+  transform: scale(0.97);
+}
+
+/* Skeleton shimmer improvement */
+@keyframes skeletonShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, rgba(200,200,200,.15) 25%, rgba(200,200,200,.3) 50%, rgba(200,200,200,.15) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+}
+
+/* Close button standardization */
+.modal-close-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(27,22,43,.08);
+  background: rgba(255,255,255,.72);
+  color: #6b7280;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.modal-close-btn:hover {
+  background: rgba(239,68,68,.08);
+  color: #ef4444;
+}
+html[data-theme="dark"] .modal-close-btn {
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.12);
+  color: #94a3b8;
+}
+html[data-theme="dark"] .modal-close-btn:hover {
+  background: rgba(239,68,68,.15);
+  color: #f87171;
+}
+
+/* Balance reveal transition */
+.balance-reveal {
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+.balance-reveal.is-hidden {
+  opacity: 0.3;
+  filter: blur(6px);
+}

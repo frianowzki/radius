@@ -83,7 +83,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-[min(86vw,340px)] rounded-2xl border border-white/40 p-3 shadow-2xl" style={{ background: "rgba(255,255,255,0.72)", backdropFilter: "blur(24px) saturate(1.4)", WebkitBackdropFilter: "blur(24px) saturate(1.4)" }}>
+        <div className="notification-dropdown absolute right-0 top-12 z-50 w-[min(86vw,340px)] rounded-2xl border border-white/40 p-3 shadow-2xl" style={{ background: "rgba(255,255,255,0.72)", backdropFilter: "blur(24px) saturate(1.4)", WebkitBackdropFilter: "blur(24px) saturate(1.4)" }}>
           <div className="mb-2 flex items-center justify-between px-1">
             <h3 className="text-sm font-bold text-[#1e293b]">Notifications</h3>
             <Link href="/history" onClick={() => setOpen(false)} className="text-[11px] font-semibold text-[var(--brand)]">View history</Link>

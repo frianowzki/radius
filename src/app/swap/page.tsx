@@ -211,7 +211,7 @@ export default function SwapPage() {
       <div className="screen-pad">
         {status === "success" ? (
           /* ─── Success state ─── */
-          <div className="space-y-5">
+          <div className="success-fade-in space-y-5">
             <div className="glass-panel-strong rounded-[32px] p-6">
               <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Swap complete</p>
               <h2 className="text-3xl font-semibold tracking-tight text-glow">Swapped on Arc.</h2>

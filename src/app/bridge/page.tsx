@@ -503,7 +503,7 @@ export default function BridgePage() {
     <AppShell>
       <div className="screen-pad">
         {status === "success" ? (
-          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="success-fade-in grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="glass-panel-strong rounded-[32px] p-8">
               <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-zinc-500">
                 {successEyebrow}
@@ -912,11 +912,11 @@ export default function BridgePage() {
             </form>
 
             {showDestinationPicker && (
-              <div className="modal-backdrop fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/70 p-4 backdrop-blur-md" onClick={() => setShowDestinationPicker(false)}>
+              <div role="dialog" aria-modal="true" className="modal-backdrop fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/70 p-4 backdrop-blur-md" onClick={() => setShowDestinationPicker(false)}>
                 <div className="bridge-sheet bridge-destination-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-bold text-[#17151f]">Choose destination</h3>
-                    <button type="button" onClick={() => setShowDestinationPicker(false)} className="bridge-icon-btn">❌</button>
+                    <button type="button" onClick={() => setShowDestinationPicker(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                   </div>
                   <div className="space-y-2">
                     {sourceRoutes.map((route) => {
@@ -937,11 +937,11 @@ export default function BridgePage() {
             )}
 
             {showBridgeHistory && (
-              <div className="fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/55 p-4 backdrop-blur-md" onClick={() => setShowBridgeHistory(false)}>
+              <div role="dialog" aria-modal="true" className="fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/55 p-4 backdrop-blur-md" onClick={() => setShowBridgeHistory(false)}>
                 <div className="bridge-sheet scrollbar-hide w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <div><h3 className="text-lg font-bold text-[#17151f]">Bridge history</h3><p className="text-xs text-[#8b8795]">Ongoing, successful, and failed bridge info</p></div>
-                    <button type="button" onClick={() => setShowBridgeHistory(false)} className="bridge-icon-btn">❌</button>
+                    <button type="button" onClick={() => setShowBridgeHistory(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                   </div>
                   <div className="space-y-2">
                     {(status === "sending" || status === "confirming" || status === "error") && (

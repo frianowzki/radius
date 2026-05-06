@@ -356,14 +356,14 @@ export function DashboardClient() {
         </section>
 
         {showReceiveAddress && address && (
-          <div className="modal-backdrop fixed inset-0 z-[80] grid place-items-end bg-slate-950/55 p-4 backdrop-blur-md" onClick={() => setShowReceiveAddress(false)}>
+          <div role="dialog" aria-modal="true" className="modal-backdrop fixed inset-0 z-[80] grid place-items-end bg-slate-950/55 p-4 backdrop-blur-md" onClick={() => setShowReceiveAddress(false)}>
             <div className="assets-modal-card receive-address-modal w-full max-w-sm rounded-[30px] p-5 text-center" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between text-left">
                 <div>
                   <h3 className="text-lg font-bold">Receive to Address</h3>
                   <p className="mt-1 text-xs text-[#8b8795]">Arc Testnet wallet address</p>
                 </div>
-                <button type="button" aria-label="Close receive address" onClick={() => setShowReceiveAddress(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button>
+                <button type="button" aria-label="Close receive address" onClick={() => setShowReceiveAddress(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
               </div>
               <div className="mx-auto w-fit rounded-[26px] bg-white p-4 shadow-[0_14px_38px_rgba(37,99,235,.14)]">
                 <QRCodeSVG value={address} size={220} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
@@ -380,9 +380,9 @@ export function DashboardClient() {
         )}
 
         {showAssets && (
-          <div className="modal-backdrop fixed inset-0 z-[80] grid place-items-end bg-slate-950/55 p-4 backdrop-blur-md" onClick={() => setShowAssets(false)}>
+          <div role="dialog" aria-modal="true" className="modal-backdrop fixed inset-0 z-[80] grid place-items-end bg-slate-950/55 p-4 backdrop-blur-md" onClick={() => setShowAssets(false)}>
             <div className="assets-modal-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
-              <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-bold">My Assets</h3><button type="button" aria-label="Close assets" onClick={() => setShowAssets(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button></div>
+              <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-bold">My Assets</h3><button type="button" aria-label="Close assets" onClick={() => setShowAssets(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
               <div className="space-y-3">
                 {[["USDC","USD Coin",visibleUsdc],["EURC","Euro Coin",visibleEurc]].map(([s,n,b]) => (
                   <div key={s} className="flex items-center justify-between rounded-2xl bg-white/55 p-3">

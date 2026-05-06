@@ -302,11 +302,11 @@ export default function RequestPage() {
             </section>
 
             {showTokenPicker && (
-              <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4 backdrop-blur-md" onClick={() => setShowTokenPicker(false)}>
+              <div role="dialog" aria-modal="true" className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4 backdrop-blur-md" onClick={() => setShowTokenPicker(false)}>
                 <div className="frost-modal w-full max-w-sm rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-bold">Choose token</h3>
-                    <button type="button" onClick={() => setShowTokenPicker(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">❌</button>
+                    <button type="button" onClick={() => setShowTokenPicker(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                   </div>
                   <div className="space-y-3">
                     {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
