@@ -4,23 +4,23 @@ import { useState } from "react";
 import type { CrosschainChain } from "@/config/crosschain";
 
 const CHAIN_LOGOS: Record<CrosschainChain, string> = {
-  Arc_Testnet: "/chains/arc.svg",
-  Ethereum_Sepolia: "/chains/ethereum.svg",
-  Base_Sepolia: "/chains/base.jpg",
-  Arbitrum_Sepolia: "/chains/arbitrum.jpg",
-  Avalanche_Fuji: "/chains/avalanche.jpg",
-  Optimism_Sepolia: "/chains/optimism.jpg",
-  Polygon_Amoy_Testnet: "/chains/polygon.jpg",
-  Linea_Sepolia: "/chains/linea.jpg",
-  Unichain_Sepolia: "/chains/unichain.jpg",
-  World_Chain_Sepolia: "/chains/world.svg",
-  Ink_Testnet: "/chains/ink.jpg",
-  Monad_Testnet: "/chains/monad.jpg",
-  HyperEVM_Testnet: "/chains/hyperliquid.jpg",
-  Plume_Testnet: "/chains/plume.jpg",
-  Sei_Testnet: "/chains/sei.jpg",
-  XDC_Apothem: "/chains/xdc.jpg",
-  Codex_Testnet: "/chains/codex.svg",
+  Arc_Testnet: "/chains/arc.png",
+  Ethereum_Sepolia: "/chains/ethereum.png",
+  Base_Sepolia: "/chains/base.png",
+  Arbitrum_Sepolia: "/chains/arbitrum.png",
+  Avalanche_Fuji: "/chains/avalanche.png",
+  Optimism_Sepolia: "/chains/optimism.png",
+  Polygon_Amoy_Testnet: "/chains/polygon.png",
+  Linea_Sepolia: "/chains/linea.png",
+  Unichain_Sepolia: "/chains/unichain.png",
+  World_Chain_Sepolia: "/chains/world.png",
+  Ink_Testnet: "/chains/ink.png",
+  Monad_Testnet: "/chains/monad.png",
+  HyperEVM_Testnet: "/chains/hyperliquid.png",
+  Plume_Testnet: "/chains/plume.png",
+  Sei_Testnet: "/chains/sei.png",
+  XDC_Apothem: "/chains/xdc.png",
+  Codex_Testnet: "/chains/codex.png",
 };
 
 const CHAIN_COLORS: Record<CrosschainChain, string> = {
@@ -82,8 +82,7 @@ export function ChainLogo({
         alt=""
         width={size}
         height={size}
-        className="rounded-full object-cover"
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover" }}
         onError={() => setFailed(true)}
         loading="lazy"
       />
