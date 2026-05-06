@@ -227,7 +227,7 @@ export default function BridgePage() {
     ? `${amount} ${token} is now routing from ${expectedSourceChainLabel} to ${validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : recipient} on ${destinationChainLabel}.`
     : `${amount} ${token} sent to ${validRecipient && resolvedRecipientAddress ? formatContactLabel(resolvedRecipientAddress) : recipient} via ${selectedRouteConfig.label}.`;
   const successStatus = isBridgeRoute ? "Bridged" : "Finalized";
-  const receiptTitle = isBridgeRoute ? "Arc Bridge" : "Arc Flow";
+  const receiptTitle = "Radius";
   const receiptStatus = isBridgeRoute ? "Bridging settled" : "Settled";
   const receiptNote = isBridgeRoute
     ? `${expectedSourceChainLabel} → ${destinationChainLabel}`

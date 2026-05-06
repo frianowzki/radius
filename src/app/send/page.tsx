@@ -238,7 +238,7 @@ export default function SendPage() {
                 {txHash && <a href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`} target="_blank" className="primary-btn text-center text-sm">View tx</a>}
               </div>
             </div>
-            <ReceiptCard title="Arc Flow" amount={amount} token={token} status="Settled" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={recipientLabel} note="Arc Testnet" shareText={validRecipient ? `Sent ${amount} ${token} on Arc to ${recipientLabel}${memo.trim() ? ` — "${memo.trim()}"` : ""}` : undefined} txHash={txHash} explorerUrl={txHash ? `${arcTestnet.blockExplorers.default.url}/tx/${txHash}` : undefined} />
+            <ReceiptCard title="Radius" amount={amount} token={token} status="Settled" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={recipientLabel} note="Arc Testnet" shareText={validRecipient ? `Sent ${amount} ${token} on Arc to ${recipientLabel}${memo.trim() ? ` — "${memo.trim()}"` : ""}` : undefined} txHash={txHash} explorerUrl={txHash ? `${arcTestnet.blockExplorers.default.url}/tx/${txHash}` : undefined} />
           </div>
         ) : (
           <form onSubmit={handleSend} className="send-flow space-y-5">

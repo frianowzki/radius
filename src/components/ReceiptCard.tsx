@@ -26,19 +26,18 @@ function formatDate(value?: number) {
 }
 
 function escapeSvg(value: string) {
-  return value.replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char] || char));
+  return value.replace(/[&<>\\\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char] || char));
 }
 
-function buildReceiptSvg(params: { title: string; amount: string; token: string; status: string; from: string; to: string; date: string; network: string; txHash?: string }) {
-  const { title, amount, token, status, from, to, date, network, txHash } = params;
+function buildReceiptSvg(params: { title: string; amount: string; token: string; status: string; from: string; to: string; date: string; network: string }) {
+  const { title, amount, token, status, from, to, date, network } = params;
   const rows: [string, string][] = [
     ["From", from],
     ["To", to],
     ["Date", date],
     ["Network", network],
   ];
-  if (txHash) rows.push(["Tx Hash", txHash]);
-  const svgHeight = 1250 + (txHash ? 130 : 0);
+  const svgHeight = 1120;
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="${svgHeight}" viewBox="0 0 1080 ${svgHeight}">
   <defs>
@@ -57,7 +56,6 @@ function buildReceiptSvg(params: { title: string; amount: string; token: string;
     const y = 625 + index * 130;
     return `<text x="170" y="${y}" fill="#9a94a3" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700">${escapeSvg(label)}</text><text x="910" y="${y}" text-anchor="end" fill="#17151f" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800">${escapeSvg(value).slice(0, 44)}</text><line x1="170" y1="${y + 48}" x2="910" y2="${y + 48}" stroke="#ece8f7" stroke-width="2"/>`;
   }).join("")}
-  <text x="540" y="${svgHeight - 100}" text-anchor="middle" fill="#2563eb" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="900">Radius</text>
 </svg>`.trim();
 }
 
@@ -85,7 +83,7 @@ function svgToPngBlob(svgString: string, scale = 2): Promise<Blob> {
   });
 }
 
-export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, note, metaLabel, metaValue, shareText, txHash, explorerUrl, createdAt, preview }: ReceiptCardProps) {
+export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, note, metaLabel, metaValue, shareText, txHash, createdAt, preview }: ReceiptCardProps) {
   const [fallbackCreatedAt] = useState(() => Date.now());
   const [downloading, setDownloading] = useState(false);
   const confirmedAt = createdAt || (txHash ? fallbackCreatedAt : undefined);
@@ -101,7 +99,6 @@ export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, 
       to: toLabel || "Recipient",
       date: dateLabel,
       network: "Arc Testnet",
-      txHash: txHash || undefined,
     });
   }
 
@@ -120,7 +117,6 @@ export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, 
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Receipt download failed:", err);
-      // Fallback: download SVG
       const svg = getSvgString();
       const file = new File([new Blob([svg], { type: "image/svg+xml" })], `radius-receipt-${Date.now()}.svg`, { type: "image/svg+xml" });
       const url = URL.createObjectURL(file);
@@ -152,20 +148,13 @@ export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, 
       } else if (nav.share) {
         await nav.share({ title: sharePayload.title, text: sharePayload.text });
       } else {
-        // Fallback: download PNG
         await downloadPng();
       }
     } catch (err) {
-      // User cancelled share or error — fallback to download
       if ((err as Error)?.name !== "AbortError") {
         await downloadPng();
       }
     }
-  }
-
-  async function copyTxHash() {
-    if (!txHash) return;
-    await navigator.clipboard.writeText(txHash);
   }
 
   return (
@@ -183,26 +172,15 @@ export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, 
         <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">To</span><span className="text-right">{toLabel || "Recipient"}</span></div>
         <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">Date</span><span className="text-right">{dateLabel}</span></div>
         <div className="flex justify-between"><span className="text-[#9a94a3]">Network</span><span className="text-[var(--brand)]">Arc Testnet</span></div>
-        {txHash && (
-          <div className="flex justify-between gap-4">
-            <span className="text-[#9a94a3]">Tx Hash</span>
-            <div className="flex items-center gap-2">
-              <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-[var(--brand)]">{txHash.slice(0, 6)}…{txHash.slice(-4)}</a>
-              <button type="button" onClick={copyTxHash} className="grid h-6 w-6 place-items-center rounded-md bg-[var(--brand)]/10 text-[var(--brand)] transition-colors hover:bg-[var(--brand)]/20" aria-label="Copy transaction hash">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              </button>
-            </div>
-          </div>
-        )}
         {metaLabel && metaValue && <div className="flex justify-between"><span className="text-[#9a94a3]">{metaLabel}</span><span>{metaValue}</span></div>}
       </div>
       {note && !preview && <div className="mt-5 rounded-2xl bg-white/70 p-4"><p className="text-[11px] text-[#9a94a3]">Note</p><p className="mt-1 text-sm">{note}</p></div>}
       <div className="mt-5 grid grid-cols-2 gap-3">
-        <button type="button" onClick={downloadPng} disabled={downloading} className="ghost-btn text-sm disabled:opacity-50">
-          {downloading ? "Saving…" : "Download PNG"}
+        <button type="button" onClick={downloadPng} disabled={downloading} className="ghost-btn grid place-items-center py-3 disabled:opacity-50" aria-label="Download receipt">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
-        <button type="button" onClick={shareReceipt} className="primary-btn text-sm">
-          Share receipt
+        <button type="button" onClick={shareReceipt} className="primary-btn grid place-items-center py-3" aria-label="Share receipt">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         </button>
       </div>
     </div>
