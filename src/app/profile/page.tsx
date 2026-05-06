@@ -166,8 +166,8 @@ export default function ProfilePage() {
           )}
           <div className="profile-hero-avatar">
             <AvatarImage src={profile.avatar} fallback={profile.handle || profile.displayName || user?.name || "R"} />
-            <span className="profile-verified" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l2.39 4.84L20 7l-3.5 3.41.83 4.83L12 12.93 6.67 15.24 7.5 10.41 4 7l5.61-1.16L12 1z"/></svg>
+            <span className="profile-verified" aria-hidden="true" style={{ background: 'radial-gradient(circle at 30% 18%, rgba(255,255,255,.50), transparent 29%), linear-gradient(135deg, #6366f1 4%, #3b82f6 55%, #38bdf8 100%)', color: 'white', display: 'grid', placeItems: 'center', width: '26px', height: '26px', borderRadius: '999px', border: '2px solid rgba(226,232,255,.92)', boxShadow: '0 4px 12px rgba(59,130,246,.35)' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/></svg>
             </span>
           </div>
           <h1>{profile.displayName || "Radius user"}</h1>

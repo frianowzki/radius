@@ -42,19 +42,15 @@ export default function SwapPage() {
   const validAmount = Number(amount) > 0 && Number.isFinite(Number(amount));
   const requestedRaw = amount && validAmount ? decimalToUnits(amount, TOKENS[tokenIn].decimals) : BigInt(0);
 
-  // Pool reserves + fee
+  // Pool fee
   const { data: poolData } = useReadContracts({
     contracts: [
-      { address: LUNEX_SWAP_POOL, abi: LUNEX_POOL_ABI, functionName: "balances", args: [BigInt(LUNEX_TOKEN_INDEX.USDC)], chainId: arcTestnet.id },
-      { address: LUNEX_SWAP_POOL, abi: LUNEX_POOL_ABI, functionName: "balances", args: [BigInt(LUNEX_TOKEN_INDEX.EURC)], chainId: arcTestnet.id },
       { address: LUNEX_SWAP_POOL, abi: LUNEX_POOL_ABI, functionName: "fee", chainId: arcTestnet.id },
     ],
     query: { refetchInterval: 10_000 },
   });
 
-  const poolUsdc = poolData?.[0]?.result as bigint | undefined;
-  const poolEurc = poolData?.[1]?.result as bigint | undefined;
-  const poolFeeRaw = poolData?.[2]?.result as bigint | undefined;
+  const poolFeeRaw = poolData?.[0]?.result as bigint | undefined;
   const feePercent = poolFeeRaw ? Number(poolFeeRaw) / 100 : 0.04;
 
   // User balances
@@ -185,7 +181,7 @@ export default function SwapPage() {
         token: tokenIn,
         txHash: swapHash,
         direction: "sent",
-        routeLabel: `Swap ${tokenIn} → ${tokenOut} via Radius`,
+        routeLabel: `Swap ${tokenIn} → ${tokenOut} via Radius Dex`,
       });
       void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
       setStatus("success");
@@ -235,7 +231,7 @@ export default function SwapPage() {
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-zinc-500">Route</span>
-                    <span className="font-medium text-zinc-700">Radius</span>
+                    <span className="font-medium text-zinc-700">Radius Dex</span>
                   </div>
                 </div>
               )}
@@ -269,7 +265,7 @@ export default function SwapPage() {
                   <p className="mb-1 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Swap</p>
                   <h2 className="text-2xl font-black tracking-tight text-glow">Stablecoin Swap</h2>
                   <p className="mt-2 max-w-xs text-sm leading-6 text-zinc-400">
-                    Swap USDC ↔ EURC instantly via Radius on Arc Testnet.
+                    Swap USDC ↔ EURC instantly via Radius Dex on Arc Testnet.
                   </p>
                 </div>
               </div>
@@ -338,7 +334,7 @@ export default function SwapPage() {
                 aria-label="Switch swap direction"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m7 4 4-2v16" /><path d="M11 2 7 4" /><path d="m17 20-4 2V6" /><path d="M13 22l4-2" />
+                  <path d="m7 16 4 4 4-4" /><path d="M11 4v16" /><path d="m17 8-4-4-4 4" />
                 </svg>
               </button>
             </div>
@@ -365,26 +361,6 @@ export default function SwapPage() {
               )}
             </div>
 
-            {/* Pool info */}
-            {poolUsdc !== undefined && poolEurc !== undefined && (
-              <div className="flow-card compact glass-panel rounded-[28px] p-5 text-sm">
-                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Pool reserves</p>
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <TokenLogo symbol="USDC" size={18} />
-                    <span className="text-zinc-500">USDC</span>
-                  </div>
-                  <span className="font-medium">{formatAmount(poolUsdc, 6)}</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <TokenLogo symbol="EURC" size={18} />
-                    <span className="text-zinc-500">EURC</span>
-                  </div>
-                  <span className="font-medium">{formatAmount(poolEurc, 6)}</span>
-                </div>
-              </div>
-            )}
 
             {/* Error / info messages */}
             {estimateText && (

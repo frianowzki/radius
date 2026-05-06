@@ -665,7 +665,7 @@ export default function BridgePage() {
               <div className="flex items-center justify-between gap-3 px-1">
                 <div>
                   <h2 className="text-2xl font-black tracking-tight text-[#17151f]">Bridge</h2>
-                  <p className="mt-1 text-xs text-[#8b8795]">Focused USDC bridge flow</p>
+                  <p className="mt-1 text-xs text-[#8b8795]">Only USDC bridge is available</p>
                 </div>
                 <button
                   type="button"

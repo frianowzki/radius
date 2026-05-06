@@ -134,11 +134,10 @@ export default function ScanPage() {
           <div className="soft-card rounded-[30px] p-6 text-center">
             <div className="scan-qr-icon mx-auto grid h-36 w-36 place-items-center rounded-[30px] border-2 border-dashed border-[var(--brand)]/30 bg-white/40 text-[var(--brand)]">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7" rx="1"/><path d="M5 5h3v3H5z"/>
-                <rect x="14" y="3" width="7" height="7" rx="1"/><path d="M16 5h3v3h-3z"/>
-                <rect x="3" y="14" width="7" height="7" rx="1"/><path d="M5 16h3v3H5z"/>
-                <rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/>
-                <rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>
+                <rect x="3" y="3" width="8" height="8" rx="1"/>
+                <rect x="13" y="3" width="8" height="8" rx="1"/>
+                <rect x="3" y="13" width="8" height="8" rx="1"/>
+                <rect x="13" y="13" width="8" height="8" rx="1"/>
               </svg>
             </div>
             <h2 className="mt-6 text-2xl font-semibold tracking-[-0.04em]">Scan QR code</h2>
