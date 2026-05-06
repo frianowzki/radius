@@ -11,6 +11,7 @@ interface ReceiptCardProps {
   fromLabel?: string;
   toLabel?: string;
   note?: string;
+  memo?: string;
   metaLabel?: string;
   metaValue?: string;
   shareText?: string;
@@ -29,15 +30,16 @@ function escapeSvg(value: string) {
   return value.replace(/[&<>\\\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char] || char));
 }
 
-function buildReceiptSvg(params: { title: string; amount: string; token: string; status: string; from: string; to: string; date: string; network: string }) {
-  const { title, amount, token, status, from, to, date, network } = params;
+function buildReceiptSvg(params: { title: string; amount: string; token: string; status: string; from: string; to: string; date: string; memo?: string }) {
+  const { title, amount, token, status, from, to, date, memo } = params;
   const rows: [string, string][] = [
     ["From", from],
     ["To", to],
     ["Date", date],
-    ["Network", network],
   ];
-  const svgHeight = 1120;
+  if (memo?.trim()) rows.push(["Memo", memo.trim()]);
+  const rowAreaHeight = rows.length * 130;
+  const svgHeight = 580 + rowAreaHeight;
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="${svgHeight}" viewBox="0 0 1080 ${svgHeight}">
   <defs>
@@ -83,7 +85,7 @@ function svgToPngBlob(svgString: string, scale = 2): Promise<Blob> {
   });
 }
 
-export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, note, metaLabel, metaValue, shareText, txHash, createdAt, preview }: ReceiptCardProps) {
+export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, note, memo, metaLabel, metaValue, shareText, txHash, createdAt, preview }: ReceiptCardProps) {
   const [fallbackCreatedAt] = useState(() => Date.now());
   const [downloading, setDownloading] = useState(false);
   const confirmedAt = createdAt || (txHash ? fallbackCreatedAt : undefined);
@@ -98,7 +100,7 @@ export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, 
       from: fromLabel || "Connected wallet",
       to: toLabel || "Recipient",
       date: dateLabel,
-      network: "Arc Testnet",
+      memo: memo?.trim() || undefined,
     });
   }
 
@@ -139,7 +141,7 @@ export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, 
       const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
       const sharePayload: ShareData = {
         title: "Radius receipt",
-        text: shareText || `${amount} ${token} on Radius${txHash ? `\nTx: ${txHash}` : ""}`,
+        text: shareText || `${amount} ${token} on Radius`,
         files: [file],
       };
 
@@ -171,7 +173,7 @@ export function ReceiptCard({ title, amount, token, status, fromLabel, toLabel, 
         <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">From</span><span className="text-right">{fromLabel || "Connected wallet"}</span></div>
         <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">To</span><span className="text-right">{toLabel || "Recipient"}</span></div>
         <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">Date</span><span className="text-right">{dateLabel}</span></div>
-        <div className="flex justify-between"><span className="text-[#9a94a3]">Network</span><span className="text-[var(--brand)]">Arc Testnet</span></div>
+        {memo?.trim() && <div className="flex justify-between gap-4"><span className="text-[#9a94a3]">Memo</span><span className="min-w-0 text-right break-words">{memo.trim()}</span></div>}
         {metaLabel && metaValue && <div className="flex justify-between"><span className="text-[#9a94a3]">{metaLabel}</span><span>{metaValue}</span></div>}
       </div>
       {note && !preview && <div className="mt-5 rounded-2xl bg-white/70 p-4"><p className="text-[11px] text-[#9a94a3]">Note</p><p className="mt-1 text-sm">{note}</p></div>}
