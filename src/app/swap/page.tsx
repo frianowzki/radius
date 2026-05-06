@@ -330,11 +330,11 @@ export default function SwapPage() {
               <button
                 type="button"
                 onClick={flipTokens}
-                className="grid h-12 w-12 place-items-center rounded-full border-[3px] border-white bg-gradient-to-b from-blue-400 to-blue-600 text-white shadow-xl shadow-blue-500/30 transition-transform hover:scale-110 active:scale-95"
+                className="swap-flip-btn"
                 aria-label="Switch swap direction"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m7 16 4 4 4-4" /><path d="M11 4v16" /><path d="m17 8-4-4-4 4" />
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M7 4l4-2v16" /><path d="M11 2l-4 2" /><path d="M17 20l-4 2V6" /><path d="M13 22l4-2" />
                 </svg>
               </button>
             </div>

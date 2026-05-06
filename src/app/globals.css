@@ -3123,6 +3123,9 @@ html {
 .bridge-chain-avatar.is-destination { }
 .bridge-role-pill { position: absolute; top: 16px; right: 14px; border-radius: 999px; background: rgba(37,99,235,.08); color: #475569; padding: 5px 8px; font-size: 10px; font-weight: 800; }
 .bridge-switch-btn { display: grid; place-items: center; width: 38px; height: 38px; margin: -5px auto; position: relative; z-index: 1; border-radius: 999px; border: 1px solid rgba(255,255,255,.7); background: linear-gradient(180deg, #60a5fa, #2563eb); color: white; box-shadow: 0 12px 30px rgba(37,99,235,.28); }
+.swap-flip-btn { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 999px; border: 3px solid rgba(255,255,255,.9); background: linear-gradient(135deg, #6366f1 0%, #3b82f6 50%, #38bdf8 100%); color: white; box-shadow: 0 8px 24px rgba(59,130,246,.35), 0 2px 8px rgba(99,102,241,.25); cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.swap-flip-btn:hover { transform: scale(1.1); box-shadow: 0 12px 32px rgba(59,130,246,.45), 0 4px 12px rgba(99,102,241,.3); }
+.swap-flip-btn:active { transform: scale(0.95); }
 .bridge-destination-row,
 .bridge-history-row { display: flex; align-items: center; gap: 12px; width: 100%; border-radius: 20px; border: 1px solid rgba(27,22,43,.07); background: rgba(255,255,255,.58); padding: 12px; color: #17151f; }
 .bridge-destination-row.is-active { border-color: rgba(37,99,235,.28); background: rgba(37,99,235,.10); }
