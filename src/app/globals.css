@@ -2493,7 +2493,7 @@ html[data-theme="dark"] .dashboard-contact-empty span { background: rgba(49,90,2
 }
 .history-counterparty-chip {
   margin-top: 14px;
-  max-width: 260px;
+  max-width: 340px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3133,7 +3133,8 @@ html {
 .bridge-destination-row.is-active { border-color: rgba(37,99,235,.28); background: rgba(37,99,235,.10); }
 .bridge-destination-row small,
 .bridge-history-row small { display: block; margin-top: 2px; color: #8b8795; font-size: 11px; }
-.bridge-radio { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; border: 1px solid rgba(37,99,235,.28); color: var(--brand); font-size: 12px; font-weight: 900; }
+.bridge-radio { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; border: 1px solid rgba(37,99,235,.28); color: var(--brand); font-size: 12px; font-weight: 900; flex: 0 0 auto; }
+.bridge-radio.is-selected { background: var(--brand); border-color: var(--brand); color: #fff; }
 .bridge-status-dot { width: 10px; height: 10px; border-radius: 999px; flex: 0 0 auto; }
 .bridge-status-dot.is-ongoing { background: #2563eb; box-shadow: 0 0 0 6px rgba(37,99,235,.10); }
 .bridge-status-dot.is-success { background: #10b981; box-shadow: 0 0 0 6px rgba(16,185,129,.10); }

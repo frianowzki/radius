@@ -926,7 +926,7 @@ export default function BridgePage() {
                         <button key={route.id} type="button" onClick={() => { setSelectedRoute(route.id); resetBridgeFeedback(); setShowDestinationPicker(false); }} className={`bridge-destination-row ${selected ? "is-active" : ""}`}>
                           <span className="bridge-chain-avatar is-destination"><ChainLogo chainKey={route.toChain} size={42} /></span>
                           <span className="min-w-0 flex-1 text-left"><b>{meta.label}</b><small>USDC · Bridge</small></span>
-                          <span className="bridge-radio">{selected ? "✓" : ""}</span>
+                          <span className={`bridge-radio ${selected ? "is-selected" : ""}`}>{selected ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : ""}</span>
                         </button>
                       );
                     })}
