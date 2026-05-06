@@ -27,7 +27,7 @@ function formatDate(value?: number) {
 }
 
 function escapeSvg(value: string) {
-  return value.replace(/[&<>\\\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char] || char));
+  return value.replace(/[&<>\\\"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char] || char));
 }
 
 function buildReceiptSvg(params: { title: string; amount: string; token: string; status: string; from: string; to: string; date: string; memo?: string }) {

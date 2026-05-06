@@ -13,7 +13,7 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://*.privy.io https://*.walletconnect.com https://*.walletconnect.org",
+      "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.privy.io https://*.walletconnect.com https://*.walletconnect.org",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://*.privy.io https://*.walletconnect.com https://cdn.jsdelivr.net",
       "font-src 'self' data:",

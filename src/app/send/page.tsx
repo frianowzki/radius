@@ -235,7 +235,7 @@ export default function SendPage() {
               )}
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <button onClick={resetForm} className="ghost-btn text-sm">Send another</button>
-                {txHash && <a href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`} target="_blank" className="primary-btn text-center text-sm">View tx</a>}
+                {txHash && <a href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="primary-btn text-center text-sm">View tx</a>}
               </div>
             </div>
 <ReceiptCard title="Radius" amount={amount} token={token} status="Settled" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={recipientLabel} memo={memo.trim() || undefined} shareText={validRecipient ? `Sent ${amount} ${token} on Arc to ${recipientLabel}${memo.trim() ? ` — "${memo.trim()}"` : ""}` : undefined} txHash={txHash} explorerUrl={txHash ? `${arcTestnet.blockExplorers.default.url}/tx/${txHash}` : undefined} />

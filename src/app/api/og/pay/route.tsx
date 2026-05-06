@@ -4,10 +4,17 @@ export const runtime = 'edge'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const amount = searchParams.get('amount') || '0'
-  const token = searchParams.get('token') || 'USDC'
-  const to = searchParams.get('to') || ''
-  const memo = searchParams.get('memo') || ''
+  const rawAmount = searchParams.get('amount') || '0'
+  const rawToken = searchParams.get('token') || 'USDC'
+  const rawTo = searchParams.get('to') || ''
+  const rawMemo = searchParams.get('memo') || ''
+
+  // Validate inputs strictly
+  const amount = /^[\d.,]+$/.test(rawAmount) ? rawAmount.slice(0, 20) : '0'
+  const ALLOWED_TOKENS = new Set(['USDC', 'EURC', 'ETH', 'ARC'])
+  const token = ALLOWED_TOKENS.has(rawToken.toUpperCase()) ? rawToken.toUpperCase() : 'USDC'
+  const to = /^[a-zA-Z0-9@._-]+$/.test(rawTo) ? rawTo.slice(0, 64) : ''
+  const memo = rawMemo.replace(/[^\w\s.,!?'-]/g, '').slice(0, 80)
   const shortTo = to ? `${to.slice(0, 6)}...${to.slice(-4)}` : ''
 
   return new ImageResponse(
