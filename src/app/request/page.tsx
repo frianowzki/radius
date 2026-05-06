@@ -302,8 +302,8 @@ export default function RequestPage() {
             </section>
 
             {showTokenPicker && (
-              <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4" onClick={() => setShowTokenPicker(false)}>
-                <div className="bg-white w-full max-w-sm rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4 backdrop-blur-md" onClick={() => setShowTokenPicker(false)}>
+                <div className="frost-modal w-full max-w-sm rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-bold">Choose token</h3>
                     <button type="button" onClick={() => setShowTokenPicker(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">❌</button>

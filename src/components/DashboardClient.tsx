@@ -356,7 +356,7 @@ export function DashboardClient() {
         </section>
 
         {showReceiveAddress && address && (
-          <div className="modal-backdrop fixed inset-0 z-[80] grid place-items-end bg-slate-950/55 p-4" onClick={() => setShowReceiveAddress(false)}>
+          <div className="modal-backdrop fixed inset-0 z-[80] grid place-items-end bg-slate-950/55 p-4 backdrop-blur-md" onClick={() => setShowReceiveAddress(false)}>
             <div className="assets-modal-card receive-address-modal w-full max-w-sm rounded-[30px] p-5 text-center" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between text-left">
                 <div>
@@ -380,7 +380,7 @@ export function DashboardClient() {
         )}
 
         {showAssets && (
-          <div className="modal-backdrop fixed inset-0 z-[80] grid place-items-end bg-slate-950/55 p-4" onClick={() => setShowAssets(false)}>
+          <div className="modal-backdrop fixed inset-0 z-[80] grid place-items-end bg-slate-950/55 p-4 backdrop-blur-md" onClick={() => setShowAssets(false)}>
             <div className="assets-modal-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-bold">My Assets</h3><button type="button" aria-label="Close assets" onClick={() => setShowAssets(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">✕</button></div>
               <div className="space-y-3">

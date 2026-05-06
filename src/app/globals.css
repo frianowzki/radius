@@ -3111,9 +3111,11 @@ html {
 .bridge-redesign { max-width: 430px; margin: 0 auto; }
 .bridge-premium-card,
 .bridge-sheet {
-  background: radial-gradient(circle at 25% 0%, rgba(59,130,246,.10), transparent 38%), linear-gradient(180deg, rgba(255,255,255,.92), rgba(247,249,255,.82));
-  border: 1px solid rgba(255,255,255,.84);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 18px 44px rgba(30,58,138,.12);
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 8px 32px rgba(30, 58, 138, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 .bridge-icon-btn { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 16px; border: 1px solid rgba(27,22,43,.08); background: rgba(255,255,255,.72); color: var(--brand); box-shadow: inset 0 1px 0 rgba(255,255,255,.76), 0 10px 22px rgba(37,99,235,.10); }
 .bridge-token-tab { min-height: 48px; display: flex; align-items: center; gap: 9px; border-radius: 18px; padding: 10px 12px; border: 1px solid rgba(27,22,43,.07); background: rgba(255,255,255,.58); color: #6f6977; font-size: 14px; font-weight: 700; }
@@ -3204,10 +3206,12 @@ html[data-theme="dark"] .profile-qr-card,
 html[data-theme="dark"] .assets-modal-card,
 html[data-theme="dark"] .bridge-premium-card,
 html[data-theme="dark"] .bridge-sheet {
-  background: linear-gradient(180deg, rgba(22,24,46,.92), rgba(12,15,31,.88)) !important;
-  border-color: rgba(255,255,255,.10) !important;
+  background: rgba(16, 21, 41, 0.72) !important;
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-color: rgba(255, 255, 255, 0.08) !important;
   color: #f1f5f9 !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 22px 52px rgba(0,0,0,.34) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
 }
 html[data-theme="dark"] .bridge-chain-card,
 html[data-theme="dark"] .bridge-destination-row,
@@ -3280,16 +3284,23 @@ html[data-theme="dark"] .dashboard-theme-toggle.theme-orb-toggle {
 }
 html[data-theme="dark"] .dashboard-reference-header { align-items: flex-start; }
 html[data-theme="dark"] .dashboard-logo { color: #315bff !important; text-shadow: none !important; }
-.modal-backdrop { overscroll-behavior: contain; touch-action: none; }
+.modal-backdrop { overscroll-behavior: contain; touch-action: none; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .receive-address-modal,
-.assets-modal-card {
-  background: #ffffff !important;
-  border-color: rgba(255,255,255,.88) !important;
+.assets-modal-card,
+.frost-modal {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 8px 32px rgba(30, 58, 138, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }
 html[data-theme="dark"] .receive-address-modal,
-html[data-theme="dark"] .assets-modal-card {
-  background: #101529 !important;
-  border-color: rgba(148,163,184,.20) !important;
+html[data-theme="dark"] .assets-modal-card,
+html[data-theme="dark"] .frost-modal {
+  background: rgba(16, 21, 41, 0.78) !important;
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-color: rgba(148, 163, 184, 0.12) !important;
   color: #f8fafc !important;
 }
 html[data-theme="dark"] .receive-address-box {

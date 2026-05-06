@@ -912,7 +912,7 @@ export default function BridgePage() {
             </form>
 
             {showDestinationPicker && (
-              <div className="modal-backdrop fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/70 p-4" onClick={() => setShowDestinationPicker(false)}>
+              <div className="modal-backdrop fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/70 p-4 backdrop-blur-md" onClick={() => setShowDestinationPicker(false)}>
                 <div className="bridge-sheet bridge-destination-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-lg font-bold text-[#17151f]">Choose destination</h3>
@@ -937,7 +937,7 @@ export default function BridgePage() {
             )}
 
             {showBridgeHistory && (
-              <div className="fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/55 p-4" onClick={() => setShowBridgeHistory(false)}>
+              <div className="fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/55 p-4 backdrop-blur-md" onClick={() => setShowBridgeHistory(false)}>
                 <div className="bridge-sheet w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between">
                     <div><h3 className="text-lg font-bold text-[#17151f]">Bridge history</h3><p className="text-xs text-[#8b8795]">Ongoing, successful, and failed bridge info</p></div>

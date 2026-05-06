@@ -324,8 +324,8 @@ export default function SendPage() {
         )}
 
         {showConfirm && (
-          <div className="fixed inset-0 z-[90] grid place-items-end bg-black/35 p-4 backdrop-blur-sm" onClick={() => setShowConfirm(false)}>
-            <div className="soft-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[90] grid place-items-end bg-black/35 p-4 backdrop-blur-md" onClick={() => setShowConfirm(false)}>
+            <div className="frost-modal w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand)]">Confirm send</p>
               <h3 className="mt-2 text-2xl font-bold">Send {amount} {token}?</h3>
               <div className="mt-5 space-y-3 rounded-2xl bg-white/55 p-4 text-sm">
@@ -345,8 +345,8 @@ export default function SendPage() {
         )}
 
         {showTokenPicker && (
-          <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4" onClick={() => setShowTokenPicker(false)}>
-            <div className="bg-white w-full max-w-sm rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4 backdrop-blur-md" onClick={() => setShowTokenPicker(false)}>
+            <div className="frost-modal w-full max-w-sm rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold">Choose token</h3>
                 <button type="button" onClick={() => setShowTokenPicker(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">❌</button>
@@ -370,8 +370,8 @@ export default function SendPage() {
         )}
 
         {showDirectory && (
-          <div className="fixed inset-0 z-[90] grid place-items-center bg-black/40 p-4" onClick={() => setShowDirectory(false)}>
-            <div className="bg-white w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[90] grid place-items-center bg-black/40 p-4 backdrop-blur-md" onClick={() => setShowDirectory(false)}>
+            <div className="frost-modal w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold">Contacts</h3>
                 <button type="button" onClick={() => setShowDirectory(false)} className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">❌</button>
