@@ -35,6 +35,7 @@ import { AppShell } from "@/components/AppShell";
 import { ReceiptCard } from "@/components/ReceiptCard";
 import { ProfileChip } from "@/components/ProfileChip";
 import { TokenLogo } from "@/components/TokenLogo";
+import { ChainLogo } from "@/components/ChainLogo";
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
 import {
   CHAIN_METADATA,
@@ -497,9 +498,6 @@ export default function BridgePage() {
     resetBridgeFeedback();
   }
 
-  function shortChainIcon(label: string) {
-    return label.slice(0, 1).toUpperCase();
-  }
 
   return (
     <AppShell>
@@ -703,7 +701,7 @@ export default function BridgePage() {
               <div className="bridge-premium-card space-y-3 p-4">
                 <div className="bridge-chain-card">
                   <div className="flex items-center gap-3">
-                    <span className="bridge-chain-avatar">{shortChainIcon(expectedSourceChainLabel)}</span>
+                    <span className="bridge-chain-avatar"><ChainLogo chainKey={selectedRouteConfig.fromChain} size={42} /></span>
                     <div>
                       <p className="text-[11px] text-[#8b8795]">You send</p>
                       <p className="font-semibold text-[#17151f]">{expectedSourceChainLabel}</p>
@@ -722,7 +720,7 @@ export default function BridgePage() {
 
                 <div className="bridge-chain-card">
                   <div className="flex items-center gap-3">
-                    <span className="bridge-chain-avatar is-destination">{shortChainIcon(destinationChainLabel)}</span>
+                    <span className="bridge-chain-avatar is-destination"><ChainLogo chainKey={selectedRouteConfig.toChain} size={42} /></span>
                     <div>
                       <p className="text-[11px] text-[#8b8795]">You receive</p>
                       <p className="font-semibold text-[#17151f]">{destinationChainLabel}</p>
@@ -926,7 +924,7 @@ export default function BridgePage() {
                       const selected = route.id === selectedRoute;
                       return (
                         <button key={route.id} type="button" onClick={() => { setSelectedRoute(route.id); resetBridgeFeedback(); setShowDestinationPicker(false); }} className={`bridge-destination-row ${selected ? "is-active" : ""}`}>
-                          <span className="bridge-chain-avatar is-destination">{shortChainIcon(meta.label)}</span>
+                          <span className="bridge-chain-avatar is-destination"><ChainLogo chainKey={route.toChain} size={42} /></span>
                           <span className="min-w-0 flex-1 text-left"><b>{meta.label}</b><small>USDC · Bridge</small></span>
                           <span className="bridge-radio">{selected ? "✓" : ""}</span>
                         </button>
