@@ -38,8 +38,20 @@ function buildReceiptSvg(params: { title: string; amount: string; token: string;
     ["Date", date],
   ];
   if (memo?.trim()) rows.push(["Memo", memo.trim()]);
-  const rowAreaHeight = rows.length * 130;
-  const svgHeight = 580 + rowAreaHeight;
+
+  const headerHeight = 338;        // blue gradient block
+  const headerTop = 178;           // y position of blue block
+  const firstRowY = 625;           // y of first data row
+  const rowSpacing = 130;          // vertical space per row
+  const bottomPadding = 80;        // extra space below last row
+  const cardTop = 118;             // white card y
+  const cardOuterPadding = 118;    // gap above card + below card
+
+  const lastRowBottom = firstRowY + (rows.length - 1) * rowSpacing + 48; // +48 for divider line
+  const cardBottom = lastRowBottom + bottomPadding;
+  const svgHeight = cardBottom + cardOuterPadding;
+  const cardHeight = svgHeight - cardOuterPadding; // cardTop + cardHeight + cardTop = svgHeight
+
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="${svgHeight}" viewBox="0 0 1080 ${svgHeight}">
   <defs>
@@ -49,13 +61,13 @@ function buildReceiptSvg(params: { title: string; amount: string; token: string;
   <rect width="1080" height="${svgHeight}" fill="#eef2ff"/>
   <circle cx="130" cy="90" r="260" fill="#3b82f6" opacity="0.16"/>
   <circle cx="930" cy="160" r="240" fill="#60a5fa" opacity="0.22"/>
-  <rect x="96" y="118" width="888" height="${svgHeight - 236}" rx="72" fill="white" filter="url(#shadow)"/>
-  <rect x="156" y="178" width="768" height="338" rx="54" fill="url(#bg)"/>
+  <rect x="96" y="${cardTop}" width="888" height="${cardHeight}" rx="72" fill="white" filter="url(#shadow)"/>
+  <rect x="156" y="${headerTop}" width="768" height="${headerHeight}" rx="54" fill="url(#bg)"/>
   <text x="540" y="268" text-anchor="middle" fill="white" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800" letter-spacing="4">${escapeSvg(title)}</text>
   <text x="540" y="382" text-anchor="middle" fill="white" font-family="Inter, Arial, sans-serif" font-size="94" font-weight="900">${escapeSvg(amount || "0.00")}</text>
   <text x="540" y="445" text-anchor="middle" fill="white" opacity="0.88" font-family="Inter, Arial, sans-serif" font-size="36" font-weight="800">${escapeSvg(token)} • ${escapeSvg(status)}</text>
   ${rows.map(([label, value], index) => {
-    const y = 625 + index * 130;
+    const y = firstRowY + index * rowSpacing;
     return `<text x="170" y="${y}" fill="#9a94a3" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700">${escapeSvg(label)}</text><text x="910" y="${y}" text-anchor="end" fill="#17151f" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="800">${escapeSvg(value).slice(0, 44)}</text><line x1="170" y1="${y + 48}" x2="910" y2="${y + 48}" stroke="#ece8f7" stroke-width="2"/>`;
   }).join("")}
 </svg>`.trim();
