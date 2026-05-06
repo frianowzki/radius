@@ -3,15 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAccount, useChainId, useReadContracts, useSwitchChain, useWalletClient, usePublicClient } from "wagmi";
 import type { EIP1193Provider } from "viem";
-import { createWalletClient, custom, parseUnits, formatUnits } from "viem";
+import { createWalletClient, custom, formatUnits } from "viem";
 import { AppShell } from "@/components/AppShell";
 import { TokenLogo } from "@/components/TokenLogo";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { useMounted } from "@/lib/useMounted";
+
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
 import { LUNEX_SWAP_POOL, LUNEX_TOKEN_INDEX, LUNEX_POOL_ABI } from "@/config/lunex";
 import { arcTestnet } from "@/config/wagmi";
-import { decimalToUnits, formatAmount, getIdentityLabel, getIdentityProfile, getLocalTransfers, getPaymentRequests, saveLocalTransfer } from "@/lib/utils";
+import { decimalToUnits, formatAmount, getLocalTransfers, getPaymentRequests, saveLocalTransfer } from "@/lib/utils";
 import { pushRemoteActivity } from "@/lib/activity-sync";
 
 type SwapStatus = "idle" | "approving" | "estimating" | "confirming" | "success" | "error";
@@ -19,7 +19,7 @@ type SwapStatus = "idle" | "approving" | "estimating" | "confirming" | "success"
 const swapTokens: TokenKey[] = ["USDC", "EURC"];
 
 export default function SwapPage() {
-  const { address: wagmiAddress, isConnected: wagmiConnected, connector } = useAccount();
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
   const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId, switchChain: switchAuthChain } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
@@ -28,7 +28,6 @@ export default function SwapPage() {
   const { switchChainAsync } = useSwitchChain();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
-  const mounted = useMounted();
 
   const [tokenIn, setTokenIn] = useState<TokenKey>("USDC");
   const tokenOut: TokenKey = tokenIn === "USDC" ? "EURC" : "USDC";
@@ -42,7 +41,6 @@ export default function SwapPage() {
   const isOnArc = activeChainId === arcTestnet.id;
   const validAmount = Number(amount) > 0 && Number.isFinite(Number(amount));
   const requestedRaw = amount && validAmount ? decimalToUnits(amount, TOKENS[tokenIn].decimals) : BigInt(0);
-  const senderLabel = mounted ? getIdentityLabel(getIdentityProfile()) : "Connected wallet";
 
   // Pool reserves + fee
   const { data: poolData } = useReadContracts({
@@ -93,7 +91,7 @@ export default function SwapPage() {
 
   // Check allowance
   useEffect(() => {
-    if (!address || !validAmount || requestedRaw <= BigInt(0)) { setAllowanceOk(false); return; }
+    if (!address || !validAmount || requestedRaw <= BigInt(0)) return;
     let cancelled = false;
     (async () => {
       try {
@@ -201,74 +199,227 @@ export default function SwapPage() {
     }
   }
 
+  function resetForm() {
+    setAmount("");
+    setStatus("idle");
+    setError("");
+    setTxHash("");
+    setEstimateText("");
+    setAllowanceOk(false);
+  }
+
+  const readyToSwap = canSwap && !error;
+
   return (
     <AppShell>
-      <div className="bridge-v2">
-        <form onSubmit={handleSwap} className="space-y-4">
-          <header className="bridge-v2-header">
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-[#17151f]">Swap</h1>
+      <div className="screen-pad">
+        {status === "success" ? (
+          /* ─── Success state ─── */
+          <div className="space-y-5">
+            <div className="glass-panel-strong rounded-[32px] p-6">
+              <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Swap complete</p>
+              <h2 className="text-3xl font-semibold tracking-tight text-glow">Swapped on Arc.</h2>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">{estimateText}</p>
+              {txHash && (
+                <div className="mt-5 rounded-[24px] bg-white/70 p-4 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-500">Transaction</span>
+                    <a
+                      href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-[var(--brand)]"
+                    >
+                      {txHash.slice(0, 10)}…{txHash.slice(-8)} ↗
+                    </a>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-zinc-500">Route</span>
+                    <span className="font-medium text-zinc-700">Lunex StableSwap</span>
+                  </div>
+                </div>
+              )}
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <button onClick={resetForm} className="ghost-btn text-sm">Swap again</button>
+                {txHash && (
+                  <a
+                    href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="primary-btn text-center text-sm"
+                  >
+                    View tx
+                  </a>
+                )}
+              </div>
             </div>
-          </header>
+          </div>
+        ) : (
+          /* ─── Swap form ─── */
+          <form onSubmit={handleSwap} className="send-flow space-y-5">
+            {/* Hero header */}
+            <div className="send-hero-card glass-panel-strong rounded-[32px] p-6">
+              <div className="flex items-start gap-4">
+                <div className="bridge-header-icon shrink-0">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 7h11" /><path d="m14 3 4 4-4 4" /><path d="M17 17H6" /><path d="m10 21-4-4 4-4" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="mb-1 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Swap</p>
+                  <h2 className="text-2xl font-black tracking-tight text-glow">Stablecoin Swap</h2>
+                  <p className="mt-2 max-w-xs text-sm leading-6 text-zinc-400">
+                    Swap USDC ↔ EURC instantly via the Lunex StableSwap pool on Arc Testnet.
+                  </p>
+                </div>
+              </div>
+            </div>
 
+            {/* Network status */}
+            <div className="flow-card compact glass-panel rounded-[28px] p-5 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500">Network</span>
+                <span className={`inline-flex items-center gap-2 font-medium ${isOnArc ? "text-emerald-500" : "text-amber-500"}`}>
+                  <span className={`status-dot ${isOnArc ? "ok" : "warn"}`} aria-hidden="true" />
+                  {isOnArc ? "Arc Testnet" : "Switch to Arc Testnet"}
+                </span>
+              </div>
+              {!isOnArc && isConnected && (
+                <button type="button" onClick={switchToArc} className="ghost-btn mt-3 w-full text-xs">Switch to Arc</button>
+              )}
+            </div>
 
+            {/* From card */}
+            <div className="flow-card glass-panel rounded-[28px] p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <label className="text-sm font-medium text-zinc-400">You send</label>
+                <span className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">From</span>
+              </div>
+              <div className="flex items-center gap-3 rounded-[24px] border-0 bg-white/55 p-4">
+                <input
+                  value={amount}
+                  onChange={(e) => { setAmount(e.target.value); setEstimateText(""); setError(""); setAllowanceOk(false); }}
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  className="min-w-0 flex-1 border-0 bg-transparent text-5xl font-semibold tracking-tight outline-none ring-0 focus:ring-0"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setTokenIn((c) => c === "USDC" ? "EURC" : "USDC"); setAllowanceOk(false); }}
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)]/8 px-3 py-1.5 text-xs font-semibold text-[var(--brand)]"
+                >
+                  <TokenLogo symbol={tokenIn} size={20} />
+                  {tokenIn}
+                </button>
+              </div>
+              {inputBalance !== undefined && (
+                <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-500">
+                  <span>Available: {formatAmount(inputBalance, TOKENS[tokenIn].decimals)} {tokenIn}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAmount(formatAmount(inputBalance, TOKENS[tokenIn].decimals).replace(/,/g, ""))}
+                    className="font-semibold text-[var(--brand)]"
+                  >
+                    Max
+                  </button>
+                </div>
+              )}
+              {!hasEnoughBalance && amount && validAmount && (
+                <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">Insufficient {tokenIn} balance.</p>
+              )}
+            </div>
 
-          {/* Token pair */}
-          <section className="bridge-premium-card p-4">
-            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#8b8795]">Token pair</p>
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-              <button type="button" onClick={() => { setTokenIn("USDC"); setAllowanceOk(false); }} className={`bridge-chain-card ${tokenIn === "USDC" ? "is-active" : ""}`}>
-                <span className="bridge-chain-avatar"><TokenLogo symbol="USDC" size={28} /></span>
-                <span className="min-w-0 text-left"><b>USDC</b><small>From</small></span>
-              </button>
-              <button type="button" onClick={flipTokens} className="bridge-switch-btn" aria-label="Switch swap direction">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M7 7h11"/><path d="m14 3 4 4-4 4"/><path d="M17 17H6"/><path d="m10 21-4-4 4-4"/></svg>
-              </button>
-              <button type="button" onClick={() => { setTokenIn("EURC"); setAllowanceOk(false); }} className={`bridge-chain-card ${tokenIn === "EURC" ? "is-active" : ""}`}>
-                <span className="bridge-chain-avatar is-destination"><TokenLogo symbol="EURC" size={28} /></span>
-                <span className="min-w-0 text-left"><b>{tokenOut}</b><small>To</small></span>
+            {/* Flip button */}
+            <div className="flex justify-center -my-2">
+              <button
+                type="button"
+                onClick={flipTokens}
+                className="grid h-11 w-11 place-items-center rounded-full border border-white/70 bg-gradient-to-b from-blue-400 to-blue-600 text-white shadow-lg shadow-blue-500/25 transition-transform hover:scale-105 active:scale-95"
+                aria-label="Switch swap direction"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14" /><path d="m19 12-7 7-7-7" />
+                </svg>
               </button>
             </div>
-          </section>
 
-          {/* Amount */}
-          <section className="bridge-premium-card p-4">
-            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#8b8795]">Amount</p>
-            <div className="relative">
-              <input className="radius-input pr-28 text-3xl font-black tracking-[-0.04em]" inputMode="decimal" value={amount} onChange={(e) => { setAmount(e.target.value); setEstimateText(""); setError(""); setAllowanceOk(false); }} placeholder="0.00" />
-              <span className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 rounded-xl bg-white/75 px-2 py-1 text-sm font-semibold text-[#3d3750]"><TokenLogo symbol={tokenIn} size={20} />{tokenIn}</span>
+            {/* To card */}
+            <div className="flow-card glass-panel rounded-[28px] p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <label className="text-sm font-medium text-zinc-400">You receive</label>
+                <span className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">To</span>
+              </div>
+              <div className="flex items-center gap-3 rounded-[24px] border-0 bg-white/35 p-4">
+                <div className="min-w-0 flex-1 text-5xl font-semibold tracking-tight text-zinc-400">
+                  {quoteOutText || "0.00"}
+                </div>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/60 px-3 py-1.5 text-xs font-semibold text-zinc-600">
+                  <TokenLogo symbol={tokenOut} size={20} />
+                  {tokenOut}
+                </span>
+              </div>
+              {quoteOutText && (
+                <p className="mt-3 text-xs text-zinc-500">
+                  Rate: 1 {tokenIn} ≈ {validAmount ? (Number(quoteOutText) / Number(amount)).toFixed(6) : "—"} {tokenOut} · Fee: {feePercent}%
+                </p>
+              )}
             </div>
-            {inputBalance !== undefined && (
-              <div className="mt-3 flex items-center justify-between gap-3 text-xs text-[#8b8795]">
-                <span>Available: {formatAmount(inputBalance, TOKENS[tokenIn].decimals)} {tokenIn}</span>
-                <button type="button" onClick={() => setAmount(formatAmount(inputBalance, TOKENS[tokenIn].decimals).replace(/,/g, ""))} className="font-semibold text-[var(--brand)]">Max</button>
+
+            {/* Pool info */}
+            {poolUsdc !== undefined && poolEurc !== undefined && (
+              <div className="flow-card compact glass-panel rounded-[28px] p-5 text-sm">
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Pool reserves</p>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <TokenLogo symbol="USDC" size={18} />
+                    <span className="text-zinc-500">USDC</span>
+                  </div>
+                  <span className="font-medium">{formatAmount(poolUsdc, 6)}</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <TokenLogo symbol="EURC" size={18} />
+                    <span className="text-zinc-500">EURC</span>
+                  </div>
+                  <span className="font-medium">{formatAmount(poolEurc, 6)}</span>
+                </div>
               </div>
             )}
-            {!hasEnoughBalance && amount && validAmount && <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">Insufficient {tokenIn} balance.</p>}
-          </section>
 
-          {/* Quote preview */}
-          {quoteOutText && (
-            <section className="bridge-premium-card p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8b8795]">You receive</p>
-              <p className="mt-2 text-2xl font-black text-[#17151f]">{quoteOutText} <span className="text-base font-semibold text-[#8b8795]">{tokenOut}</span></p>
-            </section>
-          )}
+            {/* Error / info messages */}
+            {estimateText && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{estimateText}</div>
+            )}
+            {error && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+            )}
 
-          {estimateText && <p className="rounded-2xl bg-emerald-500/10 p-3 text-xs font-medium text-emerald-600">{estimateText}</p>}
-          {error && <p className="rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">{error}</p>}
-          {txHash && <a href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="block rounded-2xl bg-white/70 p-3 text-xs font-semibold text-[var(--brand)]">View transaction · {txHash.slice(0, 10)}…{txHash.slice(-8)}</a>}
-
-          {!isConnected ? (
-            <div className="bridge-premium-card p-4 text-sm text-[#8b8795]">Connect your wallet from Home first.</div>
-          ) : !isOnArc ? (
-            <button type="button" onClick={switchToArc} className="primary-btn w-full rounded-2xl px-4 py-4 font-semibold text-white">Switch to Arc Testnet</button>
-          ) : (
-            <button type="submit" disabled={!canSwap} className="primary-btn w-full rounded-2xl px-4 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none">
-              {status === "approving" ? "Approving…" : status === "estimating" ? "Getting quote…" : status === "confirming" ? "Swapping…" : `Swap to ${tokenOut}`}
-            </button>
-          )}
-        </form>
+            {/* CTA button */}
+            {!isConnected ? (
+              <div className="glass-panel rounded-[28px] p-5 text-center text-sm text-zinc-500">
+                Connect your wallet from Home first.
+              </div>
+            ) : !isOnArc ? (
+              <button type="button" onClick={switchToArc} className="primary-btn flow-primary-action w-full">
+                Switch to Arc Testnet
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!readyToSwap}
+                className="primary-btn flow-primary-action w-full disabled:opacity-40"
+              >
+                {status === "approving"
+                  ? "Approving…"
+                  : status === "estimating"
+                    ? "Getting quote…"
+                    : status === "confirming"
+                      ? "Swapping…"
+                      : `Swap to ${tokenOut}`}
+              </button>
+            )}
+          </form>
+        )}
       </div>
     </AppShell>
   );
