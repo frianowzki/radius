@@ -4,23 +4,23 @@ import { useState } from "react";
 import type { CrosschainChain } from "@/config/crosschain";
 
 const CHAIN_LOGOS: Record<CrosschainChain, string> = {
-  Arc_Testnet: "https://cdn.jsdelivr.net/gh/nicepkg/cdn@main/radius/arc.svg",
-  Ethereum_Sepolia: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png",
-  Base_Sepolia: "https://raw.githubusercontent.com/base/brand-kit/main/logo/symbol/Base_Symbol_Blue.svg",
-  Arbitrum_Sepolia: "https://raw.githubusercontent.com/OffchainLabs/arbitrum-token-lists/main/assets/logo.svg",
-  Avalanche_Fuji: "https://raw.githubusercontent.com/ava-labs/avalanche-docs/master/static/img/avax-logo.svg",
-  Optimism_Sepolia: "https://raw.githubusercontent.com/ethereum-optimism/brand-kit/main/assets/Optimism/SVG/Optimism_Logo_No_Text_Centered.svg",
-  Polygon_Amoy_Testnet: "https://raw.githubusercontent.com/maticnetwork/polygon-token-list/main/assets/polygon-token.png",
-  Linea_Sepolia: "https://raw.githubusercontent.com/Consensys/linea-brand-kit/refs/heads/main/Logo/SVG/Linea-Logo-Black.svg",
-  Unichain_Sepolia: "https://raw.githubusercontent.com/Uniswap/interface/main/packages/ui/src/assets/logos/unichain.svg",
-  World_Chain_Sepolia: "https://raw.githubusercontent.com/worldcoin/world-id-docs/main/public/images/icons/worldcoin.svg",
-  Ink_Testnet: "https://raw.githubusercontent.com/inkonchain/docs/main/public/ink-logo.svg",
-  Monad_Testnet: "https://raw.githubusercontent.com/monad-hq/monad-brand-assets/main/monad-logo.svg",
-  HyperEVM_Testnet: "https://raw.githubusercontent.com/hyperliquid-dex/hyperliquid-brand/main/logo.svg",
-  Plume_Testnet: "https://raw.githubusercontent.com/plumenetwork/docs/main/static/img/plume-logo.svg",
-  Sei_Testnet: "https://raw.githubusercontent.com/sei-protocol/sei-chain/main/logo.svg",
-  XDC_Apothem: "https://raw.githubusercontent.com/XDC-Community/docs/main/assets/xdc-logo.svg",
-  Codex_Testnet: "https://raw.githubusercontent.com/codex-io/docs/main/logo.svg",
+  Arc_Testnet: "/chains/arc.svg",
+  Ethereum_Sepolia: "/chains/ethereum.svg",
+  Base_Sepolia: "/chains/base.jpg",
+  Arbitrum_Sepolia: "/chains/arbitrum.jpg",
+  Avalanche_Fuji: "/chains/avalanche.jpg",
+  Optimism_Sepolia: "/chains/optimism.jpg",
+  Polygon_Amoy_Testnet: "/chains/polygon.jpg",
+  Linea_Sepolia: "/chains/linea.jpg",
+  Unichain_Sepolia: "/chains/unichain.jpg",
+  World_Chain_Sepolia: "/chains/world.svg",
+  Ink_Testnet: "/chains/ink.jpg",
+  Monad_Testnet: "/chains/monad.jpg",
+  HyperEVM_Testnet: "/chains/hyperliquid.jpg",
+  Plume_Testnet: "/chains/plume.jpg",
+  Sei_Testnet: "/chains/sei.jpg",
+  XDC_Apothem: "/chains/xdc.jpg",
+  Codex_Testnet: "/chains/codex.svg",
 };
 
 const CHAIN_COLORS: Record<CrosschainChain, string> = {
@@ -82,7 +82,7 @@ export function ChainLogo({
         alt=""
         width={size}
         height={size}
-        className="rounded-full object-contain"
+        className="rounded-full object-cover"
         style={{ width: size, height: size }}
         onError={() => setFailed(true)}
         loading="lazy"
