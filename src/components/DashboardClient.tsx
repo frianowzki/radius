@@ -296,11 +296,12 @@ export function DashboardClient() {
             { href: "/send", icon: "send", label: "Send" },
             { href: "/request", icon: "request", label: "Request" },
             { href: "/swap", icon: "swap", label: "Swap" },
+            { href: "/user-wallet", icon: "wallet", label: "Wallet" },
             { href: "/contacts", icon: "contacts", label: "Contacts" },
             { href: "/bridge", icon: "bridge", label: "Bridge" },
           ].map((item) => (
             <Link key={item.label} href={item.href} className="dashboard-action-item rounded-2xl">
-              <span><QuickActionIcon name={item.icon as "send" | "request" | "swap" | "contacts" | "bridge"} /></span>{item.label}
+              <span><QuickActionIcon name={item.icon as "send" | "request" | "swap" | "contacts" | "bridge" | "wallet"} /></span>{item.label}
             </Link>
           ))}
         </section>

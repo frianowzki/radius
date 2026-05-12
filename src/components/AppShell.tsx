@@ -11,7 +11,7 @@ const PaymentRequestNotifier = dynamic(
   { ssr: false }
 );
 
-type NavIconName = "home" | "request" | "history" | "profile";
+type NavIconName = "home" | "request" | "history" | "profile" | "agent";
 
 const NAV_ITEMS: Array<{
   href: string;
@@ -65,6 +65,18 @@ function NavIcon({ name }: { name: NavIconName }) {
         <path d="M8.7 8.1h6.6" />
         <path d="M8.7 11.8h6.6" />
         <path d="M8.7 15.5h4.2" />
+      </svg>
+    );
+  }
+
+  if (name === "agent") {
+    return (
+      <svg {...shared}>
+        <path d="M12 3.8v3" />
+        <path d="M7.3 8.2h9.4a2.2 2.2 0 0 1 2.2 2.2v5.1a2.2 2.2 0 0 1-2.2 2.2H7.3a2.2 2.2 0 0 1-2.2-2.2v-5.1a2.2 2.2 0 0 1 2.2-2.2Z" />
+        <path d="M9.2 12.1h.1" />
+        <path d="M14.7 12.1h.1" />
+        <path d="M9.8 15.1h4.4" />
       </svg>
     );
   }

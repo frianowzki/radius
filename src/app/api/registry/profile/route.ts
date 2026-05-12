@@ -1,4 +1,4 @@
-import { get, put } from "@vercel/blob";
+import { get, list, put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { isAddress } from "viem";
 import { verifyRegistryProof } from "@/lib/registry-proof-core";
@@ -83,6 +83,16 @@ async function writeTable(table: RegistryTable) {
   });
 }
 
+async function latestAvatarForAddress(address: string) {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return undefined;
+  const prefix = `pfp/${address.toLowerCase()}-`;
+  const result = await list({ prefix, limit: 100 }).catch(() => null);
+  const latest = result?.blobs
+    ?.filter((blob) => blob.pathname.startsWith(prefix))
+    .sort((a, b) => (b.uploadedAt?.getTime?.() ?? 0) - (a.uploadedAt?.getTime?.() ?? 0))[0];
+  return latest ? `/api/profile/pfp?path=${encodeURIComponent(latest.pathname)}` : undefined;
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const address = url.searchParams.get("address");
@@ -96,6 +106,10 @@ export async function GET(req: Request) {
       : null;
 
   if (!profile) return jsonNoStore({ profile: null }, { status: 404 });
+  if (!profile.avatar) {
+    const avatar = await latestAvatarForAddress(profile.address);
+    if (avatar) return jsonNoStore({ profile: { ...profile, avatar } });
+  }
   return jsonNoStore({ profile });
 }
 
@@ -111,8 +125,8 @@ export async function POST(req: Request) {
   const displayName = cleanText(body.displayName, 80);
   const handle = normalizeHandle(cleanText(body.handle, 40));
   const avatarRaw = cleanText(body.avatar, 600) || undefined;
-  // Allow http(s) URLs and our own /api/profile/pfp endpoint — block javascript: and other XSS vectors.
-  const avatar = avatarRaw && /^https?:\/\//i.test(avatarRaw) ? avatarRaw : undefined;
+  // Allow http(s) URLs and our own pfp endpoint — block javascript: and other XSS vectors.
+  const avatar = avatarRaw && (/^https?:\/\//i.test(avatarRaw) || /^\/api\/profile\/pfp\?path=/i.test(avatarRaw)) ? avatarRaw : undefined;
   const bio = cleanText(body.bio, 180) || undefined;
 
   if (!isAddress(address)) return jsonNoStore({ error: "Invalid wallet address" }, { status: 400 });

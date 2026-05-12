@@ -18,7 +18,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://*.privy.io https://*.walletconnect.com https://cdn.jsdelivr.net",
       "font-src 'self' data:",
       "connect-src 'self' https://*.privy.io https://*.walletconnect.com https://*.walletconnect.org https://*.circle.com https://iris-api*.circle.com https://gateway-api*.circle.com wss://*.walletconnect.com wss://*.walletconnect.org https://rpc.walletconnect.org https://pulse.walletconnect.org https://api.github.com https://cdn.jsdelivr.net https://rpc.testnet.arc.network wss://rpc.testnet.arc.network https://*.public.blobscan.com https://*.infura.io https://*.alchemy.com blob: data:",
-      "frame-src 'self' https://*.privy.io https://*.walletconnect.com https://*.walletconnect.org https://verify.walletconnect.com https://verify.walletconnect.org",
+      "frame-src 'self' https://*.privy.io https://*.walletconnect.com https://*.walletconnect.org https://verify.walletconnect.com https://verify.walletconnect.org https://*.circle.com",
       "worker-src 'self' blob:",
       "base-uri 'self'",
       "form-action 'self'",
