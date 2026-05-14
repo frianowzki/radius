@@ -11,7 +11,7 @@ const PaymentRequestNotifier = dynamic(
   { ssr: false }
 );
 
-type NavIconName = "home" | "request" | "history" | "profile" | "agent";
+type NavIconName = "home" | "swap" | "bridge" | "profile" | "agent";
 
 const NAV_ITEMS: Array<{
   href: string;
@@ -20,9 +20,9 @@ const NAV_ITEMS: Array<{
   special?: boolean;
 }> = [
   { href: "/", label: "Home", icon: "home" },
-  { href: "/request", label: "Request", icon: "request" },
+  { href: "/swap", label: "Swap", icon: "swap" },
   { href: "/send", label: "Radius", special: true },
-  { href: "/history", label: "History", icon: "history" },
+  { href: "/bridge", label: "Bridge", icon: "bridge" },
   { href: "/profile", label: "Profile", icon: "profile" },
 ];
 
@@ -48,23 +48,25 @@ function NavIcon({ name }: { name: NavIconName }) {
     );
   }
 
-  if (name === "request") {
+  if (name === "swap") {
     return (
       <svg {...shared}>
-        <path d="M12 3.8v11.1" />
-        <path d="m7.4 10.3 4.6 4.6 4.6-4.6" />
-        <path d="M5.2 16.9v3.3h13.6v-3.3" />
+        <path d="M7 7h10" />
+        <path d="m13.8 3.8 3.2 3.2-3.2 3.2" />
+        <path d="M17 17H7" />
+        <path d="m10.2 20.2-3.2-3.2 3.2-3.2" />
       </svg>
     );
   }
 
-  if (name === "history") {
+  if (name === "bridge") {
     return (
       <svg {...shared}>
-        <path d="M7 3.8h10a1.7 1.7 0 0 1 1.7 1.7v15l-3.2-1.9-3.5 1.9-3.5-1.9-3.2 1.9v-15A1.7 1.7 0 0 1 7 3.8Z" />
-        <path d="M8.7 8.1h6.6" />
-        <path d="M8.7 11.8h6.6" />
-        <path d="M8.7 15.5h4.2" />
+        <path d="M4.2 14.6c2.2-2.1 4.8-3.1 7.8-3.1s5.6 1 7.8 3.1" />
+        <path d="M6.4 17.8c1.6-1.4 3.5-2.1 5.6-2.1s4 .7 5.6 2.1" />
+        <path d="M4.8 10.4h14.4" />
+        <path d="M7.2 7.1h9.6" />
+        <path d="M12 4.2v15.6" />
       </svg>
     );
   }

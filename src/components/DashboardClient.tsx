@@ -295,15 +295,13 @@ export function DashboardClient() {
           {[
             { href: "/send", icon: "send", label: "Send" },
             { href: "/request", icon: "request", label: "Request" },
-            { href: "/swap", icon: "swap", label: "Swap" },
+            { href: "/history", icon: "history", label: "History" },
             { href: "/pool", icon: "pool", label: "Pool" },
             { href: "/yield", icon: "yield", label: "Yield" },
-            { href: "/bridge", icon: "bridge", label: "Bridge" },
-            { href: "/user-wallet", icon: "wallet", label: "Wallet" },
             { href: "/contacts", icon: "contacts", label: "Contacts" },
           ].map((item) => (
             <Link key={item.label} href={item.href} className="dashboard-action-item rounded-2xl">
-              <span><QuickActionIcon name={item.icon as "send" | "request" | "swap" | "contacts" | "bridge" | "wallet" | "pool" | "yield"} /></span>{item.label}
+              <span><QuickActionIcon name={item.icon as "send" | "request" | "swap" | "contacts" | "bridge" | "wallet" | "pool" | "yield" | "history"} /></span>{item.label}
             </Link>
           ))}
         </section>
