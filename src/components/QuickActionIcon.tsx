@@ -1,4 +1,4 @@
-type QuickActionIconName = "send" | "request" | "swap" | "scan" | "contacts" | "bridge" | "wallet";
+type QuickActionIconName = "send" | "request" | "swap" | "scan" | "contacts" | "bridge" | "wallet" | "pool" | "yield";
 
 export function QuickActionIcon({ name }: { name: QuickActionIconName }) {
   const common = {
@@ -68,6 +68,29 @@ export function QuickActionIcon({ name }: { name: QuickActionIconName }) {
         <path d="M4.2 7.5h14.1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5.7a2 2 0 0 1-2-2V6.7a2 2 0 0 1 2-2h10.5" />
         <path d="M4 8h13.2" />
         <path d="M16.2 13.8h4" />
+      </svg>
+    );
+  }
+
+  if (name === "pool") {
+    return (
+      <svg {...common}>
+        <path d="M8 7a4 4 0 1 0 8 0" />
+        <path d="M4 11c0 3.3 3.6 6 8 6s8-2.7 8-6" />
+        <path d="M4 7v4" />
+        <path d="M20 7v4" />
+        <path d="M8 19h8" />
+      </svg>
+    );
+  }
+
+  if (name === "yield") {
+    return (
+      <svg {...common}>
+        <path d="M12 20V10" />
+        <path d="M12 10c0-3 2.5-5 6-5 0 3.5-2 6-6 6" />
+        <path d="M12 13c-3.5 0-6-2-6-5 3.2 0 6 1.8 6 5" />
+        <path d="M6 20h12" />
       </svg>
     );
   }
