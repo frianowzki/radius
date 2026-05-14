@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
-import { useAccount, useReadContract } from "wagmi";
+import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { AppShell } from "@/components/AppShell";
@@ -16,6 +16,28 @@ import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
 import { NotificationBell } from "@/components/NotificationBell";
 import { arcTestnet } from "@/config/wagmi";
+import { ChainLogo } from "@/components/ChainLogo";
+import { CHAIN_METADATA, CHAIN_USDC_ADDRESSES, type CrosschainChain } from "@/config/crosschain";
+import { RADIUSD_RAD_TOKEN_ADDRESS } from "@/config/radiusdex";
+import { createPublicClient, formatUnits, http, type Chain } from "viem";
+import {
+  arbitrumSepolia,
+  avalancheFuji,
+  baseSepolia,
+  codexTestnet,
+  hyperliquidEvmTestnet,
+  inkSepolia,
+  lineaSepolia,
+  monadTestnet,
+  optimismSepolia,
+  plumeSepolia,
+  polygonAmoy,
+  seiTestnet,
+  sepolia,
+  unichainSepolia,
+  worldchainSepolia,
+  xdcTestnet,
+} from "viem/chains";
 import { showRadiusNotification } from "@/lib/notifications";
 import { useIncomingPaymentNotifications, requestNotificationPermission } from "@/lib/incoming-payments";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, getPaymentRequests, saveLocalTransfers, savePaymentRequests, formatContactLabel, markMatchingPaymentRequestPaid, saveLocalTransfer } from "@/lib/utils";
@@ -52,6 +74,92 @@ function WalletLoginButton() {
       }}
     </ConnectButton.Custom>
   );
+}
+
+type DashboardAsset = {
+  id: string;
+  symbol: string;
+  name: string;
+  balance: string;
+  valueLabel?: string;
+  chainKey: CrosschainChain;
+  chainLabel: string;
+  kind: "stable" | "native" | "radius";
+  rawBalance: bigint;
+};
+
+const ASSET_CHAIN_MAP: Record<CrosschainChain, Chain> = {
+  Arc_Testnet: arcTestnet,
+  Ethereum_Sepolia: sepolia,
+  Base_Sepolia: baseSepolia,
+  Arbitrum_Sepolia: arbitrumSepolia,
+  Avalanche_Fuji: avalancheFuji,
+  Optimism_Sepolia: optimismSepolia,
+  Polygon_Amoy_Testnet: polygonAmoy,
+  Linea_Sepolia: lineaSepolia,
+  Unichain_Sepolia: unichainSepolia,
+  World_Chain_Sepolia: worldchainSepolia,
+  Ink_Testnet: inkSepolia,
+  Monad_Testnet: monadTestnet,
+  HyperEVM_Testnet: hyperliquidEvmTestnet,
+  Plume_Testnet: plumeSepolia,
+  Sei_Testnet: seiTestnet,
+  XDC_Apothem: xdcTestnet,
+  Codex_Testnet: codexTestnet,
+};
+
+const ASSET_CHAINS = Object.keys(CHAIN_METADATA) as CrosschainChain[];
+const ASSET_PUBLIC_CLIENTS = Object.fromEntries(
+  ASSET_CHAINS.map((chainKey) => [
+    chainKey,
+    createPublicClient({ chain: ASSET_CHAIN_MAP[chainKey], transport: http() }),
+  ])
+) as Record<CrosschainChain, ReturnType<typeof createPublicClient>>;
+
+const MULTICHAIN_TOKEN_ASSETS = [
+  ...ASSET_CHAINS.map((chainKey) => ({
+    id: `usdc-${chainKey}`,
+    symbol: "USDC",
+    name: "USD Coin",
+    decimals: 6,
+    address: CHAIN_USDC_ADDRESSES[chainKey],
+    chainKey,
+    kind: "stable" as const,
+  })),
+  {
+    id: "eurc-arc",
+    symbol: "EURC",
+    name: "Euro Coin",
+    decimals: TOKENS.EURC.decimals,
+    address: TOKENS.EURC.address,
+    chainKey: "Arc_Testnet" as const,
+    kind: "stable" as const,
+  },
+  {
+    id: "rad-arc",
+    symbol: "RAD",
+    name: "Radius Token",
+    decimals: 18,
+    address: RADIUSD_RAD_TOKEN_ADDRESS,
+    chainKey: "Arc_Testnet" as const,
+    kind: "radius" as const,
+  },
+] as const;
+
+function compactDisplay(raw: bigint, decimals: number) {
+  const formatted = formatUnits(raw, decimals);
+  const numeric = Number(formatted);
+  if (!Number.isFinite(numeric)) return formatted;
+  if (numeric === 0) return "0";
+  if (numeric < 0.0001) return "<0.0001";
+  return numeric.toLocaleString(undefined, { maximumFractionDigits: numeric >= 1 ? 4 : 6 });
+}
+
+function stableValueLabel(symbol: string, balance: string) {
+  if (symbol !== "USDC" && symbol !== "EURC") return undefined;
+  const numeric = Number(balance.replace(/,/g, ""));
+  if (!Number.isFinite(numeric)) return undefined;
+  return `$${numeric.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
 function EyeIcon({ hidden }: { hidden: boolean }) {
@@ -131,33 +239,99 @@ export function DashboardClient() {
   }, [address]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const { data: usdcBalance } = useReadContract({
-    address: TOKENS.USDC.address,
-    abi: ERC20_TRANSFER_ABI,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    chainId: arcTestnet.id,
-    query: { enabled: !!address, refetchInterval: 15_000 },
-  });
-  const { data: eurcBalance } = useReadContract({
-    address: TOKENS.EURC.address,
-    abi: ERC20_TRANSFER_ABI,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    chainId: arcTestnet.id,
-    query: { enabled: !!address, refetchInterval: 15_000 },
-  });
+  const [multichainAssets, setMultichainAssets] = useState<DashboardAsset[]>([]);
+  const [assetScanStatus, setAssetScanStatus] = useState<"idle" | "loading" | "error">("idle");
 
-  const usdcDisplay = usdcBalance !== undefined ? formatAmount(usdcBalance as bigint, TOKENS.USDC.decimals) : "0.00";
-  const eurcDisplay = eurcBalance !== undefined ? formatAmount(eurcBalance as bigint, TOKENS.EURC.decimals) : "0.00";
-  const numericUsdc = Number(usdcDisplay.replace(/,/g, ""));
-  const numericEurc = Number(eurcDisplay.replace(/,/g, ""));
-  const totalValue = (Number.isFinite(numericUsdc) ? numericUsdc : 0) + (Number.isFinite(numericEurc) ? numericEurc : 0);
+  useEffect(() => {
+    if (!address) {
+      setMultichainAssets([]);
+      setAssetScanStatus("idle");
+      return;
+    }
+
+    let cancelled = false;
+    setAssetScanStatus("loading");
+
+    async function scanAssets() {
+      const [tokenResults, nativeResults] = await Promise.all([
+        Promise.allSettled(
+          MULTICHAIN_TOKEN_ASSETS.map(async (asset) => {
+            const balance = await ASSET_PUBLIC_CLIENTS[asset.chainKey].readContract({
+              address: asset.address,
+              abi: ERC20_TRANSFER_ABI,
+              functionName: "balanceOf",
+              args: [address as `0x${string}`],
+            });
+            return {
+              id: asset.id,
+              symbol: asset.symbol,
+              name: asset.name,
+              balance: compactDisplay(balance as bigint, asset.decimals),
+              valueLabel: stableValueLabel(asset.symbol, compactDisplay(balance as bigint, asset.decimals)),
+              chainKey: asset.chainKey,
+              chainLabel: CHAIN_METADATA[asset.chainKey].label,
+              kind: asset.kind,
+              rawBalance: balance as bigint,
+            };
+          })
+        ),
+        Promise.allSettled(
+          ASSET_CHAINS.map(async (chainKey) => {
+            const chain = ASSET_CHAIN_MAP[chainKey];
+            const balance = await ASSET_PUBLIC_CLIENTS[chainKey].getBalance({ address: address as `0x${string}` });
+            return {
+              id: `native-${chainKey}`,
+              symbol: chain.nativeCurrency.symbol,
+              name: `${chain.nativeCurrency.name} gas`,
+              balance: compactDisplay(balance, chain.nativeCurrency.decimals),
+              chainKey,
+              chainLabel: CHAIN_METADATA[chainKey].label,
+              kind: "native" as const,
+              rawBalance: balance,
+            };
+          })
+        ),
+      ]);
+
+      if (cancelled) return;
+      const rows = [...tokenResults, ...nativeResults]
+        .flatMap((result) => (result.status === "fulfilled" ? [result.value] : []))
+        .filter((asset) => asset.rawBalance > BigInt(0))
+        .sort((a, b) => {
+          const order = { stable: 0, radius: 1, native: 2 } as const;
+          return order[a.kind] - order[b.kind] || a.chainLabel.localeCompare(b.chainLabel) || a.symbol.localeCompare(b.symbol);
+        });
+
+      setMultichainAssets(rows);
+      setAssetScanStatus("idle");
+    }
+
+    scanAssets().catch(() => {
+      if (!cancelled) setAssetScanStatus("error");
+    });
+
+    const timer = window.setInterval(() => {
+      scanAssets().catch(() => {
+        if (!cancelled) setAssetScanStatus("error");
+      });
+    }, 20_000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [address]);
+
+  const arcUsdcAsset = multichainAssets.find((asset) => asset.id === "usdc-Arc_Testnet");
+  const arcEurcAsset = multichainAssets.find((asset) => asset.id === "eurc-arc");
+  const totalValue = multichainAssets.reduce((sum, asset) => {
+    if (asset.symbol !== "USDC" && asset.symbol !== "EURC") return sum;
+    const numeric = Number(asset.balance.replace(/,/g, ""));
+    return sum + (Number.isFinite(numeric) ? numeric : 0);
+  }, 0);
   const totalDisplay = totalValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
   const profileName = identity.displayName || "Arc user";
   const visibleTotal = hideBalance ? "••••••" : totalDisplay;
-  const visibleUsdc = hideBalance ? "••••••" : usdcDisplay;
-  const visibleEurc = hideBalance ? "••••••" : eurcDisplay;
   const [activityNotice, setActivityNotice] = useState("");
   const [dueScheduleList, setDueScheduleList] = useState<ScheduledPaymentRecord[]>([]);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | null>(() => {
@@ -173,9 +347,11 @@ export function DashboardClient() {
     return () => window.clearInterval(t);
   }, [isConnected]);
   const balanceSnapshot = useMemo(() => {
-    if (!address || usdcBalance === undefined || eurcBalance === undefined) return null;
-    return { USDC: usdcBalance as bigint, EURC: eurcBalance as bigint };
-  }, [address, usdcBalance, eurcBalance]);
+    const usdcRaw = arcUsdcAsset?.rawBalance;
+    const eurcRaw = arcEurcAsset?.rawBalance;
+    if (!address || usdcRaw === undefined || eurcRaw === undefined) return null;
+    return { USDC: usdcRaw, EURC: eurcRaw };
+  }, [address, arcUsdcAsset?.rawBalance, arcEurcAsset?.rawBalance]);
 
   useEffect(() => {
     queueMicrotask(() => setHideBalance(localStorage.getItem("radius-hide-balance") === "true"));
@@ -293,7 +469,6 @@ export function DashboardClient() {
 
         <section className="dashboard-actions-grid">
           {[
-            { href: "/send", icon: "send", label: "Send" },
             { href: "/request", icon: "request", label: "Request" },
             { href: "/history", icon: "history", label: "History" },
             { href: "/pool", icon: "pool", label: "Pool" },
@@ -350,8 +525,21 @@ export function DashboardClient() {
         <section className="dashboard-section">
           <div className="dashboard-section-title"><h2>My Assets</h2><button type="button" onClick={() => setShowAssets(true)}>Manage</button></div>
           <div className="dashboard-list-card asset-card">
-            {[["USDC","USD Coin",visibleUsdc],["EURC","Euro Coin",visibleEurc]].map(([s,n,b], i) => (
-              <div key={s} className={`dashboard-asset-row ${i ? 'with-border' : ''}`}><div><TokenLogo symbol={s} size={38} /><div><p>{s}</p><small>{n}</small></div></div><div><p>{b}</p>{!hideBalance && <small>${Number(String(b).replace(/,/g, "") || 0).toFixed(2)}</small>}</div></div>
+            {assetScanStatus === "loading" && multichainAssets.length === 0 ? (
+              <p className="dashboard-empty">Scanning assets across supported chains…</p>
+            ) : multichainAssets.length === 0 ? (
+              <p className="dashboard-empty">No supported assets detected yet.</p>
+            ) : multichainAssets.slice(0, 5).map((asset, i) => (
+              <div key={asset.id} className={`dashboard-asset-row ${i ? "with-border" : ""}`}>
+                <div>
+                  <span className="relative inline-flex">
+                    {asset.kind === "native" ? <ChainLogo chainKey={asset.chainKey} size={38} /> : <TokenLogo symbol={asset.symbol} size={38} />}
+                    <span className="absolute -bottom-1 -right-1 rounded-full bg-white p-[1px] shadow-sm"><ChainLogo chainKey={asset.chainKey} size={16} /></span>
+                  </span>
+                  <div><p>{asset.symbol}</p><small>{asset.chainLabel} · {asset.name}</small></div>
+                </div>
+                <div><p>{hideBalance ? "••••••" : asset.balance}</p>{!hideBalance && asset.valueLabel && <small>{asset.valueLabel}</small>}</div>
+              </div>
             ))}
           </div>
         </section>
@@ -385,9 +573,20 @@ export function DashboardClient() {
             <div className="assets-modal-card w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-bold">My Assets</h3><button type="button" aria-label="Close assets" onClick={() => setShowAssets(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
               <div className="space-y-3">
-                {[["USDC","USD Coin",visibleUsdc],["EURC","Euro Coin",visibleEurc]].map(([s,n,b]) => (
-                  <div key={s} className="flex items-center justify-between rounded-2xl bg-white/55 p-3">
-                    <div className="flex items-center gap-3"><TokenLogo symbol={s} /><div><p className="text-sm font-bold">{s}</p><p className="text-xs text-[#8b8795]">{n}</p></div></div><p className="text-sm font-semibold">{b}</p>
+                {assetScanStatus === "loading" && multichainAssets.length === 0 ? (
+                  <p className="dashboard-empty">Scanning supported chains…</p>
+                ) : multichainAssets.length === 0 ? (
+                  <p className="dashboard-empty">No USDC, EURC, RAD, or native gas balances found.</p>
+                ) : multichainAssets.map((asset) => (
+                  <div key={asset.id} className="flex items-center justify-between rounded-2xl bg-white/55 p-3">
+                    <div className="flex items-center gap-3">
+                      <span className="relative inline-flex">
+                        {asset.kind === "native" ? <ChainLogo chainKey={asset.chainKey} size={36} /> : <TokenLogo symbol={asset.symbol} />}
+                        <span className="absolute -bottom-1 -right-1 rounded-full bg-white p-[1px] shadow-sm"><ChainLogo chainKey={asset.chainKey} size={15} /></span>
+                      </span>
+                      <div><p className="text-sm font-bold">{asset.symbol}</p><p className="text-xs text-[#8b8795]">{asset.chainLabel} · {asset.name}</p></div>
+                    </div>
+                    <div className="text-right"><p className="text-sm font-semibold">{hideBalance ? "••••••" : asset.balance}</p>{!hideBalance && asset.valueLabel && <p className="text-xs text-[#8b8795]">{asset.valueLabel}</p>}</div>
                   </div>
                 ))}
               </div>
