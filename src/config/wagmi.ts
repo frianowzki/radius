@@ -113,7 +113,7 @@ export const config = getDefaultConfig({
   }),
   transports: {
     [arcTestnet.id]: http("https://rpc.testnet.arc.network"),
-    [sepolia.id]: http(),
+    [sepolia.id]: http("https://11155111.rpc.thirdweb.com"),
     [baseSepolia.id]: http(),
     [arbitrumSepolia.id]: http(),
     [avalancheFuji.id]: http(),

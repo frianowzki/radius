@@ -1,6 +1,6 @@
 "use client";
 
-import type { EIP1193Provider } from "viem";
+import { createPublicClient, fallback, http, type Chain, type EIP1193Provider, type PublicClient } from "viem";
 import type { AppKit } from "@circle-fin/app-kit";
 import type { CrosschainRoute } from "@/config/crosschain";
 
@@ -14,9 +14,21 @@ export async function getAppKit() {
   return sharedKit;
 }
 
+const SEPOLIA_RPC_ENDPOINTS = ["https://11155111.rpc.thirdweb.com", "https://sepolia.drpc.org"];
+
+function createStablecoinKitPublicClient({ chain }: { chain: Chain }): PublicClient {
+  const transport = chain.id === 11155111
+    ? fallback(SEPOLIA_RPC_ENDPOINTS.map((url) => http(url)))
+    : http();
+  return createPublicClient({ chain, transport }) as unknown as PublicClient;
+}
+
 export async function createBrowserAppKitAdapter(provider: EIP1193Provider) {
   const { createViemAdapterFromProvider } = await import("@circle-fin/adapter-viem-v2");
-  return createViemAdapterFromProvider({ provider });
+  return createViemAdapterFromProvider({
+    provider,
+    getPublicClient: createStablecoinKitPublicClient,
+  });
 }
 
 export type BridgeSpeed = "FAST" | "SLOW";
