@@ -14,7 +14,11 @@ export async function getAppKit() {
   return sharedKit;
 }
 
-const SEPOLIA_RPC_ENDPOINTS = ["https://11155111.rpc.thirdweb.com", "https://sepolia.drpc.org"];
+const SEPOLIA_RPC_ENDPOINTS = [
+  "/api/rpc/sepolia",
+  "https://11155111.rpc.thirdweb.com",
+  "https://sepolia.drpc.org",
+];
 
 function createStablecoinKitPublicClient({ chain }: { chain: Chain }): PublicClient {
   const transport = chain.id === 11155111

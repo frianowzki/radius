@@ -91,6 +91,8 @@ const browserStorage =
     ? window.localStorage
     : memoryStorage;
 
+const sepoliaRpcUrl = typeof window !== "undefined" ? "/api/rpc/sepolia" : "https://11155111.rpc.thirdweb.com";
+
 export const config = getDefaultConfig({
   appName: "Radius",
   projectId,
@@ -113,7 +115,7 @@ export const config = getDefaultConfig({
   }),
   transports: {
     [arcTestnet.id]: http("https://rpc.testnet.arc.network"),
-    [sepolia.id]: http("https://11155111.rpc.thirdweb.com"),
+    [sepolia.id]: http(sepoliaRpcUrl),
     [baseSepolia.id]: http(),
     [arbitrumSepolia.id]: http(),
     [avalancheFuji.id]: http(),
