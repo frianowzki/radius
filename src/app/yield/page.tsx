@@ -42,7 +42,7 @@ export default function YieldPage() {
       { address: RADIUSD_LP_TOKEN_ADDRESS, abi: RADIUSD_ERC20_ABI, functionName: "allowance", args: address ? [address, RADIUSD_STAKING_ADDRESS] : undefined, chainId: arcTestnet.id },
       { address: RADIUSD_RAD_TOKEN_ADDRESS, abi: RADIUSD_ERC20_ABI, functionName: "balanceOf", args: address ? [address] : undefined, chainId: arcTestnet.id },
     ],
-    query: { enabled: !!address, refetchInterval: 10_000 },
+    query: { enabled: isConnected && !!address, refetchInterval: 3_000 },
   });
 
   const userStaked = (data?.[0]?.result as bigint) ?? BigInt(0);
@@ -147,14 +147,23 @@ export default function YieldPage() {
           <Stat label="Your RAD" value={Number(formatUnits(radBalance, 18)).toFixed(2)} />
         </div>
 
-        {earned > BigInt(0) && (
-          <div className="glass-panel rounded-[28px] p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div><p className="text-xs text-zinc-500">Pending rewards</p><p className="mt-1 font-mono text-xl font-bold text-[var(--brand)]">{Number(formatUnits(earned, 18)).toFixed(6)} RAD</p></div>
-              <button type="button" disabled={busy} onClick={claim} className="primary-btn px-5 text-sm disabled:opacity-40">{status === "claiming" ? "Claiming…" : "Claim"}</button>
+        <div className="glass-panel-strong rounded-[28px] p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--brand)]">Live yield preview</p>
+              <p className="mt-2 font-mono text-3xl font-black tracking-tight text-zinc-900">{Number(formatUnits(earned, 18)).toFixed(6)} RAD</p>
+              <p className="mt-1 text-xs text-zinc-500">Updates every few seconds from the staking contract.</p>
             </div>
+            <button
+              type="button"
+              disabled={!isConnected || !isOnArc || earned === BigInt(0) || busy}
+              onClick={claim}
+              className="primary-btn px-5 text-sm disabled:opacity-40"
+            >
+              {status === "claiming" ? "Claiming…" : earned > BigInt(0) ? "Claim yield" : "No yield"}
+            </button>
           </div>
-        )}
+        </div>
 
         {userStaked > BigInt(0) && <div className="glass-panel rounded-[24px] p-4 text-sm text-zinc-500">Your staking share: <b className="text-zinc-800">{userShare.toFixed(2)}%</b></div>}
         {!isOnArc && isConnected && <button type="button" onClick={switchToArc} className="primary-btn w-full">Switch to Arc Testnet</button>}

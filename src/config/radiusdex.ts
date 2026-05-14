@@ -1,7 +1,7 @@
 export const RADIUSD_POOL_ADDRESS = "0x8C5954bE2A8b463895eA9cd0bc2Ea83b5DC7B0d9" as `0x${string}`;
 export const RADIUSD_LP_TOKEN_ADDRESS = "0xc349BCA5A206D52c2840f7BaBd4F72ee30C4127f" as `0x${string}`;
 export const RADIUSD_RAD_TOKEN_ADDRESS = "0x196Ee81eC2e565188EC737234a108AcbFEA0d992" as `0x${string}`;
-export const RADIUSD_STAKING_ADDRESS = "0xD4DD50Eb1fb8b4c3d88e508b1E80194835b5ecf5" as `0x${string}`;
+export const RADIUSD_STAKING_ADDRESS = "0xd4dd50eb1fb8b4c3d88e508b1e80194835b5ecf5" as `0x${string}`;
 
 export const RADIUSD_TOKEN_INDEX = { USDC: 0, EURC: 1 } as const;
 
