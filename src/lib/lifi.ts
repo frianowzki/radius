@@ -4,6 +4,7 @@ import { config, createConfig, EVM, executeRoute, getRoutes } from "@lifi/sdk";
 import { ChainType, type Route } from "@lifi/types";
 import { createWalletClient, custom, parseUnits, type EIP1193Provider } from "viem";
 import { CHAIN_METADATA, CHAIN_USDC_ADDRESSES, type CrosschainRoute } from "@/config/crosschain";
+import { RPC_SLUG_BY_CHAIN_ID, getRpcUrlsForChainId } from "@/config/rpc";
 
 let lifiConfigured = false;
 
@@ -22,6 +23,10 @@ export interface LifiBridgeResult {
 
 type SwitchChainFn = (chainId: number) => Promise<void>;
 
+const lifiRpcUrls = Object.fromEntries(
+  Object.keys(RPC_SLUG_BY_CHAIN_ID).map((chainId) => [Number(chainId), getRpcUrlsForChainId(Number(chainId)) ?? []])
+);
+
 function ensureLifiConfig(provider: EIP1193Provider, account: `0x${string}`, switchChain: SwitchChainFn) {
   const getWalletClient = async () => createWalletClient({ account, transport: custom(provider) }) as never;
 
@@ -37,6 +42,7 @@ function ensureLifiConfig(provider: EIP1193Provider, account: `0x${string}`, swi
           },
         }),
       ],
+      rpcUrls: lifiRpcUrls,
       preloadChains: false,
     });
     lifiConfigured = true;

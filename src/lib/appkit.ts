@@ -3,6 +3,7 @@
 import { createPublicClient, fallback, http, type Chain, type EIP1193Provider, type PublicClient } from "viem";
 import type { AppKit } from "@circle-fin/app-kit";
 import type { CrosschainRoute } from "@/config/crosschain";
+import { getRpcUrlsForChainId } from "@/config/rpc";
 
 let sharedKit: AppKit | null = null;
 
@@ -14,16 +15,9 @@ export async function getAppKit() {
   return sharedKit;
 }
 
-const SEPOLIA_RPC_ENDPOINTS = [
-  "/api/rpc/sepolia",
-  "https://11155111.rpc.thirdweb.com",
-  "https://sepolia.drpc.org",
-];
-
 function createStablecoinKitPublicClient({ chain }: { chain: Chain }): PublicClient {
-  const transport = chain.id === 11155111
-    ? fallback(SEPOLIA_RPC_ENDPOINTS.map((url) => http(url)))
-    : http();
+  const rpcUrls = getRpcUrlsForChainId(chain.id);
+  const transport = rpcUrls?.length ? fallback(rpcUrls.map((url) => http(url))) : http();
   return createPublicClient({ chain, transport }) as unknown as PublicClient;
 }
 

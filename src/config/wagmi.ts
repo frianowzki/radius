@@ -8,6 +8,7 @@ import {
 } from "@rainbow-me/rainbowkit/wallets";
 import { createStorage, http } from "wagmi";
 import { defineChain } from "viem";
+import { getBrowserRpcUrl, getServerRpcUrl } from "@/config/rpc";
 import {
   arbitrumSepolia,
   avalancheFuji,
@@ -91,7 +92,9 @@ const browserStorage =
     ? window.localStorage
     : memoryStorage;
 
-const sepoliaRpcUrl = typeof window !== "undefined" ? "/api/rpc/sepolia" : "https://11155111.rpc.thirdweb.com";
+function rpcTransport(chainId: number) {
+  return http(typeof window !== "undefined" ? getBrowserRpcUrl(chainId) : getServerRpcUrl(chainId));
+}
 
 export const config = getDefaultConfig({
   appName: "Radius",
@@ -114,22 +117,22 @@ export const config = getDefaultConfig({
     storage: browserStorage,
   }),
   transports: {
-    [arcTestnet.id]: http("https://rpc.testnet.arc.network"),
-    [sepolia.id]: http(sepoliaRpcUrl),
-    [baseSepolia.id]: http(),
-    [arbitrumSepolia.id]: http(),
-    [avalancheFuji.id]: http(),
-    [optimismSepolia.id]: http(),
-    [polygonAmoy.id]: http(),
-    [lineaSepolia.id]: http(),
-    [unichainSepolia.id]: http(),
-    [worldchainSepolia.id]: http(),
-    [inkSepolia.id]: http(),
-    [monadTestnet.id]: http(),
-    [hyperliquidEvmTestnet.id]: http(),
-    [plumeSepolia.id]: http(),
-    [seiTestnet.id]: http(),
-    [xdcTestnet.id]: http(),
-    [codexTestnet.id]: http(),
+    [arcTestnet.id]: rpcTransport(arcTestnet.id),
+    [sepolia.id]: rpcTransport(sepolia.id),
+    [baseSepolia.id]: rpcTransport(baseSepolia.id),
+    [arbitrumSepolia.id]: rpcTransport(arbitrumSepolia.id),
+    [avalancheFuji.id]: rpcTransport(avalancheFuji.id),
+    [optimismSepolia.id]: rpcTransport(optimismSepolia.id),
+    [polygonAmoy.id]: rpcTransport(polygonAmoy.id),
+    [lineaSepolia.id]: rpcTransport(lineaSepolia.id),
+    [unichainSepolia.id]: rpcTransport(unichainSepolia.id),
+    [worldchainSepolia.id]: rpcTransport(worldchainSepolia.id),
+    [inkSepolia.id]: rpcTransport(inkSepolia.id),
+    [monadTestnet.id]: rpcTransport(monadTestnet.id),
+    [hyperliquidEvmTestnet.id]: rpcTransport(hyperliquidEvmTestnet.id),
+    [plumeSepolia.id]: rpcTransport(plumeSepolia.id),
+    [seiTestnet.id]: rpcTransport(seiTestnet.id),
+    [xdcTestnet.id]: rpcTransport(xdcTestnet.id),
+    [codexTestnet.id]: rpcTransport(codexTestnet.id),
   },
 });

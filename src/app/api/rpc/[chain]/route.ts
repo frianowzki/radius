@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { RPC_ENDPOINTS_BY_SLUG, type RpcSlug } from "@/config/rpc";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const RPC_ENDPOINTS: Record<string, string[]> = {
-  sepolia: [
-    "https://11155111.rpc.thirdweb.com",
-    "https://sepolia.drpc.org",
-    "https://ethereum-sepolia.publicnode.com",
-  ],
-};
 
 type RpcParams = { chain: string };
 
@@ -26,7 +19,7 @@ function badRequest(message: string) {
 
 export async function POST(request: NextRequest, context: { params: Promise<RpcParams> | RpcParams }) {
   const params = await context.params;
-  const endpoints = RPC_ENDPOINTS[params.chain];
+  const endpoints = RPC_ENDPOINTS_BY_SLUG[params.chain as RpcSlug];
   if (!endpoints) return badRequest("Unsupported RPC chain");
 
   let body: RpcBody | RpcBody[];
