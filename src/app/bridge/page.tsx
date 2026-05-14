@@ -51,8 +51,13 @@ import {
   getBridgeErrorMessage,
   summarizeBridgeEstimate,
   formatEtaSeconds,
+  createAccountSafeProvider,
   type BridgeSpeed,
 } from "@/lib/appkit";
+import {
+  executeLifiUsdcBridgeTransfer,
+  getLifiErrorMessage,
+} from "@/lib/lifi";
 import {
   decimalToUnits,
   formatAddress,
@@ -288,7 +293,7 @@ export default function BridgePage() {
         // fall through to other sources
       }
     }
-    if (authProvider) return authProvider as EIP1193Provider;
+    if (authProvider) return createAccountSafeProvider(authProvider as EIP1193Provider, address as `0x${string}`);
 
     const injectedProvider = (globalThis as typeof globalThis & {
       ethereum?: EIP1193Provider;
@@ -337,14 +342,63 @@ export default function BridgePage() {
         if (!provider || !resolvedRecipientAddress) {
           throw new Error("Wallet provider unavailable for crosschain transfer");
         }
-        const estimate = await estimateBridgeTransfer(
-          provider,
-          selectedRouteConfig,
-          resolvedRecipientAddress,
-          amount,
-          bridgeSpeed,
-          useForwarder
-        );
+        let estimate: unknown;
+        try {
+          estimate = await estimateBridgeTransfer(
+            provider,
+            selectedRouteConfig,
+            resolvedRecipientAddress,
+            amount,
+            bridgeSpeed,
+            useForwarder,
+            address as `0x${string}`
+          );
+        } catch (circleEstimateError) {
+          setBridgeProgress("Circle CCTP route unavailable, trying LI.FI fallback");
+          setStatus("confirming");
+          try {
+            const lifiResult = await executeLifiUsdcBridgeTransfer(
+              provider,
+              address as `0x${string}`,
+              selectedRouteConfig,
+              resolvedRecipientAddress as `0x${string}`,
+              amount,
+              async (chainId) => {
+                if (wagmiConnected) {
+                  await switchChainAsync({ chainId });
+                } else {
+                  await switchAuthChain(chainId);
+                }
+              },
+              (event) => {
+                setBridgeProgress(event.state ? `LI.FI: ${event.label} • ${event.state}` : `LI.FI: ${event.label}`);
+                if (event.txHash) setTxHash(event.txHash);
+                if (event.errorMessage) setError(event.errorMessage);
+              }
+            );
+            const lifiHash = lifiResult.steps.find((step) => step.txHash)?.txHash || "";
+            setTxHash(lifiHash);
+            setShowSaveRecipient(!resolvedRecipient.contact && !!resolvedRecipientAddress);
+            setStatus(lifiResult.state === "error" ? "error" : "success");
+            if (lifiResult.state === "error") {
+              setError(getBridgeErrorMessage(lifiResult));
+            } else if (lifiHash && resolvedRecipientAddress) {
+              saveLocalTransfer({
+                from: address,
+                to: resolvedRecipientAddress,
+                value: parseUnits(amount, TOKENS[token].decimals).toString(),
+                token,
+                txHash: lifiHash,
+                direction: "sent",
+                routeLabel: `${selectedRouteConfig.label} · LI.FI fallback`,
+              });
+              void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
+            }
+            return;
+          } catch (lifiError) {
+            throw new Error(`Circle CCTP failed: ${getBridgeErrorMessage({ steps: [{ name: "estimate", error: circleEstimateError }] })}. LI.FI fallback failed: ${getLifiErrorMessage(lifiError)}`);
+          }
+        }
         const estimateSummary = summarizeBridgeEstimate(estimate);
         setBridgeEstimateText(
           estimateSummary.feeCount || estimateSummary.gasFeeCount
@@ -388,7 +442,8 @@ export default function BridgePage() {
               });
             }
           },
-          useForwarder
+          useForwarder,
+          address as `0x${string}`
         );
 
         const lastStepWithHash = [...(result.steps || [])]

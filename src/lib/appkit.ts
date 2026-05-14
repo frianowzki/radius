@@ -27,10 +27,21 @@ function createStablecoinKitPublicClient({ chain }: { chain: Chain }): PublicCli
   return createPublicClient({ chain, transport }) as unknown as PublicClient;
 }
 
-export async function createBrowserAppKitAdapter(provider: EIP1193Provider) {
+export function createAccountSafeProvider(provider: EIP1193Provider, account?: `0x${string}`): EIP1193Provider {
+  if (!account) return provider;
+  return {
+    ...provider,
+    request: async (args) => {
+      if (args.method === "eth_requestAccounts" || args.method === "eth_accounts") return [account];
+      return provider.request(args as Parameters<EIP1193Provider["request"]>[0]);
+    },
+  } as EIP1193Provider;
+}
+
+export async function createBrowserAppKitAdapter(provider: EIP1193Provider, account?: `0x${string}`) {
   const { createViemAdapterFromProvider } = await import("@circle-fin/adapter-viem-v2");
   return createViemAdapterFromProvider({
-    provider,
+    provider: createAccountSafeProvider(provider, account),
     getPublicClient: createStablecoinKitPublicClient,
   });
 }
@@ -160,9 +171,10 @@ export async function estimateBridgeTransfer(
   recipient: string,
   amount: string,
   speed: BridgeSpeed,
-  useForwarder = true
+  useForwarder = true,
+  account?: `0x${string}`
 ) {
-  const adapter = await createBrowserAppKitAdapter(provider);
+  const adapter = await createBrowserAppKitAdapter(provider, account);
   const kit = await getAppKit();
 
   const destination = useForwarder
@@ -254,9 +266,10 @@ export async function executeBridgeTransfer(
   amount: string,
   speed: BridgeSpeed,
   onProgress?: (event: BridgeProgressEvent) => void,
-  useForwarder = true
+  useForwarder = true,
+  account?: `0x${string}`
 ) {
-  const adapter = await createBrowserAppKitAdapter(provider);
+  const adapter = await createBrowserAppKitAdapter(provider, account);
   const kit = await getAppKit();
   const handler = onProgress ? (payload: unknown) => onProgress(parseBridgeProgress(payload)) : undefined;
 

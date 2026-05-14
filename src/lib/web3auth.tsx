@@ -22,7 +22,24 @@ import {
   type User,
 } from "@privy-io/react-auth";
 import type { EIP1193Provider } from "viem";
-import { arbitrumSepolia, baseSepolia, sepolia } from "viem/chains";
+import {
+  arbitrumSepolia,
+  avalancheFuji,
+  baseSepolia,
+  codexTestnet,
+  hyperliquidEvmTestnet,
+  inkSepolia,
+  lineaSepolia,
+  monadTestnet,
+  optimismSepolia,
+  plumeSepolia,
+  polygonAmoy,
+  seiTestnet,
+  sepolia,
+  unichainSepolia,
+  worldchainSepolia,
+  xdcTestnet,
+} from "viem/chains";
 import { arcTestnet } from "@/config/wagmi";
 
 export type SocialLoginMethod = "email" | "google" | "github" | "twitter" | "apple";
@@ -225,7 +242,25 @@ export function RadiusAuthProvider({ children }: { children: ReactNode }) {
           walletChainType: "ethereum-only",
         },
         loginMethods: ["google", "email", "github", "twitter", "apple"],
-        supportedChains: [arcTestnet, sepolia, baseSepolia, arbitrumSepolia],
+        supportedChains: [
+          arcTestnet,
+          sepolia,
+          baseSepolia,
+          arbitrumSepolia,
+          avalancheFuji,
+          optimismSepolia,
+          polygonAmoy,
+          lineaSepolia,
+          unichainSepolia,
+          worldchainSepolia,
+          inkSepolia,
+          monadTestnet,
+          hyperliquidEvmTestnet,
+          plumeSepolia,
+          seiTestnet,
+          xdcTestnet,
+          codexTestnet,
+        ],
         defaultChain: arcTestnet,
         embeddedWallets: {
           ethereum: { createOnLogin: "users-without-wallets" },
