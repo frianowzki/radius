@@ -162,6 +162,20 @@ function stableValueLabel(symbol: string, balance: string) {
   return `$${numeric.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
+function shortAddress(value?: string) {
+  if (!value) return "0x0000...0000";
+  return `${value.slice(0, 6)}...${value.slice(-4)}`;
+}
+
+function contactInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "R";
+}
+
 function EyeIcon({ hidden }: { hidden: boolean }) {
   return (
     <svg viewBox="0 0 48 48" aria-hidden="true" className="h-5 w-5 fill-current">
@@ -425,6 +439,21 @@ export function DashboardClient() {
         </div>
       )}
       <div className="dashboard-reference-screen">
+        <div className="desktop-dashboard-topbar">
+          <h1>Hello, {profileName} <span key={waveKey} className="dashboard-wave" aria-hidden="true">👋</span></h1>
+          <div className="desktop-topbar-actions">
+            <label className="desktop-search" aria-label="Search">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input type="search" placeholder="Search by address / tx / contact..." />
+            </label>
+            <NotificationBell />
+            <Link href="/profile" className="desktop-profile-chip" aria-label="Open profile">
+              <span>{contactInitials(profileName).slice(0, 1)}</span>
+              <strong>{profileName}</strong>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </Link>
+          </div>
+        </div>
         <header className="dashboard-reference-header">
           <div>
             <div className="dashboard-logo">Radius</div>
@@ -481,6 +510,58 @@ export function DashboardClient() {
           ))}
         </section>
 
+        <aside className="desktop-dashboard-side">
+          <section className="desktop-panel desktop-shortcuts-panel">
+            <h2>Quick Shortcuts</h2>
+            <div>
+              {[
+                { href: "/request", icon: "request", label: "Request" },
+                { href: "/send", icon: "send", label: "Send" },
+                { href: "/swap", icon: "swap", label: "Swap" },
+                { href: "/bridge", icon: "bridge", label: "Bridge" },
+              ].map((item) => (
+                <Link key={item.label} href={item.href} className="desktop-shortcut-tile">
+                  <QuickActionIcon name={item.icon as "send" | "request" | "swap" | "bridge"} />
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="desktop-panel desktop-notifications-panel">
+            <div className="desktop-panel-title"><h2>Notifications</h2><Link href="/history">View all</Link></div>
+            <div className="desktop-notification-list">
+              {recentTransfers.slice(0, 2).length === 0 ? (
+                <div className="desktop-notification-row">
+                  <span><QuickActionIcon name="wallet" /></span>
+                  <p>No new wallet activity yet.<small>Start by receiving or sending funds.</small></p>
+                  <i />
+                </div>
+              ) : recentTransfers.slice(0, 2).map((transfer) => (
+                <Link href="/history" key={`notice-${transfer.id}`} className="desktop-notification-row">
+                  <span><QuickActionIcon name={transfer.direction === "sent" ? "send" : "request"} /></span>
+                  <p>{transfer.direction === "sent" ? "Sent" : "Received"} {formatAmount(BigInt(transfer.value), TOKENS[transfer.token].decimals)} {transfer.token}<small>{new Date(transfer.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</small></p>
+                  <i />
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="desktop-panel desktop-contacts-panel">
+            <div className="desktop-panel-title"><h2>Recent Contacts</h2><Link href="/contacts">View all</Link></div>
+            <div className="desktop-contact-row">
+              {contacts.slice(0, 4).map((c, index) => (
+                <Link href={`/send?to=${encodeURIComponent(c.handle ? c.handle.replace(/^@/, "") : c.address)}`} key={`desktop-${c.id}`}>
+                  <span data-tone={index % 4}>{contactInitials(c.name)}</span>
+                  <strong>{c.name}</strong>
+                  <small>{shortAddress(c.address)}</small>
+                </Link>
+              ))}
+              <Link href="/contacts" className="desktop-add-contact"><span>+</span><strong>Add New</strong><small>&nbsp;</small></Link>
+            </div>
+          </section>
+        </aside>
+
         <section className="dashboard-section">
           <div className="dashboard-section-title"><h2>Latest Activities</h2><Link href="/history">View all</Link></div>
           <div className="dashboard-list-card">
@@ -522,7 +603,13 @@ export function DashboardClient() {
           </div>
         </section>
 
-        <section className="dashboard-section">
+        <section className="desktop-feature-banner">
+          <span><QuickActionIcon name="wallet" /></span>
+          <div><strong>Secure. Fast. Borderless.</strong><p>Manage your digital assets across chains with Radius.</p></div>
+          <Link href="/bridge">Explore features <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></Link>
+        </section>
+
+        <section className="dashboard-section dashboard-assets-section">
           <div className="dashboard-section-title"><h2>My Assets</h2><button type="button" onClick={() => setShowAssets(true)}>Manage</button></div>
           <div className="dashboard-list-card asset-card">
             {assetScanStatus === "loading" && multichainAssets.length === 0 ? (

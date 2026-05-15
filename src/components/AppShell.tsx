@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DynamicBackground } from "@/components/DynamicBackground";
+import { QuickActionIcon } from "@/components/QuickActionIcon";
 
 const PaymentRequestNotifier = dynamic(
   () => import("@/components/PaymentRequestNotifier").then((m) => m.PaymentRequestNotifier),
@@ -12,6 +13,7 @@ const PaymentRequestNotifier = dynamic(
 );
 
 type NavIconName = "home" | "swap" | "bridge" | "profile" | "agent";
+type QuickIconName = "send" | "request" | "swap" | "scan" | "contacts" | "bridge" | "wallet" | "pool" | "yield" | "history";
 
 const NAV_ITEMS: Array<{
   href: string;
@@ -24,6 +26,24 @@ const NAV_ITEMS: Array<{
   { href: "/send", label: "Radius", special: true },
   { href: "/bridge", label: "Bridge", icon: "bridge" },
   { href: "/profile", label: "Profile", icon: "profile" },
+];
+
+const DESKTOP_NAV_ITEMS: Array<{
+  href: string;
+  label: string;
+  icon: NavIconName | QuickIconName;
+  source?: "quick";
+  dividerBefore?: boolean;
+}> = [
+  { href: "/", label: "Home", icon: "home" },
+  { href: "/swap", label: "Swap", icon: "swap" },
+  { href: "/bridge", label: "Bridge", icon: "bridge" },
+  { href: "/profile", label: "Profile", icon: "profile" },
+  { href: "/request", label: "Request", icon: "request", source: "quick", dividerBefore: true },
+  { href: "/history", label: "History", icon: "history", source: "quick" },
+  { href: "/pool", label: "Pool", icon: "pool", source: "quick" },
+  { href: "/yield", label: "Yield", icon: "yield", source: "quick" },
+  { href: "/contacts", label: "Contacts", icon: "contacts", source: "quick" },
 ];
 
 function NavIcon({ name }: { name: NavIconName }) {
@@ -108,6 +128,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="phone-shell">
       <DynamicBackground />
       {notifierReady && <PaymentRequestNotifier />}
+      <aside className="desktop-sidebar" aria-label="Desktop navigation">
+        <Link href="/" className="desktop-sidebar-logo">Radius</Link>
+        <nav className="desktop-sidebar-nav">
+          {DESKTOP_NAV_ITEMS.map((item) => {
+            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`desktop-sidebar-link${active ? " active" : ""}${item.dividerBefore ? " with-divider" : ""}`}
+              >
+                <span className="desktop-sidebar-icon">
+                  {item.source === "quick" ? <QuickActionIcon name={item.icon as QuickIconName} /> : <NavIcon name={item.icon as NavIconName} />}
+                </span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="desktop-sidebar-tvl" aria-label="Total value locked">
+          <p>Total Value Locked <span>ⓘ</span></p>
+          <strong>$ 12.45M</strong><em>+4.32%</em>
+          <svg viewBox="0 0 180 62" aria-hidden="true"><path d="M6 48c14-24 26-32 38-16 10 13 18 15 31-3 13-17 25-15 35 2 13 23 31 19 42-8 7-17 15-21 23-9" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg>
+        </div>
+      </aside>
       <main>{children}</main>
       <nav className="bottom-nav" aria-label="Primary navigation">
         <div className="bottom-nav-grid">
