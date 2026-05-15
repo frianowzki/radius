@@ -34,6 +34,15 @@ export async function fetchRegistryProfile(params: { address?: string; handle?: 
   return data.profile ?? null;
 }
 
+export async function searchRegistryProfiles(query: string): Promise<RegistryProfile[]> {
+  const q = query.trim().replace(/^@+/, "");
+  if (q.length < 2) return [];
+  const res = await fetch(`/api/registry/profile?q=${encodeURIComponent(q)}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json().catch(() => ({}));
+  return Array.isArray(data.profiles) ? data.profiles : [];
+}
+
 export async function saveRegistryProfile(input: {
   address: string;
   displayName: string;

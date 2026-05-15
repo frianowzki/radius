@@ -3,9 +3,14 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import { formatUnits } from "viem";
 import { usePathname } from "next/navigation";
+import { useReadContracts } from "wagmi";
 import { DynamicBackground } from "@/components/DynamicBackground";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
+import { TOKENS } from "@/config/tokens";
+import { arcTestnet } from "@/config/wagmi";
+import { RADIUSD_POOL_ABI, RADIUSD_POOL_ADDRESS } from "@/config/radiusdex";
 
 const PaymentRequestNotifier = dynamic(
   () => import("@/components/PaymentRequestNotifier").then((m) => m.PaymentRequestNotifier),
@@ -82,11 +87,10 @@ function NavIcon({ name }: { name: NavIconName }) {
   if (name === "bridge") {
     return (
       <svg {...shared}>
-        <path d="M4.2 14.6c2.2-2.1 4.8-3.1 7.8-3.1s5.6 1 7.8 3.1" />
-        <path d="M6.4 17.8c1.6-1.4 3.5-2.1 5.6-2.1s4 .7 5.6 2.1" />
-        <path d="M4.8 10.4h14.4" />
-        <path d="M7.2 7.1h9.6" />
-        <path d="M12 4.2v15.6" />
+        <path d="M5 7.5h8.2a3.8 3.8 0 0 1 0 7.6H9.8" />
+        <path d="M19 16.5h-8.2a3.8 3.8 0 0 1 0-7.6h3.4" />
+        <path d="m8 4.8-3 2.7 3 2.7" />
+        <path d="m16 13.8 3 2.7-3 2.7" />
       </svg>
     );
   }
@@ -108,6 +112,37 @@ function NavIcon({ name }: { name: NavIconName }) {
       <path d="M12 12.4a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Z" />
       <path d="M4.8 20.1a7.2 7.2 0 0 1 14.4 0" />
     </svg>
+  );
+}
+
+function formatLiquidity(raw: bigint, decimals: number) {
+  const numeric = Number(formatUnits(raw, decimals));
+  if (!Number.isFinite(numeric)) return "0.00";
+  return numeric.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function DesktopLiquidityCard() {
+  const { data } = useReadContracts({
+    contracts: [
+      { address: RADIUSD_POOL_ADDRESS, abi: RADIUSD_POOL_ABI, functionName: "balances", args: [BigInt(0)], chainId: arcTestnet.id },
+      { address: RADIUSD_POOL_ADDRESS, abi: RADIUSD_POOL_ABI, functionName: "balances", args: [BigInt(1)], chainId: arcTestnet.id },
+    ],
+    query: { refetchInterval: 10_000 },
+  });
+  const usdc = (data?.[0]?.result as bigint | undefined) ?? BigInt(0);
+  const eurc = (data?.[1]?.result as bigint | undefined) ?? BigInt(0);
+  const total = Number(formatUnits(usdc, TOKENS.USDC.decimals)) + Number(formatUnits(eurc, TOKENS.EURC.decimals));
+
+  return (
+    <div className="desktop-sidebar-tvl" aria-label="RadiusDex liquidity locked">
+      <p>Liquidity Locked <span>live</span></p>
+      <strong>${Number.isFinite(total) ? total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}</strong>
+      <div className="desktop-liquidity-lines">
+        <span><b>USDC</b>{formatLiquidity(usdc, TOKENS.USDC.decimals)}</span>
+        <span><b>EURC</b>{formatLiquidity(eurc, TOKENS.EURC.decimals)}</span>
+      </div>
+      <svg viewBox="0 0 180 62" aria-hidden="true"><path d="M6 48c14-24 26-32 38-16 10 13 18 15 31-3 13-17 25-15 35 2 13 23 31 19 42-8 7-17 15-21 23-9" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg>
+    </div>
   );
 }
 
@@ -148,11 +183,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="desktop-sidebar-tvl" aria-label="Total value locked">
-          <p>Total Value Locked <span>ⓘ</span></p>
-          <strong>$ 12.45M</strong><em>+4.32%</em>
-          <svg viewBox="0 0 180 62" aria-hidden="true"><path d="M6 48c14-24 26-32 38-16 10 13 18 15 31-3 13-17 25-15 35 2 13 23 31 19 42-8 7-17 15-21 23-9" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg>
-        </div>
+        <DesktopLiquidityCard />
       </aside>
       <main>{children}</main>
       <nav className="bottom-nav" aria-label="Primary navigation">

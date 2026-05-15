@@ -9,7 +9,7 @@ import { TokenLogo } from "@/components/TokenLogo";
 import { fetchRegistryProfile, type RegistryProfile } from "@/lib/registry-client";
 import { formatAddress } from "@/lib/utils";
 
-export default function PublicProfilePage({ params }: { params: Promise<{ handle: string }> }) {
+export default function PublicProfilePage({ params }: { params: { handle: string } | Promise<{ handle: string }> }) {
   const [handle, setHandle] = useState<string>("");
   const [profile, setProfile] = useState<RegistryProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,7 +17,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ handle
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    params.then((p) => {
+    Promise.resolve(params).then((p) => {
       const h = decodeURIComponent(p.handle).replace(/^@+/, "");
       setHandle(h);
       fetchRegistryProfile({ handle: h })

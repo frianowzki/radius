@@ -606,7 +606,10 @@ export function DashboardClient() {
         <section className="desktop-feature-banner">
           <span><QuickActionIcon name="wallet" /></span>
           <div><strong>Secure. Fast. Borderless.</strong><p>Manage your digital assets across chains with Radius.</p></div>
-          <Link href="/bridge">Explore features <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg></Link>
+          <Link href="https://github.com/frianowzki/radius" target="_blank" rel="noopener noreferrer" aria-label="Visit Radius on GitHub">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5A11.5 11.5 0 0 0 8.36 22.9c.58.1.8-.25.8-.56v-2.18c-3.26.7-3.95-1.38-3.95-1.38-.53-1.36-1.3-1.72-1.3-1.72-1.07-.73.08-.72.08-.72 1.18.08 1.8 1.22 1.8 1.22 1.05 1.8 2.75 1.28 3.42.98.1-.76.41-1.28.75-1.57-2.6-.3-5.34-1.3-5.34-5.8 0-1.28.46-2.33 1.21-3.15-.12-.3-.53-1.5.12-3.1 0 0 .99-.32 3.25 1.2a11.2 11.2 0 0 1 5.9 0c2.26-1.52 3.25-1.2 3.25-1.2.65 1.6.24 2.8.12 3.1.75.82 1.2 1.87 1.2 3.15 0 4.5-2.74 5.5-5.35 5.8.42.36.8 1.08.8 2.18v3.23c0 .31.21.67.81.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+            Visit GitHub <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </Link>
         </section>
 
         <section className="dashboard-section dashboard-assets-section">

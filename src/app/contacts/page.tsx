@@ -8,7 +8,7 @@ import { useAccount } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { addContact, formatAddress, getContacts, removeContact, saveContacts, updateContact, type Contact } from "@/lib/utils";
 import { fetchRemoteContacts, mergeContacts, pushRemoteContacts } from "@/lib/contacts-sync";
-import { fetchRegistryProfile } from "@/lib/registry-client";
+import { fetchRegistryProfile, searchRegistryProfiles } from "@/lib/registry-client";
 
 function SyncStatusIcon({ status }: { status: "idle" | "syncing" | "synced" | "error" }) {
   if (status === "syncing") {
@@ -151,12 +151,9 @@ export default function ContactsPage() {
               const q = e.target.value.trim().replace(/^@/, "");
               if (q.length < 2) { setGlobalResults([]); return; }
               setGlobalSearching(true);
-              fetchRegistryProfile({ handle: q })
-                .then((profile) => {
-                  if (profile) setGlobalResults([profile]);
-                  else setGlobalResults([]);
-                })
-                .catch(() => setGlobalResults([]))
+              searchRegistryProfiles(q)
+                .then((profiles) => setGlobalResults(profiles))
+                .catch(() => fetchRegistryProfile({ handle: q }).then((profile) => setGlobalResults(profile ? [profile] : [])).catch(() => setGlobalResults([])))
                 .finally(() => setGlobalSearching(false));
             }}
             placeholder="Search Radius users"

@@ -97,7 +97,25 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const address = url.searchParams.get("address");
   const handle = url.searchParams.get("handle");
+  const q = normalizeHandle(url.searchParams.get("q") || "");
   const table = await readTable();
+
+  if (q) {
+    const profiles = table.profiles
+      .filter((item) => {
+        const handleValue = item.handle || "";
+        return handleValue.includes(q) || item.displayName.toLowerCase().includes(q) || item.address.toLowerCase().includes(q.toLowerCase());
+      })
+      .sort((a, b) => {
+        const ah = a.handle || "";
+        const bh = b.handle || "";
+        const aExact = ah === q ? 0 : ah.startsWith(q) ? 1 : 2;
+        const bExact = bh === q ? 0 : bh.startsWith(q) ? 1 : 2;
+        return aExact - bExact || b.updatedAt - a.updatedAt;
+      })
+      .slice(0, 8);
+    return jsonNoStore({ profiles });
+  }
 
   const profile = address && isAddress(address)
     ? table.profiles.find((item) => item.address.toLowerCase() === address.toLowerCase())

@@ -3842,3 +3842,102 @@ html[data-theme="dark"] .modal-close-btn:hover {
   .phone-shell { grid-template-columns: 292px minmax(0, 1fr); }
   .dashboard-reference-screen { padding: 40px 52px 42px; grid-template-columns: minmax(620px, 1fr) minmax(400px, 430px); }
 }
+
+/* Desktop fixes: fluid fit, real liquidity card, frosted notifications */
+.notification-dropdown {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.78));
+  backdrop-filter: blur(28px) saturate(1.55);
+  -webkit-backdrop-filter: blur(28px) saturate(1.55);
+  box-shadow:
+    0 24px 70px rgba(15,23,42,.20),
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 0 0 1px rgba(255,255,255,.35);
+}
+html[data-theme="dark"] .notification-dropdown {
+  background:
+    linear-gradient(180deg, rgba(17,24,39,.92), rgba(15,23,42,.82));
+  border-color: rgba(255,255,255,.14) !important;
+}
+
+@media (min-width: 1024px) and (orientation: landscape) {
+  .desktop-topbar-actions > .relative { z-index: 130; }
+  .desktop-sidebar-tvl p span {
+    margin-left: 5px;
+    border-radius: 999px;
+    background: rgba(16,185,129,.12);
+    padding: 2px 7px;
+    color: #047857;
+    font-size: 10px;
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+  .desktop-sidebar-tvl strong {
+    display: block;
+    font-size: 19px;
+  }
+  .desktop-liquidity-lines {
+    display: grid;
+    gap: 7px;
+    margin-top: 12px;
+  }
+  .desktop-liquidity-lines span {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-radius: 10px;
+    background: rgba(239,246,255,.74);
+    padding: 7px 9px;
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 780;
+  }
+  .desktop-liquidity-lines b {
+    color: #174bd8;
+    font-size: 11px;
+    letter-spacing: .04em;
+  }
+  .desktop-feature-banner a { white-space: nowrap; }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) and (orientation: landscape) {
+  .phone-shell { grid-template-columns: 236px minmax(0, 1fr); }
+  .desktop-sidebar { padding: 28px 16px 20px; gap: 16px; }
+  .desktop-sidebar-logo { font-size: 30px; }
+  .desktop-sidebar-link { min-height: 42px; padding: 0 13px; font-size: 14px; gap: 10px; }
+  .desktop-sidebar-link.with-divider { margin-top: 7px; padding-top: 10px; }
+  .desktop-sidebar-tvl { padding: 13px; }
+  .desktop-sidebar-tvl svg { height: 38px; }
+
+  .dashboard-reference-screen {
+    padding: 26px 24px 26px;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 34vw);
+    gap: 16px 18px;
+  }
+  .desktop-dashboard-topbar h1 { font-size: 20px; }
+  .desktop-search { width: min(330px, 30vw); height: 44px; }
+  .desktop-profile-chip { height: 44px; }
+  .dashboard-balance-card { min-height: 222px; padding: 30px 32px 26px; }
+  .dashboard-total { margin-top: 30px; font-size: clamp(44px, 4.8vw, 58px); }
+  .dashboard-balance-actions { margin-top: 31px; gap: 16px; }
+  .dashboard-balance-actions a,
+  .dashboard-balance-actions button { min-height: 52px; font-size: 16px; }
+  .desktop-panel { padding: 18px; }
+  .desktop-shortcuts-panel > div { gap: 10px; }
+  .desktop-shortcut-tile { min-height: 68px; }
+  .desktop-notification-row { grid-template-columns: 42px 1fr 8px; gap: 10px; }
+  .desktop-notification-row > span { width: 42px; height: 42px; }
+  .desktop-contact-row { gap: 7px; }
+  .desktop-contact-row span { width: 46px; height: 46px; }
+  .dashboard-activity-row { min-height: 58px; padding: 9px 18px; }
+  .desktop-feature-banner { min-height: 88px; grid-template-columns: 56px 1fr auto; padding: 14px 18px; }
+  .desktop-feature-banner > span { width: 50px; height: 50px; border-radius: 15px; }
+}
+
+@media (min-width: 1440px) and (orientation: landscape) {
+  .dashboard-reference-screen {
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+}
