@@ -6,14 +6,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import "@rainbow-me/rainbowkit/styles.css";
-import { config } from "@/config/wagmi";
+import { config, arcTestnet } from "@/config/wagmi";
 import { RadiusAuthProvider } from "@/lib/web3auth";
+import { ArcNetworkSync } from "@/components/ArcNetworkSync";
 import { installCircleFetchProxy } from "@/lib/install-circle-fetch-proxy";
 
 function WalletProviders({ children }: { children: ReactNode }) {
   return (
-    <WagmiProvider config={config} reconnectOnMount={false}>
+    <WagmiProvider config={config} reconnectOnMount>
       <RainbowKitProvider
+        initialChain={arcTestnet}
         theme={darkTheme({
           accentColor: "#183B5C",
           accentColorForeground: "white",
@@ -21,6 +23,7 @@ function WalletProviders({ children }: { children: ReactNode }) {
           fontStack: "system",
         })}
       >
+        <ArcNetworkSync />
         {children}
       </RainbowKitProvider>
     </WagmiProvider>

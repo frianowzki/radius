@@ -3,7 +3,10 @@ import {
   injectedWallet,
   metaMaskWallet,
   rabbyWallet,
+  okxWallet,
+  bitgetWallet,
   coinbaseWallet,
+  walletConnectWallet,
   safeWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 import { createStorage, http } from "wagmi";
@@ -106,9 +109,12 @@ export const config = getDefaultConfig({
       groupName: "Wallets",
       wallets: [
         injectedWallet,
+        okxWallet,
+        bitgetWallet,
         metaMaskWallet,
         rabbyWallet,
         coinbaseWallet,
+        walletConnectWallet,
         safeWallet,
       ],
     },
