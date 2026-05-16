@@ -15,6 +15,8 @@ import { TokenLogo } from "@/components/TokenLogo";
 import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { searchRegistryProfiles, type RegistryProfile } from "@/lib/registry-client";
 import { arcTestnet } from "@/config/wagmi";
 import { ChainLogo } from "@/components/ChainLogo";
 import { CHAIN_METADATA, CHAIN_USDC_ADDRESSES, type CrosschainChain } from "@/config/crosschain";
@@ -228,6 +230,9 @@ export function DashboardClient() {
   const [identity, setIdentity] = useState<{ displayName?: string; authMode?: string; avatar?: string }>({ displayName: "Arc user", authMode: "wallet" });
   const [contacts, setContacts] = useState<{ id: string; name: string; handle?: string; address: string; avatar?: string }[]>([]);
   const [recentTransfers, setRecentTransfers] = useState<ReturnType<typeof getLocalTransfers>>([]);
+  const [desktopSearch, setDesktopSearch] = useState("");
+  const [desktopRegistryResults, setDesktopRegistryResults] = useState<RegistryProfile[]>([]);
+  const [desktopSearchOpen, setDesktopSearchOpen] = useState(false);
   const [waveKey, setWaveKey] = useState(0);
 
   /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage on mount (client-only) to avoid SSR mismatch */
@@ -398,6 +403,38 @@ export function DashboardClient() {
     }
   }
 
+  const desktopQuery = desktopSearch.trim().toLowerCase();
+  const desktopContactMatches = desktopQuery
+    ? contacts.filter((contact) => [contact.name, contact.handle, contact.address].some((value) => value?.toLowerCase().includes(desktopQuery))).slice(0, 4)
+    : [];
+  const desktopActivityMatches = desktopQuery
+    ? recentTransfers.filter((transfer) => [transfer.token, transfer.txHash, transfer.direction, transfer.to, transfer.from, transfer.routeLabel].some((value) => value?.toLowerCase().includes(desktopQuery))).slice(0, 3)
+    : [];
+  const desktopActionMatches = desktopQuery
+    ? [
+        { label: "Send stablecoins", href: `/send?to=${encodeURIComponent(desktopSearch.trim())}`, icon: "send" },
+        { label: "Contacts", href: `/contacts?search=${encodeURIComponent(desktopSearch.trim())}`, icon: "contacts" },
+        { label: "History", href: "/history", icon: "history" },
+        { label: "Swap", href: "/swap", icon: "swap" },
+        { label: "Bridge", href: "/bridge", icon: "bridge" },
+      ].filter((item) => item.label.toLowerCase().includes(desktopQuery) || desktopQuery.length >= 2).slice(0, 3)
+    : [];
+
+  useEffect(() => {
+    const q = desktopSearch.trim().replace(/^@+/, "");
+    if (q.length < 2) {
+      setDesktopRegistryResults([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      searchRegistryProfiles(q)
+        .then((profiles) => { if (!cancelled) setDesktopRegistryResults(profiles.slice(0, 4)); })
+        .catch(() => { if (!cancelled) setDesktopRegistryResults([]); });
+    }, 220);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [desktopSearch]);
+
   useEffect(() => {
     if (!address || !balanceSnapshot) return;
     (["USDC", "EURC"] as const).forEach((symbol) => {
@@ -458,10 +495,63 @@ export function DashboardClient() {
         <div className="desktop-dashboard-topbar">
           <h1>Hello, {profileName} <span key={waveKey} className="dashboard-wave" aria-hidden="true">👋</span></h1>
           <div className="desktop-topbar-actions">
-            <label className="desktop-search" aria-label="Search">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-              <input type="search" placeholder="Search by address / tx / contact..." />
-            </label>
+            <div className="desktop-search-wrap">
+              <form
+                className="desktop-search"
+                role="search"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const q = desktopSearch.trim();
+                  if (!q) return;
+                  window.location.href = `/send?to=${encodeURIComponent(q)}`;
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                <input
+                  type="search"
+                  value={desktopSearch}
+                  onChange={(e) => { setDesktopSearch(e.target.value); setDesktopSearchOpen(true); }}
+                  onFocus={() => setDesktopSearchOpen(true)}
+                  placeholder="Search username / address / contact..."
+                />
+              </form>
+              {desktopSearchOpen && desktopQuery && (
+                <div className="desktop-search-popover">
+                  {desktopRegistryResults.length > 0 && <p className="desktop-search-heading">Radius users</p>}
+                  {desktopRegistryResults.map((profile) => (
+                    <Link key={`registry-${profile.address}`} href={`/send?to=${encodeURIComponent(profile.handle || profile.address)}`} onClick={() => setDesktopSearchOpen(false)} className="desktop-search-result">
+                      <span>{profile.avatar ? <img src={profile.avatar} alt="" /> : profile.displayName.slice(0, 1).toUpperCase()}</span>
+                      <div><strong>{profile.displayName}</strong><small>{profile.handle ? `@${profile.handle}` : shortAddress(profile.address)}</small></div>
+                    </Link>
+                  ))}
+                  {desktopContactMatches.length > 0 && <p className="desktop-search-heading">Contacts</p>}
+                  {desktopContactMatches.map((contact) => (
+                    <Link key={`contact-${contact.id}`} href={`/send?to=${encodeURIComponent(contact.handle ? contact.handle.replace(/^@/, "") : contact.address)}`} onClick={() => setDesktopSearchOpen(false)} className="desktop-search-result">
+                      <span>{contact.avatar ? <img src={contact.avatar} alt="" /> : contactInitials(contact.name).slice(0, 1)}</span>
+                      <div><strong>{contact.name}</strong><small>{contact.handle ? `@${contact.handle.replace(/^@/, "")}` : shortAddress(contact.address)}</small></div>
+                    </Link>
+                  ))}
+                  {desktopActivityMatches.length > 0 && <p className="desktop-search-heading">Recent history</p>}
+                  {desktopActivityMatches.map((transfer) => (
+                    <Link key={`activity-${transfer.id}`} href="/history" onClick={() => setDesktopSearchOpen(false)} className="desktop-search-result">
+                      <span><QuickActionIcon name={transfer.direction === "sent" ? "send" : "request"} /></span>
+                      <div><strong>{transfer.direction === "sent" ? "Sent" : "Received"} {transfer.token}</strong><small>{shortAddress(transfer.txHash)}</small></div>
+                    </Link>
+                  ))}
+                  <p className="desktop-search-heading">Actions</p>
+                  {desktopActionMatches.map((item) => (
+                    <Link key={`action-${item.href}`} href={item.href} onClick={() => setDesktopSearchOpen(false)} className="desktop-search-result">
+                      <span><QuickActionIcon name={item.icon as "send" | "contacts" | "history" | "swap" | "bridge"} /></span>
+                      <div><strong>{item.label}</strong><small>Open</small></div>
+                    </Link>
+                  ))}
+                  {desktopRegistryResults.length === 0 && desktopContactMatches.length === 0 && desktopActivityMatches.length === 0 && desktopActionMatches.length === 0 && (
+                    <p className="desktop-search-empty">No matches. Press Enter to send by username/address.</p>
+                  )}
+                </div>
+              )}
+            </div>
+            <ThemeToggle />
             <NotificationBell />
             <div className="desktop-account-menu-wrap">
               <button type="button" onClick={() => setAccountMenuOpen((v) => !v)} className="desktop-profile-chip" aria-haspopup="menu" aria-expanded={accountMenuOpen}>
@@ -491,6 +581,7 @@ export function DashboardClient() {
             <Link href="/scan" aria-label="Scan QR" className="grid h-10 w-10 place-items-center rounded-full bg-white/20 text-[var(--brand)] shadow-sm">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
             </Link>
+            <ThemeToggle />
             <NotificationBell />
           </div>
         </header>

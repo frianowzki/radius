@@ -73,6 +73,7 @@ import {
   upsertContactByAddress,
 } from "@/lib/utils";
 import { pushRemoteActivity } from "@/lib/activity-sync";
+import { fetchRegistryProfile, type RegistryProfile } from "@/lib/registry-client";
 import type { DirectoryEntry } from "@/lib/utils";
 
 type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
@@ -101,6 +102,7 @@ export default function BridgePage() {
   const [saveName, setSaveName] = useState("");
   const [saveHandle, setSaveHandle] = useState("");
   const [saveAvatar, setSaveAvatar] = useState("");
+  const [registryRecipient, setRegistryRecipient] = useState<RegistryProfile | null>(null);
   const [showDestinationPicker, setShowDestinationPicker] = useState(false);
   const [showBridgeHistory, setShowBridgeHistory] = useState(false);
   const bridgeRoutes = CROSSCHAIN_ROUTES.filter((route) => route.mode === "bridge");
@@ -222,8 +224,26 @@ export default function BridgePage() {
   }, [mounted, address, directoryQuery]);
 
   const resolvedRecipient = resolveRecipientInput(recipient);
-  const resolvedRecipientAddress = resolvedRecipient.address;
+  const registryRecipientAddress = registryRecipient?.address;
+  const resolvedRecipientAddress = resolvedRecipient.address || registryRecipientAddress;
   const validRecipient = !!resolvedRecipientAddress && isAddress(resolvedRecipientAddress);
+
+  useEffect(() => {
+    const trimmed = recipient.trim();
+    const handle = trimmed && !trimmed.startsWith("0x") ? trimmed : "";
+    if (!handle || resolvedRecipient.address) {
+      queueMicrotask(() => setRegistryRecipient(null));
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      fetchRegistryProfile({ handle })
+        .then((profile) => { if (!cancelled) setRegistryRecipient(profile); })
+        .catch(() => { if (!cancelled) setRegistryRecipient(null); });
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [recipient, resolvedRecipient.address]);
+
   const successEyebrow = isBridgeRoute ? "Bridge completed" : "Payment sent";
   const successHeadline = isBridgeRoute
     ? "Bridge route submitted cleanly."
@@ -412,7 +432,7 @@ export default function BridgePage() {
             );
             const lifiHash = lifiResult.steps.find((step) => step.txHash)?.txHash || "";
             setTxHash(lifiHash);
-            setShowSaveRecipient(!resolvedRecipient.contact && !!resolvedRecipientAddress);
+            setShowSaveRecipient(!resolvedRecipient.contact && !registryRecipient && !!resolvedRecipientAddress);
             setStatus(lifiResult.state === "error" ? "error" : "success");
             if (lifiResult.state === "error") {
               setError(getBridgeErrorMessage(lifiResult));
@@ -491,7 +511,7 @@ export default function BridgePage() {
         const bridgeStepData = bridgeStepRecord?.data as { txHash?: string } | undefined;
         const bridgeHash = bridgeStepRecord?.txHash || bridgeStepData?.txHash || "";
         setTxHash(bridgeHash);
-        setShowSaveRecipient(!resolvedRecipient.contact && !!resolvedRecipientAddress);
+        setShowSaveRecipient(!resolvedRecipient.contact && !registryRecipient && !!resolvedRecipientAddress);
         setStatus(result.state === "error" ? "error" : "success");
         if (result.state === "error") {
           setError(getBridgeErrorMessage(result));
@@ -535,7 +555,7 @@ export default function BridgePage() {
         });
         void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
       }
-      setShowSaveRecipient(!resolvedRecipient.contact && !!resolvedRecipientAddress);
+      setShowSaveRecipient(!resolvedRecipient.contact && !registryRecipient && !!resolvedRecipientAddress);
       setStatus("success");
     } catch (err: unknown) {
       setStatus("error");
@@ -855,6 +875,13 @@ export default function BridgePage() {
                   }}
                   className="bridge-input w-full rounded-[20px] border-0 px-4 py-3 font-mono text-sm ring-0 focus:ring-0"
                 />
+                {registryRecipient && !resolvedRecipient.contact && (
+                  <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white/55 p-3 text-sm text-[#17151f]">
+                    {registryRecipient.avatar ? <img src={registryRecipient.avatar} alt="" className="h-9 w-9 rounded-full object-cover" /> : <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--brand)]/10 text-xs font-bold text-[var(--brand)]">{registryRecipient.displayName.slice(0, 1).toUpperCase()}</span>}
+                    <div className="min-w-0 flex-1"><p className="truncate font-bold">{registryRecipient.displayName}</p><p className="truncate text-xs text-[#8b8795]">@{registryRecipient.handle || formatAddress(registryRecipient.address)}</p></div>
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-600">Resolved</span>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => { setDirectoryQuery(""); setShowDirectory((v) => !v); }}

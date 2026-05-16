@@ -51,22 +51,16 @@ export async function pushRemoteContacts(owner: string, contacts: Contact[], opt
   }
 }
 
-/** Merge local + remote, preferring local. Remote-only contacts (deleted locally) are excluded. */
+/** Merge local + remote contacts by address, keeping remote-only contacts so username contacts survive reload/logout. Local wins on conflicts. */
 export function mergeContacts(local: Contact[], remote: Contact[]): Contact[] {
   const byAddress = new Map<string, Contact>();
-  const localAddresses = new Set<string>();
+  for (const c of remote) {
+    if (!c?.address) continue;
+    byAddress.set(c.address.toLowerCase(), c);
+  }
   for (const c of local) {
     if (!c?.address) continue;
     byAddress.set(c.address.toLowerCase(), c);
-    localAddresses.add(c.address.toLowerCase());
-  }
-  // Only add remote contacts that also exist in local (were not deleted)
-  for (const c of remote) {
-    if (!c?.address) continue;
-    const key = c.address.toLowerCase();
-    if (!byAddress.has(key) && localAddresses.has(key)) {
-      byAddress.set(key, c);
-    }
   }
   return Array.from(byAddress.values());
 }

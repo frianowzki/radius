@@ -6,7 +6,7 @@ import { isAddress } from "viem";
 import { AppShell } from "@/components/AppShell";
 import { useAccount } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { addContact, formatAddress, getContacts, removeContact, saveContacts, updateContact, upsertContactByAddress, type Contact } from "@/lib/utils";
+import { formatAddress, getContacts, removeContact, saveContacts, updateContact, upsertContactByAddress, type Contact } from "@/lib/utils";
 import { fetchRemoteContacts, mergeContacts, pushRemoteContacts } from "@/lib/contacts-sync";
 import { fetchRegistryProfile, searchRegistryProfiles } from "@/lib/registry-client";
 
@@ -42,8 +42,26 @@ export default function ContactsPage() {
   const owner = wagmiAddress ?? authAddress;
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "synced" | "error">("idle");
-  /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage on mount to avoid SSR mismatch */
-  useEffect(() => { setContacts(getContacts()); }, []);
+  const [query, setQuery] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [handle, setHandle] = useState("");
+  const [note, setNote] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [globalResults, setGlobalResults] = useState<{ address: string; displayName: string; handle?: string; avatar?: string }[]>([]);
+  const [globalSearching, setGlobalSearching] = useState(false);
+  /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage/URL on mount to avoid SSR mismatch */
+  useEffect(() => {
+    setContacts(getContacts());
+    const initial = new URLSearchParams(window.location.search).get("search");
+    if (initial) {
+      setQuery(initial);
+      setGlobalSearch(initial);
+    }
+  }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
   // Auto-pull and merge cloud contacts when owner becomes known.
   /* eslint-disable react-hooks/set-state-in-effect -- async fetch then state update is the canonical pattern */
@@ -71,17 +89,6 @@ export default function ContactsPage() {
     setSyncStatus("syncing");
     pushRemoteContacts(owner, getContacts(), { provider: authProvider, signMessage, prompt: true }).then((res) => setSyncStatus(res ? "synced" : "error"));
   }
-  const [query, setQuery] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [handle, setHandle] = useState("");
-  const [note, setNote] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [globalSearch, setGlobalSearch] = useState("");
-  const [globalResults, setGlobalResults] = useState<{ address: string; displayName: string; handle?: string; avatar?: string }[]>([]);
-  const [globalSearching, setGlobalSearching] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -89,20 +96,59 @@ export default function ContactsPage() {
     return contacts.filter((c) => [c.name, c.handle, c.address, c.note].some((v) => v?.toLowerCase().includes(q)));
   }, [contacts, query]);
 
+  useEffect(() => {
+    const q = globalSearch.trim().replace(/^@/, "");
+    if (q.length < 2) {
+      setGlobalResults([]);
+      setGlobalSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setGlobalSearching(true);
+    const timer = window.setTimeout(() => {
+      searchRegistryProfiles(q)
+        .then(async (profiles) => {
+          if (cancelled) return;
+          if (profiles.length) { setGlobalResults(profiles); return; }
+          const exact = await fetchRegistryProfile({ handle: q }).catch(() => null);
+          if (!cancelled) setGlobalResults(exact ? [exact] : []);
+        })
+        .catch(() => fetchRegistryProfile({ handle: q }).then((profile) => { if (!cancelled) setGlobalResults(profile ? [profile] : []); }).catch(() => { if (!cancelled) setGlobalResults([]); }))
+        .finally(() => { if (!cancelled) setGlobalSearching(false); });
+    }, 220);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [globalSearch]);
+
   function resetForm() {
     setName(""); setAddress(""); setHandle(""); setNote(""); setShowForm(false);
   }
 
-  function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !isAddress(address)) return;
-    if (editingId) updateContact(editingId, { name: name.trim(), address, handle, note });
-    else addContact(name.trim(), address, { handle, note });
+    const input = address.trim();
+    if (!name.trim() || !input) return;
+
+    let finalAddress = input;
+    let finalName = name.trim();
+    let finalHandle = handle.trim();
+    let finalAvatar: string | undefined;
+
+    if (!isAddress(input)) {
+      const profile = await fetchRegistryProfile({ handle: input.replace(/^@/, "") }).catch(() => null);
+      if (!profile?.address || !isAddress(profile.address)) return;
+      finalAddress = profile.address;
+      finalName = finalName || profile.displayName;
+      finalHandle = profile.handle || finalHandle || input.replace(/^@/, "");
+      finalAvatar = profile.avatar;
+    }
+
+    if (editingId) updateContact(editingId, { name: finalName, address: finalAddress, handle: finalHandle, avatar: finalAvatar, note });
+    else upsertContactByAddress(finalAddress, { name: finalName, handle: finalHandle, avatar: finalAvatar, note });
     const next = getContacts();
     setContacts(next);
     setEditingId(null);
     resetForm();
-    if (owner) pushRemoteContacts(owner, next);
+    if (owner) pushRemoteContacts(owner, next, { provider: authProvider, signMessage, prompt: true }).then((res) => setSyncStatus(res ? "synced" : "error"));
   }
 
   function startEdit(contact: Contact) {
@@ -146,20 +192,7 @@ export default function ContactsPage() {
         <div className="relative">
           <input
             value={globalSearch}
-            onChange={(e) => {
-              setGlobalSearch(e.target.value);
-              const q = e.target.value.trim().replace(/^@/, "");
-              if (q.length < 2) { setGlobalResults([]); return; }
-              setGlobalSearching(true);
-              searchRegistryProfiles(q)
-                .then(async (profiles) => {
-                  if (profiles.length) { setGlobalResults(profiles); return; }
-                  const exact = await fetchRegistryProfile({ handle: q }).catch(() => null);
-                  setGlobalResults(exact ? [exact] : []);
-                })
-                .catch(() => fetchRegistryProfile({ handle: q }).then((profile) => setGlobalResults(profile ? [profile] : [])).catch(() => setGlobalResults([])))
-                .finally(() => setGlobalSearching(false));
-            }}
+            onChange={(e) => setGlobalSearch(e.target.value)}
             placeholder="Search Radius users"
             className="radius-input text-sm"
           />
@@ -181,7 +214,7 @@ export default function ContactsPage() {
                       setContacts(next);
                       setGlobalSearch("");
                       setGlobalResults([]);
-                      if (owner) pushRemoteContacts(owner, next);
+                      if (owner) pushRemoteContacts(owner, next, { provider: authProvider, signMessage, prompt: true }).then((res) => setSyncStatus(res ? "synced" : "error"));
                     }}
                     className="shrink-0 rounded-full bg-[var(--brand)] px-3 py-1.5 text-xs font-semibold text-white"
                   >Add</button>
@@ -195,8 +228,8 @@ export default function ContactsPage() {
         {showForm && (
           <form onSubmit={handleAdd} className="soft-card rounded-[28px] p-5 space-y-3">
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="radius-input text-sm" />
-            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="0x wallet address" className="radius-input font-mono text-sm" />
-            <button type="submit" disabled={!name.trim() || !isAddress(address)} className="primary-btn w-full text-sm disabled:opacity-40">{editingId ? "Save changes" : "Save contact"}</button>
+            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="0x wallet address or @username" className="radius-input font-mono text-sm" />
+            <button type="submit" disabled={!name.trim() || !address.trim()} className="primary-btn w-full text-sm disabled:opacity-40">{editingId ? "Save changes" : "Save contact"}</button>
           </form>
         )}
 

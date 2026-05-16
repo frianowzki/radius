@@ -9,7 +9,7 @@ import { formatAmount } from "@/lib/utils";
 const LAST_SEEN_KEY = "radius-notifications-last-seen";
 const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000; // last 7 days
 
-export type NotificationKind = "received" | "request_paid" | "schedule_due";
+export type NotificationKind = "received" | "sent" | "request_paid" | "schedule_due";
 
 export interface NotificationItem {
   id: string;
@@ -38,23 +38,23 @@ function buildFeed(address?: string): NotificationItem[] {
   const lastSeen = getLastSeen();
   const since = Date.now() - RECENT_WINDOW_MS;
 
-  // Recently received transfers
+  // Recent transfers: sent + received
   const transfers = getLocalTransfers(address);
   for (const t of transfers) {
-    if (t.direction !== "received") continue;
     if (t.createdAt < since) continue;
     const tokenInfo = TOKENS[t.token];
     if (!tokenInfo) continue;
     let amount = "0";
     try { amount = formatAmount(BigInt(t.value), tokenInfo.decimals); } catch { /* ignore */ }
+    const sent = t.direction === "sent";
     items.push({
-      id: `recv-${t.id}`,
-      kind: "received",
-      title: "Payment received",
-      body: `+${amount} ${t.token} from ${formatContactLabel(t.from)}`,
+      id: `${sent ? "sent" : "recv"}-${t.id}`,
+      kind: sent ? "sent" : "received",
+      title: sent ? "Payment sent" : "Payment received",
+      body: `${sent ? "-" : "+"}${amount} ${t.token} ${sent ? `to ${formatContactLabel(t.to)}` : `from ${formatContactLabel(t.from)}`}`,
       timestamp: t.createdAt,
       href: "/history",
-      unread: t.createdAt > lastSeen,
+      unread: !sent && t.createdAt > lastSeen,
     });
   }
 

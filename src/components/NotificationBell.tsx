@@ -24,6 +24,11 @@ function iconForKind(kind: NotificationItem["kind"]) {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="19 12 12 19 5 12"/><line x1="12" y1="5" x2="12" y2="19"/></svg>
     );
   }
+  if (kind === "sent") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 12 12 5 19 12"/><line x1="12" y1="19" x2="12" y2="5"/></svg>
+    );
+  }
   if (kind === "request_paid") {
     return (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -95,7 +100,7 @@ export function NotificationBell() {
               {items.slice(0, 25).map((item) => {
                 const content = (
                   <div className="flex items-start gap-3 rounded-xl px-2 py-2 transition hover:bg-[#f3f1ff]">
-                    <span className={`mt-0.5 grid h-7 w-7 flex-none place-items-center rounded-full ${item.kind === "received" ? "bg-emerald-500/15 text-emerald-600" : item.kind === "request_paid" ? "bg-sky-500/15 text-sky-600" : "bg-amber-500/15 text-amber-600"}`}>
+                    <span className={`mt-0.5 grid h-7 w-7 flex-none place-items-center rounded-full ${item.kind === "received" ? "bg-emerald-500/15 text-emerald-600" : item.kind === "sent" ? "bg-indigo-500/15 text-indigo-600" : item.kind === "request_paid" ? "bg-sky-500/15 text-sky-600" : "bg-amber-500/15 text-amber-600"}`}>
                       {iconForKind(item.kind)}
                     </span>
                     <div className="min-w-0 flex-1">

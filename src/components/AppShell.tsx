@@ -41,7 +41,7 @@ const DESKTOP_NAV_ITEMS: Array<{
   dividerBefore?: boolean;
 }> = [
   { href: "/", label: "Home", icon: "home" },
-  { href: "/swap", label: "Swap", icon: "swap" },
+  { href: "/swap", label: "Swap", icon: "swap", source: "quick" },
   { href: "/bridge", label: "Bridge", icon: "bridge" },
   { href: "/profile", label: "Profile", icon: "profile" },
   { href: "/request", label: "Request", icon: "request", source: "quick", dividerBefore: true },
