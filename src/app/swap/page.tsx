@@ -258,7 +258,7 @@ export default function SwapPage() {
               <div className="flex items-start gap-4">
                 <div className="bridge-header-icon shrink-0">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7.2 6.2 9.5 3.8l2.4 2.4" /><path d="M9.5 3.8v4.7a5.6 5.6 0 0 0 2.4 4.6" /><path d="M17.8 8.2 21 9.1l-.9 3.2" /><path d="M21 9.1 16.9 11.5a5.6 5.6 0 0 0-5.2-.2" /><path d="M8.4 19.8 7.5 16.6l3.2-.9" /><path d="M7.5 16.6 11.6 14.2a5.6 5.6 0 0 0 5.1.3" />
+                    <path d="M18.7 8.3A7.1 7.1 0 0 0 6 6.2" /><path d="M18.7 4.8v3.5h-3.5" /><path d="M5.3 15.7A7.1 7.1 0 0 0 18 17.8" /><path d="M5.3 19.2v-3.5h3.5" />
                   </svg>
                 </div>
                 <div>
