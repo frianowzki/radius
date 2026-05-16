@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { useAccount, useChainId, useSwitchChain } from "wagmi";
 import { arcTestnet } from "@/config/wagmi";
 
@@ -47,12 +48,14 @@ async function addAndSwitchArc(provider: Eip1193Provider) {
 }
 
 export function ArcNetworkSync() {
+  const pathname = usePathname();
   const { address, connector, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
   const inFlight = useRef(false);
 
   useEffect(() => {
+    if (pathname?.startsWith("/bridge")) return;
     if (!isConnected || !address || chainId === arcTestnet.id || inFlight.current) return;
 
     inFlight.current = true;
@@ -94,7 +97,7 @@ export function ArcNetworkSync() {
       .finally(() => {
         inFlight.current = false;
       });
-  }, [address, chainId, connector, isConnected, switchChainAsync]);
+  }, [address, chainId, connector, isConnected, pathname, switchChainAsync]);
 
   return null;
 }

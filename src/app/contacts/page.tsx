@@ -6,7 +6,7 @@ import { isAddress } from "viem";
 import { AppShell } from "@/components/AppShell";
 import { useAccount } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { addContact, formatAddress, getContacts, removeContact, saveContacts, updateContact, type Contact } from "@/lib/utils";
+import { addContact, formatAddress, getContacts, removeContact, saveContacts, updateContact, upsertContactByAddress, type Contact } from "@/lib/utils";
 import { fetchRemoteContacts, mergeContacts, pushRemoteContacts } from "@/lib/contacts-sync";
 import { fetchRegistryProfile, searchRegistryProfiles } from "@/lib/registry-client";
 
@@ -152,7 +152,11 @@ export default function ContactsPage() {
               if (q.length < 2) { setGlobalResults([]); return; }
               setGlobalSearching(true);
               searchRegistryProfiles(q)
-                .then((profiles) => setGlobalResults(profiles))
+                .then(async (profiles) => {
+                  if (profiles.length) { setGlobalResults(profiles); return; }
+                  const exact = await fetchRegistryProfile({ handle: q }).catch(() => null);
+                  setGlobalResults(exact ? [exact] : []);
+                })
                 .catch(() => fetchRegistryProfile({ handle: q }).then((profile) => setGlobalResults(profile ? [profile] : [])).catch(() => setGlobalResults([])))
                 .finally(() => setGlobalSearching(false));
             }}
@@ -163,6 +167,7 @@ export default function ContactsPage() {
             <div className="absolute left-0 right-0 top-full z-10 mt-1 space-y-1 rounded-2xl border border-[var(--brand)]/20 bg-white p-3 shadow-lg">
               {globalResults.map((r) => (
                 <div key={r.address} className="flex items-center justify-between gap-2 rounded-xl bg-[var(--brand)]/5 p-2">
+                  {r.avatar ? <img src={r.avatar} alt="" className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--brand)]/10 text-xs font-bold text-[var(--brand)]">{r.displayName.slice(0, 1).toUpperCase()}</div>}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold">{r.displayName}</p>
                     {r.handle && <p className="truncate text-xs text-[#8b8795]">@{r.handle}</p>}
@@ -171,7 +176,7 @@ export default function ContactsPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      addContact(r.displayName, r.address, { handle: r.handle, avatar: r.avatar });
+                      upsertContactByAddress(r.address, { name: r.displayName, handle: r.handle, avatar: r.avatar });
                       const next = getContacts();
                       setContacts(next);
                       setGlobalSearch("");

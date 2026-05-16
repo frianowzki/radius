@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { AppShell } from "@/components/AppShell";
 import { AvatarImage } from "@/components/AvatarImage";
@@ -9,7 +10,8 @@ import { TokenLogo } from "@/components/TokenLogo";
 import { fetchRegistryProfile, type RegistryProfile } from "@/lib/registry-client";
 import { formatAddress } from "@/lib/utils";
 
-export default function PublicProfilePage({ params }: { params: { handle: string } | Promise<{ handle: string }> }) {
+export default function PublicProfilePage() {
+  const params = useParams<{ handle?: string | string[] }>();
   const [handle, setHandle] = useState<string>("");
   const [profile, setProfile] = useState<RegistryProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,18 +19,21 @@ export default function PublicProfilePage({ params }: { params: { handle: string
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    Promise.resolve(params).then((p) => {
-      const h = decodeURIComponent(p.handle).replace(/^@+/, "");
-      setHandle(h);
-      fetchRegistryProfile({ handle: h })
+    const rawHandle = Array.isArray(params?.handle) ? params.handle[0] : params?.handle;
+    if (!rawHandle) return;
+    const h = decodeURIComponent(rawHandle).replace(/^@+/, "");
+    setLoading(true);
+    setError("");
+    setProfile(null);
+    setHandle(h);
+    fetchRegistryProfile({ handle: h })
         .then((p) => {
           setProfile(p);
           if (!p) setError("Profile not found");
         })
         .catch(() => setError("Could not load profile"))
         .finally(() => setLoading(false));
-    });
-  }, [params]);
+  }, [params?.handle]);
 
   const payLink = useMemo(() => {
     if (!profile) return "";
@@ -83,7 +88,7 @@ export default function PublicProfilePage({ params }: { params: { handle: string
             </Link>
           </div>
         ) : (
-          <div className="mx-auto max-w-md space-y-5">
+          <div className="public-profile-layout mx-auto max-w-md space-y-5">
             {/* Hero card */}
             <div className="soft-card rounded-[28px] p-6 text-center">
               <div className="mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full ring-4 ring-[var(--brand)]/20">

@@ -87,10 +87,10 @@ function NavIcon({ name }: { name: NavIconName }) {
   if (name === "bridge") {
     return (
       <svg {...shared}>
-        <path d="M5 7.5h8.2a3.8 3.8 0 0 1 0 7.6H9.8" />
-        <path d="M19 16.5h-8.2a3.8 3.8 0 0 1 0-7.6h3.4" />
-        <path d="m8 4.8-3 2.7 3 2.7" />
-        <path d="m16 13.8 3 2.7-3 2.7" />
+        <path d="M7 7h10" />
+        <path d="m14 4 3 3-3 3" />
+        <path d="M17 17H7" />
+        <path d="m10 14-3 3 3 3" />
       </svg>
     );
   }

@@ -302,6 +302,44 @@ export default function BridgePage() {
     return injectedProvider ?? null;
   }
 
+  async function switchToWalletChain(targetChainId: number) {
+    resetBridgeFeedback();
+    if (!wagmiConnected) {
+      await switchAuthChain(targetChainId);
+      return;
+    }
+
+    try {
+      await switchChainAsync({ chainId: targetChainId });
+      return;
+    } catch (wagmiError) {
+      const provider = await getActiveProvider();
+      if (!provider) throw wagmiError;
+      const targetChain = targetChainId === expectedSourceChainId ? sourceViemChain : chainByRoute[selectedRouteConfig.toChain];
+      const chainIdHex = `0x${targetChainId.toString(16)}`;
+      try {
+        await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: chainIdHex }] });
+      } catch (switchError) {
+        const code = (switchError as { code?: number | string; data?: { code?: number | string } })?.code ?? (switchError as { data?: { code?: number | string } })?.data?.code;
+        if (targetChain && (code === 4902 || code === "4902" || code === -32603 || code === "-32603")) {
+          await provider.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: chainIdHex,
+              chainName: targetChain.name,
+              nativeCurrency: targetChain.nativeCurrency,
+              rpcUrls: [...targetChain.rpcUrls.default.http],
+              blockExplorerUrls: targetChain.blockExplorers?.default?.url ? [targetChain.blockExplorers.default.url] : undefined,
+            }],
+          });
+          await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: chainIdHex }] });
+          return;
+        }
+        throw switchError;
+      }
+    }
+  }
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!publicClient || !address) return;
@@ -364,11 +402,7 @@ export default function BridgePage() {
               resolvedRecipientAddress as `0x${string}`,
               amount,
               async (chainId) => {
-                if (wagmiConnected) {
-                  await switchChainAsync({ chainId });
-                } else {
-                  await switchAuthChain(chainId);
-                }
+                await switchToWalletChain(chainId);
               },
               (event) => {
                 setBridgeProgress(event.state ? `LI.FI: ${event.label} • ${event.state}` : `LI.FI: ${event.label}`);
@@ -797,11 +831,7 @@ export default function BridgePage() {
                     <button
                       type="button"
                       onClick={() => {
-                        resetBridgeFeedback();
-                        const switcher = wagmiConnected
-                          ? switchChainAsync({ chainId: expectedSourceChainId })
-                          : switchAuthChain(expectedSourceChainId);
-                        switcher.catch((err) => {
+                        switchToWalletChain(expectedSourceChainId).catch((err) => {
                           setError(err instanceof Error ? err.message.slice(0, 160) : "Failed to switch network");
                         });
                       }}

@@ -8,7 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import { AvatarImage } from "@/components/AvatarImage";
 import { ProfilePfpUpload } from "@/components/ProfilePfpUpload";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { clearRadiusLocalSession, formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
+import { formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
 import { fetchRegistryProfile, registryProfileToIdentity, saveRegistryProfile } from "@/lib/registry-client";
 import { useMounted } from "@/lib/useMounted";
 
@@ -142,7 +142,7 @@ export default function ProfilePage() {
   async function disconnectAll() {
     disconnect();
     await logout();
-    clearRadiusLocalSession();
+    try { localStorage.removeItem("radius-login-pending"); } catch { /* ignore */ }
     window.location.replace("/");
   }
 

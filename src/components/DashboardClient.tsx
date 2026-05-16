@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
-import { useAccount } from "wagmi";
+import { useAccount, useDisconnect } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { AppShell } from "@/components/AppShell";
@@ -215,14 +215,17 @@ function LoginScreen() {
 
 export function DashboardClient() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { initialized, authenticated, address: authAddress } = useRadiusAuth();
+  const { disconnect } = useDisconnect();
+  const { initialized, authenticated, address: authAddress, logout } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const [hideBalance, setHideBalance] = useState(false);
   const [showAssets, setShowAssets] = useState(false);
   const [showReceiveAddress, setShowReceiveAddress] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
-  const [identity, setIdentity] = useState<{ displayName?: string; authMode?: string }>({ displayName: "Arc user", authMode: "wallet" });
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [identity, setIdentity] = useState<{ displayName?: string; authMode?: string; avatar?: string }>({ displayName: "Arc user", authMode: "wallet" });
   const [contacts, setContacts] = useState<{ id: string; name: string; handle?: string; address: string; avatar?: string }[]>([]);
   const [recentTransfers, setRecentTransfers] = useState<ReturnType<typeof getLocalTransfers>>([]);
   const [waveKey, setWaveKey] = useState(0);
@@ -382,6 +385,19 @@ export function DashboardClient() {
     window.setTimeout(() => setCopiedAddress(false), 1500);
   }
 
+  async function disconnectAll() {
+    setDisconnecting(true);
+    try {
+      disconnect();
+      await logout();
+      try { localStorage.removeItem("radius-login-pending"); } catch { /* ignore */ }
+      setAccountMenuOpen(false);
+      window.location.replace("/");
+    } finally {
+      window.setTimeout(() => setDisconnecting(false), 1000);
+    }
+  }
+
   useEffect(() => {
     if (!address || !balanceSnapshot) return;
     (["USDC", "EURC"] as const).forEach((symbol) => {
@@ -447,11 +463,23 @@ export function DashboardClient() {
               <input type="search" placeholder="Search by address / tx / contact..." />
             </label>
             <NotificationBell />
-            <Link href="/profile" className="desktop-profile-chip" aria-label="Open profile">
-              <span>{contactInitials(profileName).slice(0, 1)}</span>
-              <strong>{profileName}</strong>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-            </Link>
+            <div className="desktop-account-menu-wrap">
+              <button type="button" onClick={() => setAccountMenuOpen((v) => !v)} className="desktop-profile-chip" aria-haspopup="menu" aria-expanded={accountMenuOpen}>
+                <span>{identity.avatar ? <img src={identity.avatar} alt="" /> : contactInitials(profileName).slice(0, 1)}</span>
+                <strong>{profileName}</strong>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              {accountMenuOpen && (
+                <div className="desktop-account-popover" role="menu">
+                  <div className="desktop-account-popover-head">
+                    <span>{identity.avatar ? <img src={identity.avatar} alt="" /> : contactInitials(profileName).slice(0, 1)}</span>
+                    <div><strong>{profileName}</strong><small>{address ? shortAddress(address) : "No wallet"}</small></div>
+                  </div>
+                  <button type="button" role="menuitem" onClick={copyReceiveAddress}>{copiedAddress ? "Copied address" : "Copy address"}</button>
+                  <button type="button" role="menuitem" onClick={disconnectAll} disabled={disconnecting}>{disconnecting ? "Disconnecting…" : "Disconnect"}</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <header className="dashboard-reference-header">
