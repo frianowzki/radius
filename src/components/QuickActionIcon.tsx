@@ -34,10 +34,12 @@ export function QuickActionIcon({ name }: { name: QuickActionIconName }) {
   if (name === "swap") {
     return (
       <svg {...common}>
-        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-        <path d="M21 3v5h-5" />
-        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-        <path d="M8 16H3v5" />
+        <path d="M7.2 6.2 9.5 3.8l2.4 2.4" />
+        <path d="M9.5 3.8v4.7a5.6 5.6 0 0 0 2.4 4.6" />
+        <path d="M17.8 8.2 21 9.1l-.9 3.2" />
+        <path d="M21 9.1 16.9 11.5a5.6 5.6 0 0 0-5.2-.2" />
+        <path d="M8.4 19.8 7.5 16.6l3.2-.9" />
+        <path d="M7.5 16.6 11.6 14.2a5.6 5.6 0 0 0 5.1.3" />
       </svg>
     );
   }
