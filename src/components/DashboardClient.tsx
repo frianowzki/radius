@@ -16,7 +16,6 @@ import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { RadiusBrandLogo } from "@/components/RadiusBrandLogo";
 import { searchRegistryProfiles, type RegistryProfile } from "@/lib/registry-client";
 import { arcTestnet } from "@/config/wagmi";
 import { ChainLogo } from "@/components/ChainLogo";
@@ -203,8 +202,7 @@ function LoginScreen() {
             <span className="login-planet" />
           </div>
 
-          <h1 className="sr-only">Radius</h1>
-          <RadiusBrandLogo className="login-brand-logo" priority />
+          <h1 className="login-title">Radius</h1>
           <p className="login-subtitle">P2P stablecoin payments on Arc Testnet</p>
         </section>
 
@@ -236,7 +234,7 @@ export function DashboardClient() {
   const [desktopRegistryResults, setDesktopRegistryResults] = useState<RegistryProfile[]>([]);
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false);
   const [waveKey, setWaveKey] = useState(0);
-  const accountMenuRef = useRef<HTMLDetailsElement>(null);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage on mount (client-only) to avoid SSR mismatch */
   useEffect(() => {
@@ -572,37 +570,37 @@ export function DashboardClient() {
             </div>
             <ThemeToggle />
             <NotificationBell />
-            <details
-              className="desktop-account-menu-wrap"
+            <div
+              className={`desktop-account-menu-wrap${accountMenuOpen ? " is-open" : ""}`}
               ref={accountMenuRef}
-              open={accountMenuOpen}
-              onToggle={(e) => setAccountMenuOpen(e.currentTarget.open)}
             >
-              <summary
+              <button
+                type="button"
                 className="desktop-profile-chip"
                 aria-haspopup="menu"
                 aria-expanded={accountMenuOpen}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
+                onClick={() => setAccountMenuOpen((open) => !open)}
               >
                 <span>{identity.avatar ? <img src={identity.avatar} alt="" /> : contactInitials(profileName).slice(0, 1)}</span>
                 <strong>{profileName}</strong>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-              </summary>
-              <div className="desktop-account-popover is-open" role="menu">
-                <div className="desktop-account-popover-head">
-                  <span>{identity.avatar ? <img src={identity.avatar} alt="" /> : contactInitials(profileName).slice(0, 1)}</span>
-                  <div><strong>{profileName}</strong><small>{address ? shortAddress(address) : "No wallet"}</small></div>
+              </button>
+              {accountMenuOpen && (
+                <div className="desktop-account-popover is-open" role="menu">
+                  <div className="desktop-account-popover-head">
+                    <span>{identity.avatar ? <img src={identity.avatar} alt="" /> : contactInitials(profileName).slice(0, 1)}</span>
+                    <div><strong>{profileName}</strong><small>{address ? shortAddress(address) : "No wallet"}</small></div>
+                  </div>
+                  <button type="button" role="menuitem" onClick={copyReceiveAddress}>{copiedAddress ? "Copied address" : "Copy address"}</button>
+                  <button type="button" role="menuitem" onClick={disconnectAll} disabled={disconnecting}>{disconnecting ? "Disconnecting…" : "Disconnect"}</button>
                 </div>
-                <button type="button" role="menuitem" onClick={copyReceiveAddress}>{copiedAddress ? "Copied address" : "Copy address"}</button>
-                <button type="button" role="menuitem" onClick={disconnectAll} disabled={disconnecting}>{disconnecting ? "Disconnecting…" : "Disconnect"}</button>
-              </div>
-            </details>
+              )}
+            </div>
           </div>
         </div>
         <header className="dashboard-reference-header">
           <div>
-            <RadiusBrandLogo className="dashboard-logo" priority />
+            <div className="dashboard-logo">Radius</div>
             <h1>Hello, {profileName} <span key={waveKey} className="dashboard-wave" aria-hidden="true">👋</span></h1>
           </div>
           <div className="flex items-center gap-2">
