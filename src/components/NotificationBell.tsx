@@ -45,7 +45,7 @@ export function NotificationBell() {
   const address = wagmiAddress ?? authAddress;
   const { items, unreadCount } = useNotificationFeed(address ?? undefined);
   const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -63,21 +63,23 @@ export function NotificationBell() {
     };
   }, [open]);
 
-  function handleOpen() {
-    setOpen((v) => {
-      const next = !v;
-      if (next && unreadCount > 0) markNotificationsRead();
-      return next;
-    });
+  function handleToggle(next: boolean) {
+    setOpen(next);
+    if (next && unreadCount > 0) markNotificationsRead();
   }
 
   return (
-    <div className="relative" ref={panelRef}>
-      <button
-        type="button"
-        onClick={handleOpen}
+    <details
+      className="notification-bell-wrap relative"
+      ref={panelRef}
+      open={open}
+      onToggle={(e) => handleToggle(e.currentTarget.open)}
+    >
+      <summary
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
-        className="relative grid h-10 w-10 place-items-center rounded-full bg-white/20 text-[var(--brand)] shadow-sm"
+        className="notification-bell-button relative grid h-10 w-10 place-items-center rounded-full bg-white/20 text-[var(--brand)] shadow-sm"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         {unreadCount > 0 && (
@@ -85,13 +87,12 @@ export function NotificationBell() {
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
-      </button>
+      </summary>
 
-      {open && (
-        <div className="notification-dropdown absolute right-0 top-12 z-[120] w-[min(86vw,340px)] rounded-2xl border border-white/70 p-3 shadow-2xl">
+      <div className="notification-dropdown absolute right-0 top-12 z-[260] w-[min(86vw,360px)] rounded-2xl border border-white/70 p-3 shadow-2xl" role="menu">
           <div className="mb-2 flex items-center justify-between px-1">
-            <h3 className="text-sm font-bold text-[#1e293b]">Notifications</h3>
-            <Link href="/history" onClick={() => setOpen(false)} className="text-[11px] font-semibold text-[var(--brand)]">View history</Link>
+            <h3 className="text-sm font-bold text-[#1e293b]">Recent history</h3>
+            <Link href="/history" onClick={() => setOpen(false)} className="notification-history-link text-[11px] font-semibold text-[var(--brand)]">View all</Link>
           </div>
           {items.length === 0 ? (
             <p className="px-2 py-6 text-center text-xs text-[#8b8795]">You&apos;re all caught up.</p>
@@ -125,8 +126,7 @@ export function NotificationBell() {
               })}
             </ul>
           )}
-        </div>
-      )}
-    </div>
+      </div>
+    </details>
   );
 }

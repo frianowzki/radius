@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { useAccount, useDisconnect } from "wagmi";
@@ -234,6 +234,7 @@ export function DashboardClient() {
   const [desktopRegistryResults, setDesktopRegistryResults] = useState<RegistryProfile[]>([]);
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false);
   const [waveKey, setWaveKey] = useState(0);
+  const accountMenuRef = useRef<HTMLDetailsElement>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage on mount (client-only) to avoid SSR mismatch */
   useEffect(() => {
@@ -464,6 +465,22 @@ export function DashboardClient() {
     });
   }, [address, balanceSnapshot]);
 
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+    function onPointerDown(e: MouseEvent) {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node)) setAccountMenuOpen(false);
+    }
+    function onEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setAccountMenuOpen(false);
+    }
+    window.addEventListener("mousedown", onPointerDown);
+    window.addEventListener("keydown", onEscape);
+    return () => {
+      window.removeEventListener("mousedown", onPointerDown);
+      window.removeEventListener("keydown", onEscape);
+    };
+  }, [accountMenuOpen]);
+
   if (!initialized) {
     return (
       <AppShell>
@@ -553,23 +570,32 @@ export function DashboardClient() {
             </div>
             <ThemeToggle />
             <NotificationBell />
-            <div className="desktop-account-menu-wrap">
-              <button type="button" onClick={() => setAccountMenuOpen((v) => !v)} className="desktop-profile-chip" aria-haspopup="menu" aria-expanded={accountMenuOpen}>
+            <details
+              className="desktop-account-menu-wrap"
+              ref={accountMenuRef}
+              open={accountMenuOpen}
+              onToggle={(e) => setAccountMenuOpen(e.currentTarget.open)}
+            >
+              <summary
+                className="desktop-profile-chip"
+                aria-haspopup="menu"
+                aria-expanded={accountMenuOpen}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <span>{identity.avatar ? <img src={identity.avatar} alt="" /> : contactInitials(profileName).slice(0, 1)}</span>
                 <strong>{profileName}</strong>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-              </button>
-              {accountMenuOpen && (
-                <div className="desktop-account-popover" role="menu">
-                  <div className="desktop-account-popover-head">
-                    <span>{identity.avatar ? <img src={identity.avatar} alt="" /> : contactInitials(profileName).slice(0, 1)}</span>
-                    <div><strong>{profileName}</strong><small>{address ? shortAddress(address) : "No wallet"}</small></div>
-                  </div>
-                  <button type="button" role="menuitem" onClick={copyReceiveAddress}>{copiedAddress ? "Copied address" : "Copy address"}</button>
-                  <button type="button" role="menuitem" onClick={disconnectAll} disabled={disconnecting}>{disconnecting ? "Disconnecting…" : "Disconnect"}</button>
+              </summary>
+              <div className="desktop-account-popover is-open" role="menu">
+                <div className="desktop-account-popover-head">
+                  <span>{identity.avatar ? <img src={identity.avatar} alt="" /> : contactInitials(profileName).slice(0, 1)}</span>
+                  <div><strong>{profileName}</strong><small>{address ? shortAddress(address) : "No wallet"}</small></div>
                 </div>
-              )}
-            </div>
+                <button type="button" role="menuitem" onClick={copyReceiveAddress}>{copiedAddress ? "Copied address" : "Copy address"}</button>
+                <button type="button" role="menuitem" onClick={disconnectAll} disabled={disconnecting}>{disconnecting ? "Disconnecting…" : "Disconnect"}</button>
+              </div>
+            </details>
           </div>
         </div>
         <header className="dashboard-reference-header">
