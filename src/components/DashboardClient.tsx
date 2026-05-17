@@ -673,17 +673,17 @@ export function DashboardClient() {
             </div>
           </section>
 
-          <section className="desktop-panel desktop-notifications-panel">
-            <div className="desktop-panel-title"><h2>Notifications</h2><Link href="/history">View all</Link></div>
+          <section className="desktop-panel desktop-activities-panel">
+            <div className="desktop-panel-title"><h2>Recent Activities</h2><Link href="/history">View all</Link></div>
             <div className="desktop-notification-list">
               {recentTransfers.slice(0, 2).length === 0 ? (
                 <div className="desktop-notification-row">
                   <span><QuickActionIcon name="wallet" /></span>
-                  <p>No new wallet activity yet.<small>Start by receiving or sending funds.</small></p>
+                  <p>No recent activity yet.<small>Start by receiving or sending funds.</small></p>
                   <i />
                 </div>
               ) : recentTransfers.slice(0, 2).map((transfer) => (
-                <Link href="/history" key={`notice-${transfer.id}`} className="desktop-notification-row">
+                <Link href="/history" key={`activity-card-${transfer.id}`} className="desktop-notification-row">
                   <span><QuickActionIcon name={transfer.direction === "sent" ? "send" : "request"} /></span>
                   <p>{transfer.direction === "sent" ? "Sent" : "Received"} {formatAmount(BigInt(transfer.value), TOKENS[transfer.token].decimals)} {transfer.token}<small>{new Date(transfer.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</small></p>
                   <i />
@@ -697,7 +697,12 @@ export function DashboardClient() {
             <div className="desktop-contact-row">
               {contacts.slice(0, 4).map((c, index) => (
                 <Link href={`/send?to=${encodeURIComponent(c.handle ? c.handle.replace(/^@/, "") : c.address)}`} key={`desktop-${c.id}`}>
-                  <span data-tone={index % 4}>{contactInitials(c.name)}</span>
+                  <span data-tone={index % 4}>
+                    {c.avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={c.avatar} alt={c.name} className="desktop-contact-avatar-img" loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+                    ) : contactInitials(c.name)}
+                  </span>
                   <strong>{c.name}</strong>
                   <small>{shortAddress(c.address)}</small>
                 </Link>

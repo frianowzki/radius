@@ -3931,6 +3931,12 @@ html[data-theme="dark"] .modal-close-btn:hover {
   .desktop-contact-row span[data-tone="1"] { color: #7c3aed; background: #ede9fe; }
   .desktop-contact-row span[data-tone="2"] { color: #047857; background: #d1fae5; }
   .desktop-contact-row span[data-tone="3"] { color: #b45309; background: #ffedd5; }
+  .desktop-contact-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+  }
   .desktop-contact-row strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 750; }
   .desktop-contact-row small { display: block; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #64748b; font-size: 11px; }
   .desktop-add-contact span { color: #475569; background: #f1f5f9; font-size: 28px; font-weight: 360; }
@@ -4541,7 +4547,7 @@ html[data-theme="dark"] .dashboard-section-title button {
 @media (min-width: 1024px) and (orientation: landscape) {
   html[data-theme="dark"] .desktop-panel,
   html[data-theme="dark"] .desktop-shortcuts-panel,
-  html[data-theme="dark"] .desktop-notifications-panel,
+  html[data-theme="dark"] .desktop-activities-panel,
   html[data-theme="dark"] .desktop-contacts-panel {
     background: rgba(8,13,28,.72) !important;
     border-color: rgba(148,163,184,.16) !important;
@@ -4552,5 +4558,18 @@ html[data-theme="dark"] .dashboard-section-title button {
   html[data-theme="dark"] .desktop-shortcut-tile {
     background: rgba(30,41,59,.62) !important;
     border-color: rgba(148,163,184,.15) !important;
+  }
+  html[data-theme="dark"] .dashboard-action-item {
+    color: #e8eefc !important;
+  }
+  html[data-theme="dark"] .dashboard-action-item span {
+    background: rgba(30,41,59,.70) !important;
+    color: #93c5fd !important;
+    border: 1px solid rgba(148,163,184,.14) !important;
+  }
+  html[data-theme="dark"] .dashboard-action-item svg,
+  html[data-theme="dark"] .dashboard-action-item svg * {
+    color: #93c5fd !important;
+    stroke: currentColor;
   }
 }

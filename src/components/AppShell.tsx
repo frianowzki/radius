@@ -141,7 +141,6 @@ function DesktopLiquidityCard() {
         <span><b>USDC</b>{formatLiquidity(usdc, TOKENS.USDC.decimals)}</span>
         <span><b>EURC</b>{formatLiquidity(eurc, TOKENS.EURC.decimals)}</span>
       </div>
-      <svg viewBox="0 0 180 62" aria-hidden="true"><path d="M6 48c14-24 26-32 38-16 10 13 18 15 31-3 13-17 25-15 35 2 13 23 31 19 42-8 7-17 15-21 23-9" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg>
     </div>
   );
 }
