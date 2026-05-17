@@ -151,8 +151,8 @@ export default function YieldPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--brand)]">Live yield preview</p>
-              <p className="mt-2 font-mono text-3xl font-black tracking-tight text-zinc-900">{Number(formatUnits(earned, 18)).toFixed(6)} RAD</p>
-              <p className="mt-1 text-xs text-zinc-500">Updates every few seconds from the staking contract.</p>
+              <p className="mt-2 font-mono text-3xl font-black tracking-tight text-[var(--foreground)]">{Number(formatUnits(earned, 18)).toFixed(6)} RAD</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">Updates every few seconds from the staking contract.</p>
             </div>
             <button
               type="button"
