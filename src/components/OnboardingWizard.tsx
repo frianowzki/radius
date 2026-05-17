@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
-import { saveRegistryProfile } from "@/lib/registry-client";
+import { fetchRegistryProfile, saveRegistryProfile } from "@/lib/registry-client";
 
 const FLAG = "radius-onboarding-done";
 
@@ -22,19 +22,34 @@ export function OnboardingWizard() {
   const [displayName, setDisplayName] = useState("");
   const [handle, setHandle] = useState("");
   const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState("");
 
   /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage on mount */
   useEffect(() => {
     if (!isConnected || !address) return;
-    if (localStorage.getItem(FLAG) === "1") return;
+    let cancelled = false;
     const p = getIdentityProfile();
-    // Only show for users who don't already have a customized display name.
-    if (p.displayName && p.displayName !== "Arc user") {
-      localStorage.setItem(FLAG, "1");
-      return;
-    }
-    setDisplayName(user?.name || p.displayName === "Arc user" ? (user?.name || "") : p.displayName);
-    setOpen(true);
+    setDisplayName(user?.name || (p.displayName === "Arc user" ? "" : p.displayName));
+    setHandle(p.handle || "");
+
+    fetchRegistryProfile({ address })
+      .then((remote) => {
+        if (cancelled) return;
+        if (remote?.handle) {
+          localStorage.setItem(FLAG, "1");
+          return;
+        }
+        if (localStorage.getItem(FLAG) === "1" && !p.handle) return;
+        setStep("profile");
+        setOpen(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        if (localStorage.getItem(FLAG) === "1" && !p.handle) return;
+        setStep("profile");
+        setOpen(true);
+      });
+    return () => { cancelled = true; };
   }, [isConnected, address, user?.name]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -44,14 +59,25 @@ export function OnboardingWizard() {
   }
 
   async function saveProfile() {
-    if (!address || !displayName.trim()) { setStep("fund"); return; }
+    const normalizedHandle = handle.trim().replace(/^@+/, "").toLowerCase();
+    if (!address || !displayName.trim() || !normalizedHandle) {
+      setStatus("Display name and username are required to register globally.");
+      return;
+    }
     setSaving(true);
-    const normalizedHandle = handle.trim().replace(/^@+/, "").toLowerCase() || undefined;
+    setStatus("Claiming username globally...");
     const next = { displayName: displayName.trim(), handle: normalizedHandle, authMode: "wallet" as const };
     try { saveIdentityProfile(next); } catch { /* noop */ }
-    try { await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle }, { provider: authProvider, signMessage, prompt: true }); } catch { /* registry optional */ }
-    setSaving(false);
-    setStep("fund");
+    try {
+      await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle }, { provider: authProvider, signMessage, prompt: true });
+      localStorage.setItem(FLAG, "1");
+      setStatus("");
+      setStep("fund");
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "Could not claim username. Try another one.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!open) return null;
@@ -72,21 +98,23 @@ export function OnboardingWizard() {
         )}
         {step === "profile" && (
           <>
-            <h2 className="text-lg font-bold">Claim your handle</h2>
-            <p className="mt-1 text-xs text-[#8b8795]">Friends can pay you by username instead of a 0x address.</p>
+            <h2 className="text-lg font-bold">Claim your permanent username</h2>
+            <p className="mt-1 text-xs text-[#8b8795]">Friends can find and add you from Contacts by searching this username. It cannot be changed after saving.</p>
             <div className="mt-4 space-y-3">
               <div>
                 <label className="mb-1 block text-[11px] font-bold text-[#8b8795]">Display name</label>
                 <input className="radius-input text-sm" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-bold text-[#8b8795]">Username</label>
-                <input className="radius-input text-sm" value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@yourname" />
+                <label className="mb-1 block text-[11px] font-bold text-[#8b8795]">Permanent username</label>
+                <input className="radius-input text-sm" value={handle} onChange={(e) => { setHandle(e.target.value); setStatus(""); }} placeholder="@yourname" />
+                <p className="mt-1 text-[11px] text-[#8b8795]">2-30 chars: letters, numbers, underscore, dot, dash.</p>
               </div>
             </div>
+            {status && <p className="mt-3 rounded-2xl bg-[var(--brand)]/10 p-3 text-xs text-[var(--foreground)]">{status}</p>}
             <div className="mt-5 grid grid-cols-2 gap-3">
               <button type="button" onClick={() => setStep("fund")} className="ghost-btn py-3 text-xs">Skip</button>
-              <button type="button" onClick={saveProfile} disabled={saving || !displayName.trim()} className="primary-btn py-3 text-xs disabled:opacity-40">{saving ? "Saving..." : "Save & continue"}</button>
+              <button type="button" onClick={saveProfile} disabled={saving || !displayName.trim() || !handle.trim()} className="primary-btn py-3 text-xs disabled:opacity-40">{saving ? "Saving..." : "Claim & continue"}</button>
             </div>
           </>
         )}

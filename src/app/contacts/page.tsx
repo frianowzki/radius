@@ -187,42 +187,54 @@ export default function ContactsPage() {
           </div>
         </header>
 
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search contacts" className="radius-input text-sm" />
-
         <div className="relative">
           <input
-            value={globalSearch}
-            onChange={(e) => setGlobalSearch(e.target.value)}
-            placeholder="Search Radius users"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setGlobalSearch(e.target.value);
+            }}
+            placeholder="Search contacts or @username"
             className="radius-input text-sm"
           />
+          <p className="mt-2 text-xs text-[var(--muted)]">Type a Radius username to find registered users globally and add them to contacts.</p>
           {globalResults.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-10 mt-1 space-y-1 rounded-2xl border border-[var(--brand)]/20 bg-white p-3 shadow-lg">
-              {globalResults.map((r) => (
-                <div key={r.address} className="flex items-center justify-between gap-2 rounded-xl bg-[var(--brand)]/5 p-2">
-                  {r.avatar ? <img src={r.avatar} alt="" className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--brand)]/10 text-xs font-bold text-[var(--brand)]">{r.displayName.slice(0, 1).toUpperCase()}</div>}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold">{r.displayName}</p>
-                    {r.handle && <p className="truncate text-xs text-[#8b8795]">@{r.handle}</p>}
-                    <p className="truncate font-mono text-[10px] text-[#8b8795]">{formatAddress(r.address)}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      upsertContactByAddress(r.address, { name: r.displayName, handle: r.handle, avatar: r.avatar });
-                      const next = getContacts();
-                      setContacts(next);
-                      setGlobalSearch("");
-                      setGlobalResults([]);
-                      if (owner) pushRemoteContacts(owner, next, { provider: authProvider, signMessage, prompt: true }).then((res) => setSyncStatus(res ? "synced" : "error"));
-                    }}
-                    className="shrink-0 rounded-full bg-[var(--brand)] px-3 py-1.5 text-xs font-semibold text-white"
-                  >Add</button>
-                </div>
-              ))}
+            <div className="absolute left-0 right-0 top-full z-30 mt-2 space-y-1 rounded-2xl border border-[var(--brand)]/20 bg-[var(--card)] p-3 text-[var(--foreground)] shadow-lg backdrop-blur-xl">
+              {globalResults
+                .filter((r) => r.address.toLowerCase() !== owner?.toLowerCase())
+                .map((r) => {
+                  const alreadyAdded = contacts.some((c) => c.address.toLowerCase() === r.address.toLowerCase());
+                  return (
+                    <div key={r.address} className="flex items-center justify-between gap-2 rounded-xl bg-[var(--brand)]/5 p-2">
+                      {r.avatar ? <img src={r.avatar} alt="" className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--brand)]/10 text-xs font-bold text-[var(--brand)]">{r.displayName.slice(0, 1).toUpperCase()}</div>}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold">{r.displayName}</p>
+                        {r.handle && <p className="truncate text-xs text-[var(--muted)]">@{r.handle}</p>}
+                        <p className="truncate font-mono text-[10px] text-[var(--muted)]">{formatAddress(r.address)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={alreadyAdded}
+                        onClick={() => {
+                          upsertContactByAddress(r.address, { name: r.displayName, handle: r.handle, avatar: r.avatar });
+                          const next = getContacts();
+                          setContacts(next);
+                          setQuery("");
+                          setGlobalSearch("");
+                          setGlobalResults([]);
+                          if (owner) pushRemoteContacts(owner, next, { provider: authProvider, signMessage, prompt: true }).then((res) => setSyncStatus(res ? "synced" : "error"));
+                        }}
+                        className="shrink-0 rounded-full bg-[var(--brand)] px-3 py-1.5 text-xs font-semibold text-white disabled:bg-white/15 disabled:text-[var(--muted)]"
+                      >{alreadyAdded ? "Added" : "Add"}</button>
+                    </div>
+                  );
+                })}
             </div>
           )}
-          {globalSearching && <p className="mt-1 text-xs text-[#8b8795]">Searching…</p>}
+          {globalSearching && <p className="mt-1 text-xs text-[var(--muted)]">Searching Radius usernames…</p>}
+          {!globalSearching && globalSearch.trim().replace(/^@+/, "").length >= 2 && globalResults.length === 0 && (
+            <p className="mt-1 text-xs text-[var(--muted)]">No registered Radius username found yet.</p>
+          )}
         </div>
 
         {showForm && (

@@ -157,21 +157,28 @@ export async function POST(req: Request) {
 
   try {
     const table = await readTable();
+    const index = table.profiles.findIndex((item) => item.address.toLowerCase() === address.toLowerCase());
+    const existingProfile = index >= 0 ? table.profiles[index] : undefined;
     const existingHandle = handle
       ? table.profiles.find((item) => item.handle === handle && item.address.toLowerCase() !== address.toLowerCase())
       : undefined;
     if (existingHandle) return jsonNoStore({ error: "Username is already taken" }, { status: 409 });
+    if (existingProfile?.handle && handle && handle !== existingProfile.handle) {
+      return jsonNoStore({ error: `@${existingProfile.handle} is permanent and cannot be changed` }, { status: 409 });
+    }
+    if (existingProfile?.handle && !handle) {
+      return jsonNoStore({ error: `@${existingProfile.handle} is permanent and cannot be removed` }, { status: 409 });
+    }
 
     const profile: RegistryProfile = {
       address,
       displayName,
-      handle: handle || undefined,
+      handle: handle || existingProfile?.handle || undefined,
       avatar,
       bio,
       updatedAt: Date.now(),
     };
 
-    const index = table.profiles.findIndex((item) => item.address.toLowerCase() === address.toLowerCase());
     if (index >= 0) table.profiles[index] = profile;
     else table.profiles.push(profile);
     table.updatedAt = Date.now();

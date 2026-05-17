@@ -53,6 +53,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [registryStatus, setRegistryStatus] = useState("");
+  const [registeredHandle, setRegisteredHandle] = useState<string | undefined>();
   const [hidePayQr, setHidePayQr] = useState(true);
 
   const mounted = useMounted();
@@ -84,6 +85,7 @@ export default function ProfilePage() {
         });
         setDisplayName(remoteIdentity.displayName);
         setHandle(remoteIdentity.handle || "");
+        setRegisteredHandle(remoteIdentity.handle || undefined);
         setBio(remoteIdentity.bio || "");
       })
       .catch(() => undefined);
@@ -93,10 +95,15 @@ export default function ProfilePage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!displayName.trim() || !address) return;
+    if (!registeredHandle && !normalizedHandle) {
+      setRegistryStatus("Pick a permanent username to register globally.");
+      return;
+    }
+    const finalHandle = registeredHandle || normalizedHandle;
     let cachedPfp: string | null = null;
     try { cachedPfp = localStorage.getItem("pfpUrl"); } catch { /* ignore */ }
     const effectiveAvatar = profile.avatar || cachedPfp || undefined;
-    const next = { displayName: displayName.trim(), handle: normalizedHandle || undefined, avatar: effectiveAvatar, bio: bio.trim() || undefined, authMode: "wallet" as const };
+    const next = { displayName: displayName.trim(), handle: finalHandle || undefined, avatar: effectiveAvatar, bio: bio.trim() || undefined, authMode: "wallet" as const };
     saveIdentityProfile(next);
     setProfile(next);
     setRegistryStatus("Saving global profile...");
@@ -107,6 +114,7 @@ export default function ProfilePage() {
       saveIdentityProfile(synced);
       setProfile(synced);
       setRegistryStatus("Global profile saved");
+      setRegisteredHandle(remoteIdentity.handle || finalHandle || undefined);
       setSaved(true);
       setTimeout(() => setSaved(false), 1600);
     } catch (err) {
@@ -115,7 +123,7 @@ export default function ProfilePage() {
   }
 
   async function handleAvatarUploaded(url: string) {
-    const next = { ...profile, displayName: displayName.trim() || profile.displayName || "Radius user", handle: normalizedHandle || profile.handle, bio: bio.trim() || profile.bio, avatar: url };
+    const next = { ...profile, displayName: displayName.trim() || profile.displayName || "Radius user", handle: registeredHandle || normalizedHandle || profile.handle, bio: bio.trim() || profile.bio, avatar: url };
     saveIdentityProfile(next);
     setProfile(next);
     if (!address) return;
@@ -223,6 +231,13 @@ export default function ProfilePage() {
         )}
 
         <form onSubmit={handleSave} className="profile-form-card">
+          {registeredHandle && (
+            <div className="rounded-[20px] border border-[var(--brand)]/20 bg-[var(--brand)]/8 p-4 text-sm text-[var(--foreground)]">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand)]">Permanent username</p>
+              <p className="mt-1 font-mono text-lg font-black">@{registeredHandle}</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">This username is globally searchable and cannot be changed or removed.</p>
+            </div>
+          )}
           <div>
             <p className="mb-2 text-xs font-bold text-[#8b8795]">Profile picture</p>
             <ProfilePfpUpload initialUrl={profile.avatar} onUploaded={handleAvatarUploaded} />
@@ -232,16 +247,22 @@ export default function ProfilePage() {
             <input className="radius-input text-sm" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" />
           </div>
           <div>
-            <label className="mb-2 block text-xs font-bold text-[#8b8795]">Username for sending</label>
-            <input className="radius-input text-sm" value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@yourname" />
-            {normalizedHandle && <p className="mt-2 text-xs text-[#8b8795]">@{normalizedHandle} will be checked against the global registry on save.</p>}
+            <label className="mb-2 block text-xs font-bold text-[#8b8795]">Permanent username</label>
+            <input className="radius-input text-sm disabled:opacity-70" value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@yourname" disabled={!!registeredHandle} />
+            {registeredHandle ? (
+              <p className="mt-2 text-xs text-[var(--muted)]">@{registeredHandle} is locked to this wallet and searchable from Contacts.</p>
+            ) : normalizedHandle ? (
+              <p className="mt-2 text-xs text-[#8b8795]">@{normalizedHandle} will be checked and permanently claimed on save.</p>
+            ) : (
+              <p className="mt-2 text-xs text-[#8b8795]">Pick carefully. Usernames are global and permanent after saving.</p>
+            )}
           </div>
           <div>
             <label className="mb-2 block text-xs font-bold text-[#8b8795]">Bio</label>
             <textarea className="radius-input min-h-24 text-sm" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Short profile bio" />
           </div>
           {registryStatus && <p className="text-xs text-[#8b8795]">{registryStatus}</p>}
-          <button type="submit" disabled={!displayName.trim() || !address} className="primary-btn w-full text-sm disabled:opacity-40">{saved ? "Saved globally" : "Save global profile"}</button>
+          <button type="submit" disabled={!displayName.trim() || !address || (!registeredHandle && !normalizedHandle)} className="primary-btn w-full text-sm disabled:opacity-40">{saved ? "Saved globally" : registeredHandle ? "Save global profile" : "Claim username + save profile"}</button>
         </form>
 
         <p className="text-center text-[11px] leading-5 text-[#9a94a3]">{isConnected ? "Profile is connected to your current wallet/social wallet." : "Connect first to use this profile in payments."}</p>
