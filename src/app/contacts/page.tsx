@@ -96,6 +96,21 @@ export default function ContactsPage() {
     return contacts.filter((c) => [c.name, c.handle, c.address, c.note].some((v) => v?.toLowerCase().includes(q)));
   }, [contacts, query]);
 
+  const visibleGlobalResults = useMemo(
+    () => globalResults.filter((r) => r.address.toLowerCase() !== owner?.toLowerCase()),
+    [globalResults, owner]
+  );
+
+  function addGlobalProfile(r: { address: string; displayName: string; handle?: string; avatar?: string }) {
+    upsertContactByAddress(r.address, { name: r.displayName, handle: r.handle, avatar: r.avatar });
+    const next = getContacts();
+    setContacts(next);
+    setQuery("");
+    setGlobalSearch("");
+    setGlobalResults([]);
+    if (owner) pushRemoteContacts(owner, next, { provider: authProvider, signMessage, prompt: true }).then((res) => setSyncStatus(res ? "synced" : "error"));
+  }
+
   useEffect(() => {
     const q = globalSearch.trim().replace(/^@/, "");
     if (q.length < 2) {
@@ -194,15 +209,20 @@ export default function ContactsPage() {
               setQuery(e.target.value);
               setGlobalSearch(e.target.value);
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && visibleGlobalResults[0]) {
+                e.preventDefault();
+                addGlobalProfile(visibleGlobalResults[0]);
+              }
+            }}
             placeholder="Search contacts or @username"
             className="radius-input text-sm"
           />
           <p className="mt-2 text-xs text-[var(--muted)]">Type a Radius username to find registered users globally and add them to contacts.</p>
-          {globalResults.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-30 mt-2 space-y-1 rounded-2xl border border-[var(--brand)]/20 bg-[var(--card)] p-3 text-[var(--foreground)] shadow-lg backdrop-blur-xl">
-              {globalResults
-                .filter((r) => r.address.toLowerCase() !== owner?.toLowerCase())
-                .map((r) => {
+          {visibleGlobalResults.length > 0 && (
+            <div className="mt-3 space-y-2 rounded-2xl border border-[var(--brand)]/20 bg-[var(--card)] p-3 text-[var(--foreground)] shadow-lg backdrop-blur-xl">
+              <p className="px-1 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--brand)]">Global Radius users</p>
+              {visibleGlobalResults.map((r) => {
                   const alreadyAdded = contacts.some((c) => c.address.toLowerCase() === r.address.toLowerCase());
                   return (
                     <div key={r.address} className="flex items-center justify-between gap-2 rounded-xl bg-[var(--brand)]/5 p-2">
@@ -215,15 +235,7 @@ export default function ContactsPage() {
                       <button
                         type="button"
                         disabled={alreadyAdded}
-                        onClick={() => {
-                          upsertContactByAddress(r.address, { name: r.displayName, handle: r.handle, avatar: r.avatar });
-                          const next = getContacts();
-                          setContacts(next);
-                          setQuery("");
-                          setGlobalSearch("");
-                          setGlobalResults([]);
-                          if (owner) pushRemoteContacts(owner, next, { provider: authProvider, signMessage, prompt: true }).then((res) => setSyncStatus(res ? "synced" : "error"));
-                        }}
+                        onClick={() => addGlobalProfile(r)}
                         className="shrink-0 rounded-full bg-[var(--brand)] px-3 py-1.5 text-xs font-semibold text-white disabled:bg-white/15 disabled:text-[var(--muted)]"
                       >{alreadyAdded ? "Added" : "Add"}</button>
                     </div>
@@ -232,7 +244,7 @@ export default function ContactsPage() {
             </div>
           )}
           {globalSearching && <p className="mt-1 text-xs text-[var(--muted)]">Searching Radius usernames…</p>}
-          {!globalSearching && globalSearch.trim().replace(/^@+/, "").length >= 2 && globalResults.length === 0 && (
+          {!globalSearching && globalSearch.trim().replace(/^@+/, "").length >= 2 && visibleGlobalResults.length === 0 && (
             <p className="mt-1 text-xs text-[var(--muted)]">No registered Radius username found yet.</p>
           )}
         </div>
