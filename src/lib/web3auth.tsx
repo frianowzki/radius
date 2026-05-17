@@ -235,7 +235,7 @@ export function RadiusAuthProvider({ children }: { children: ReactNode }) {
         appearance: {
           theme: "dark",
           accentColor: "#8f7cff",
-          logo: "https://radius-gules.vercel.app/icon.png",
+          logo: "https://radius-gules.vercel.app/radius-brand.svg",
           landingHeader: "Continue to Radius",
           loginMessage: "Create an embedded wallet that can bridge across Arc routes.",
           showWalletLoginFirst: false,

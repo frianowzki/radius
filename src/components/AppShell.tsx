@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { useReadContracts } from "wagmi";
 import { DynamicBackground } from "@/components/DynamicBackground";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
+import { RadiusBrandLogo } from "@/components/RadiusBrandLogo";
 import { TOKENS } from "@/config/tokens";
 import { arcTestnet } from "@/config/wagmi";
 import { RADIUSD_POOL_ABI, RADIUSD_POOL_ADDRESS } from "@/config/radiusdex";
@@ -163,7 +164,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <DynamicBackground />
       {notifierReady && <PaymentRequestNotifier />}
       <aside className="desktop-sidebar" aria-label="Desktop navigation">
-        <Link href="/" className="desktop-sidebar-logo">Radius</Link>
+        <Link href="/" className="desktop-sidebar-logo" aria-label="Radius home"><RadiusBrandLogo className="desktop-sidebar-logo-img" priority /></Link>
         <nav className="desktop-sidebar-nav">
           {DESKTOP_NAV_ITEMS.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);

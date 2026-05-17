@@ -16,6 +16,7 @@ import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { RadiusBrandLogo } from "@/components/RadiusBrandLogo";
 import { searchRegistryProfiles, type RegistryProfile } from "@/lib/registry-client";
 import { arcTestnet } from "@/config/wagmi";
 import { ChainLogo } from "@/components/ChainLogo";
@@ -202,7 +203,8 @@ function LoginScreen() {
             <span className="login-planet" />
           </div>
 
-          <h1 className="login-title">Radius</h1>
+          <h1 className="sr-only">Radius</h1>
+          <RadiusBrandLogo className="login-brand-logo" priority />
           <p className="login-subtitle">P2P stablecoin payments on Arc Testnet</p>
         </section>
 
@@ -600,7 +602,7 @@ export function DashboardClient() {
         </div>
         <header className="dashboard-reference-header">
           <div>
-            <div className="dashboard-logo">Radius</div>
+            <RadiusBrandLogo className="dashboard-logo" priority />
             <h1>Hello, {profileName} <span key={waveKey} className="dashboard-wave" aria-hidden="true">👋</span></h1>
           </div>
           <div className="flex items-center gap-2">
@@ -712,7 +714,7 @@ export function DashboardClient() {
           </section>
         </aside>
 
-        <section className="dashboard-section">
+        <section className="dashboard-section dashboard-latest-section">
           <div className="dashboard-section-title"><h2>Latest Activities</h2><Link href="/history">View all</Link></div>
           <div className="dashboard-list-card">
             {recentTransfers.length === 0 ? (

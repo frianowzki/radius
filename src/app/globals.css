@@ -1573,6 +1573,15 @@ html[data-theme="dark"] .contacts-empty-orb {
   opacity: .75;
   mix-blend-mode: screen;
 }
+.login-brand-logo {
+  display: block;
+  width: min(330px, 86vw);
+  height: auto;
+  margin: -2px auto 0;
+  border-radius: 18px;
+  object-fit: contain;
+  box-shadow: 0 20px 48px rgba(0,0,0,.18);
+}
 .login-title {
   margin: -2px 0 0;
   color: #120f5d;
@@ -2027,11 +2036,11 @@ html[data-theme="dark"] .profile-upload-edit { color: #7dd3fc; border-color: rgb
   justify-content: space-between;
 }
 .dashboard-logo {
-  color: #174bd8;
-  font-size: 30px;
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: -.06em;
+  display: block;
+  width: 142px;
+  height: auto;
+  border-radius: 10px;
+  object-fit: contain;
 }
 .dashboard-reference-header h1 {
   margin-top: 15px;
@@ -3580,11 +3589,16 @@ html[data-theme="dark"] .modal-close-btn:hover {
     box-shadow: inset -1px 0 0 rgba(255,255,255,.72);
   }
   .desktop-sidebar-logo {
-    color: #1454d8;
-    font-size: 34px;
-    line-height: 1;
-    font-weight: 950;
-    letter-spacing: -.065em;
+    display: block;
+    width: 180px;
+    line-height: 0;
+  }
+  .desktop-sidebar-logo-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 13px;
+    object-fit: contain;
   }
   .desktop-sidebar-nav {
     display: grid;
@@ -3646,7 +3660,6 @@ html[data-theme="dark"] .modal-close-btn:hover {
       "top top"
       "balance side"
       "assets side"
-      "activity side"
       "banner banner";
     align-content: start;
     gap: 22px 30px;
@@ -3954,7 +3967,8 @@ html[data-theme="dark"] .modal-close-btn:hover {
     max-height: 248px;
     overflow-y: auto;
   }
-  .dashboard-section:nth-of-type(4) { display: none; }
+  .dashboard-section:nth-of-type(4),
+  .dashboard-latest-section { display: none; }
   .dashboard-section-title { padding: 0 4px; }
   .dashboard-section-title h2 { font-size: 18px; }
   .dashboard-section-title a,
@@ -4096,7 +4110,7 @@ html[data-theme="dark"] .desktop-liquidity-lines span {
 @media (min-width: 1024px) and (max-width: 1279px) and (orientation: landscape) {
   .phone-shell { grid-template-columns: 236px minmax(0, 1fr); }
   .desktop-sidebar { padding: 28px 16px 20px; gap: 16px; }
-  .desktop-sidebar-logo { font-size: 30px; }
+  .desktop-sidebar-logo { width: 154px; }
   .desktop-sidebar-link { min-height: 42px; padding: 0 13px; font-size: 14px; gap: 10px; }
   .desktop-sidebar-link.with-divider { margin-top: 7px; padding-top: 10px; }
   .desktop-sidebar-tvl { padding: 13px; }
