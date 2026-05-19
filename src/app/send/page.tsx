@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAccount, usePublicClient, useWalletClient, useReadContracts, useChainId, useSwitchChain } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { createWalletClient, custom, parseUnits, isAddress, type Chain } from "viem";
+import { createWalletClient, custom, parseUnits, formatUnits, isAddress, type Chain } from "viem";
 import {
   arbitrumSepolia,
   avalancheFuji,
@@ -276,6 +276,19 @@ export default function SendPage() {
         : feeEstimate?.gasPrice
           ? { gasPrice: feeEstimate.gasPrice }
           : {};
+      const gasPriceCeiling = ("maxFeePerGas" in feeOverrides
+        ? feeOverrides.maxFeePerGas
+        : "gasPrice" in feeOverrides
+          ? feeOverrides.gasPrice
+          : BigInt(0)) ?? BigInt(0);
+      if (selectedChain !== "Arc_Testnet" && gasPriceCeiling > BigInt(0)) {
+        const nativeBalance = await publicClient.getBalance({ address });
+        const requiredNativeGas = gasLimit * gasPriceCeiling;
+        if (nativeBalance < requiredNativeGas) {
+          const nativeSymbol = selectedViemChain.nativeCurrency.symbol;
+          throw new Error(`Insufficient ${nativeSymbol} for ${selectedChainLabel} gas. Need about ${formatUnits(requiredNativeGas, selectedViemChain.nativeCurrency.decimals)} ${nativeSymbol}; wallet has ${formatUnits(nativeBalance, selectedViemChain.nativeCurrency.decimals)} ${nativeSymbol}.`);
+        }
+      }
       const hash = await activeWalletClient.writeContract({
         address: selectedTokenAddress,
         abi: ERC20_TRANSFER_ABI,
