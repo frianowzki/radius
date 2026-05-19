@@ -120,6 +120,7 @@ export default function SendPage() {
   const [saveHandle, setSaveHandle] = useState("");
   const [saveAvatar, setSaveAvatar] = useState("");
   const [registryRecipient, setRegistryRecipient] = useState<RegistryProfile | null>(null);
+  const [nativeGasBalance, setNativeGasBalance] = useState<bigint | undefined>();
   const [showConfirm, setShowConfirm] = useState(false);
   const senderLabel = mounted ? getIdentityLabel(getIdentityProfile()) : "Connected wallet";
 
@@ -140,7 +141,8 @@ export default function SendPage() {
   const isOnSelectedChain = activeChainId === selectedChainId;
   const requestedRaw = amount && Number(amount) > 0 ? decimalToUnits(amount, TOKENS[token].decimals) : BigInt(0);
   const hasEnoughBalance = typeof selectedBalance === "bigint" ? selectedBalance >= requestedRaw : false;
-  const canSend = isConnected && isOnSelectedChain && supportsSelectedToken && !!amount && Number(amount) > 0 && hasEnoughBalance && status !== "sending" && status !== "confirming";
+  const hasNativeGas = selectedChain === "Arc_Testnet" || (typeof nativeGasBalance === "bigint" && nativeGasBalance > BigInt(0));
+  const canSend = isConnected && isOnSelectedChain && supportsSelectedToken && hasNativeGas && !!amount && Number(amount) > 0 && hasEnoughBalance && status !== "sending" && status !== "confirming";
 
   const directoryEntries = useMemo(() => {
     if (!mounted) return [] as DirectoryEntry[];
@@ -163,6 +165,19 @@ export default function SendPage() {
       queueMicrotask(() => setToken("USDC"));
     }
   }, [selectedChain, token]);
+
+  useEffect(() => {
+    if (!publicClient || !address) {
+      setNativeGasBalance(undefined);
+      return;
+    }
+    let cancelled = false;
+    setNativeGasBalance(undefined);
+    publicClient.getBalance({ address })
+      .then((balance) => { if (!cancelled) setNativeGasBalance(balance); })
+      .catch(() => { if (!cancelled) setNativeGasBalance(undefined); });
+    return () => { cancelled = true; };
+  }, [publicClient, address, selectedChainId]);
 
   useEffect(() => {
     const trimmed = recipient.trim();
@@ -410,6 +425,12 @@ export default function SendPage() {
               </button>
               {!isOnSelectedChain && <button type="button" onClick={() => switchToSelectedChain().catch(() => setError(`Failed to switch to ${selectedChainLabel}`))} className="ghost-btn mt-3 w-full text-xs">Switch to {selectedChainLabel}</button>}
               {selectedChain !== "Arc_Testnet" && <p className="mt-3 text-xs text-zinc-500">Non-Arc networks support USDC sends only. Use Bridge for cross-chain delivery.</p>}
+              {selectedChain !== "Arc_Testnet" && nativeGasBalance !== undefined && (
+                <p className={`mt-2 text-xs ${nativeGasBalance > BigInt(0) ? "text-emerald-600" : "text-red-500"}`}>
+                  Gas balance: {formatUnits(nativeGasBalance, selectedViemChain.nativeCurrency.decimals)} {selectedViemChain.nativeCurrency.symbol}
+                  {nativeGasBalance === BigInt(0) ? ` — add ${selectedViemChain.nativeCurrency.symbol} before sending.` : ""}
+                </p>
+              )}
             </div>
 
             <div className="flow-card glass-panel rounded-[28px] p-5">
@@ -443,6 +464,9 @@ export default function SendPage() {
               )}
               {!hasEnoughBalance && supportsSelectedToken && amount && Number(amount) > 0 && (
                 <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">Insufficient {token} balance.</p>
+              )}
+              {!hasNativeGas && (
+                <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">Add {selectedViemChain.nativeCurrency.symbol} on {selectedChainLabel} for gas before sending USDC.</p>
               )}
             </div>
 
