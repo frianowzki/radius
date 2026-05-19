@@ -261,13 +261,30 @@ export default function SendPage() {
       const activeWalletClient = await ensureSelectedWalletChain();
       const tokenInfo = TOKENS[token];
       const parsedAmount = parseUnits(amount, tokenInfo.decimals);
+      const transferArgs = [resolvedRecipientAddress as `0x${string}`, parsedAmount] as const;
+      const gasEstimate = await publicClient.estimateContractGas({
+        account: address,
+        address: selectedTokenAddress,
+        abi: ERC20_TRANSFER_ABI,
+        functionName: "transfer",
+        args: transferArgs,
+      });
+      const gasLimit = gasEstimate + gasEstimate / BigInt(5);
+      const feeEstimate = await publicClient.estimateFeesPerGas().catch(() => null);
+      const feeOverrides = feeEstimate?.maxFeePerGas && feeEstimate?.maxPriorityFeePerGas
+        ? { maxFeePerGas: feeEstimate.maxFeePerGas, maxPriorityFeePerGas: feeEstimate.maxPriorityFeePerGas }
+        : feeEstimate?.gasPrice
+          ? { gasPrice: feeEstimate.gasPrice }
+          : {};
       const hash = await activeWalletClient.writeContract({
         address: selectedTokenAddress,
         abi: ERC20_TRANSFER_ABI,
         functionName: "transfer",
-        args: [resolvedRecipientAddress as `0x${string}`, parsedAmount],
+        args: transferArgs,
         chain: selectedViemChain,
         account: address,
+        gas: gasLimit,
+        ...feeOverrides,
       });
       setTxHash(hash);
       setStatus("confirming");
