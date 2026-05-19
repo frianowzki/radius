@@ -27,6 +27,7 @@ import { ReceiptCard } from "@/components/ReceiptCard";
 import { ProfileChip } from "@/components/ProfileChip";
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
+import { ChainLogo } from "@/components/ChainLogo";
 import { arcTestnet } from "@/config/wagmi";
 import {
   CHAIN_METADATA,
@@ -113,6 +114,7 @@ export default function SendPage() {
   const [directoryQuery, setDirectoryQuery] = useState("");
   const [showDirectory, setShowDirectory] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
+  const [showChainPicker, setShowChainPicker] = useState(false);
   const [showSaveRecipient, setShowSaveRecipient] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [saveHandle, setSaveHandle] = useState("");
@@ -339,17 +341,26 @@ export default function SendPage() {
                   {isOnSelectedChain ? selectedChainLabel : `Switch to ${selectedChainLabel}`}
                 </span>
               </div>
-              <select
-                value={selectedChain}
-                onChange={(e) => setSelectedChain(e.target.value as CrosschainChain)}
-                className="radius-input mb-3 text-sm"
-                aria-label="Source network"
+              <button
+                type="button"
+                onClick={() => setShowChainPicker(true)}
+                className="bridge-chain-card w-full text-left transition-transform hover:-translate-y-0.5"
+                aria-label="Choose source network"
               >
-                {SEND_CHAINS.map((chain) => (
-                  <option key={chain} value={chain}>{CHAIN_METADATA[chain].label}</option>
-                ))}
-              </select>
-              {!isOnSelectedChain && <button type="button" onClick={() => switchToSelectedChain().catch(() => setError(`Failed to switch to ${selectedChainLabel}`))} className="ghost-btn w-full text-xs">Switch to {selectedChainLabel}</button>}
+                <div className="flex items-center gap-3">
+                  <span className="bridge-chain-avatar"><ChainLogo chainKey={selectedChain} size={42} /></span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] text-[#8b8795]">You send from</p>
+                    <p className="truncate font-semibold text-[#17151f]">{selectedChainLabel}</p>
+                  </div>
+                  <span className="text-xl text-[#8b8795]">›</span>
+                </div>
+                <div className="mt-3 flex items-center justify-between border-t border-[#1b162b]/5 pt-3 text-xs">
+                  <span className="text-[#8b8795]">Network</span>
+                  <span className="font-semibold text-[#17151f]">{selectedChainLabel}</span>
+                </div>
+              </button>
+              {!isOnSelectedChain && <button type="button" onClick={() => switchToSelectedChain().catch(() => setError(`Failed to switch to ${selectedChainLabel}`))} className="ghost-btn mt-3 w-full text-xs">Switch to {selectedChainLabel}</button>}
               {selectedChain !== "Arc_Testnet" && <p className="mt-3 text-xs text-zinc-500">Non-Arc networks support USDC sends only. Use Bridge for cross-chain delivery.</p>}
             </div>
 
@@ -429,6 +440,45 @@ export default function SendPage() {
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <button type="button" onClick={() => setShowConfirm(false)} className="ghost-btn text-sm">Cancel</button>
                 <button type="button" onClick={executeSend} className="primary-btn text-sm">Confirm</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showChainPicker && (
+          <div role="dialog" aria-modal="true" className="fixed inset-0 z-[90] grid place-items-end bg-black/30 p-4 backdrop-blur-md" onClick={() => setShowChainPicker(false)}>
+            <div className="frost-modal w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand)]">Source network</p>
+                  <h3 className="mt-1 text-lg font-bold">Choose chain</h3>
+                </div>
+                <button type="button" onClick={() => setShowChainPicker(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              </div>
+              <div className="space-y-3">
+                {SEND_CHAINS.map((chain) => {
+                  const meta = CHAIN_METADATA[chain];
+                  return (
+                    <button
+                      key={chain}
+                      type="button"
+                      onClick={() => {
+                        setSelectedChain(chain);
+                        setShowChainPicker(false);
+                      }}
+                      className={`frosted-choice w-full ${selectedChain === chain ? "active" : ""}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="bridge-chain-avatar"><ChainLogo chainKey={chain} size={36} /></span>
+                        <div className="min-w-0 flex-1 text-left">
+                          <p className="truncate font-bold">{meta.label}</p>
+                          <p className="text-xs opacity-70">USDC sends supported</p>
+                        </div>
+                        {selectedChain === chain && <span className="text-xs font-bold text-[var(--brand)]">✓</span>}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
