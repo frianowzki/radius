@@ -181,7 +181,7 @@ export default function SendPage() {
   }, [recipient, resolvedRecipient.address]);
 
   async function getActiveWalletClient() {
-    if (walletClient && walletClient.chain?.id === selectedChainId) return walletClient;
+    if (walletClient) return walletClient;
     if (!authProvider || !address) return null;
     return createWalletClient({ account: address, chain: selectedViemChain, transport: custom(authProvider) });
   }
@@ -192,6 +192,29 @@ export default function SendPage() {
       return;
     }
     await switchAuthChain(selectedChainId);
+  }
+
+  async function ensureSelectedWalletChain() {
+    if (activeChainId !== selectedChainId) {
+      await switchToSelectedChain();
+    }
+
+    const deadline = Date.now() + 5000;
+    let lastSeenChainId = activeChainId;
+
+    while (Date.now() < deadline) {
+      const nextWalletClient = await getActiveWalletClient();
+      if (!nextWalletClient) throw new Error("Wallet signer unavailable. Reconnect and try again.");
+
+      const walletChainId = await nextWalletClient.getChainId();
+      lastSeenChainId = walletChainId;
+      if (walletChainId === selectedChainId) return nextWalletClient;
+
+      await switchToSelectedChain();
+      await new Promise((resolve) => window.setTimeout(resolve, 350));
+    }
+
+    throw new Error(`Wallet is still on chain ${lastSeenChainId ?? "unknown"}. Switch to ${selectedChainLabel} and try again.`);
   }
 
   function handleSend(e: React.FormEvent) {
@@ -231,16 +254,11 @@ export default function SendPage() {
   async function executeSend() {
     if (!publicClient || !address || !validRecipient || !resolvedRecipientAddress) return;
     setShowConfirm(false);
-    const activeWalletClient = await getActiveWalletClient();
-    if (!activeWalletClient) {
-      setStatus("error");
-      setError("Wallet signer unavailable. Reconnect and try again.");
-      return;
-    }
 
     try {
       setStatus("sending");
       setError("");
+      const activeWalletClient = await ensureSelectedWalletChain();
       const tokenInfo = TOKENS[token];
       const parsedAmount = parseUnits(amount, tokenInfo.decimals);
       const hash = await activeWalletClient.writeContract({
