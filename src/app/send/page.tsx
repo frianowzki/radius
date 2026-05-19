@@ -3,13 +3,36 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAccount, usePublicClient, useWalletClient, useReadContracts, useChainId, useSwitchChain } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { createWalletClient, custom, parseUnits, isAddress } from "viem";
+import { createWalletClient, custom, parseUnits, isAddress, type Chain } from "viem";
+import {
+  arbitrumSepolia,
+  avalancheFuji,
+  baseSepolia,
+  codexTestnet,
+  hyperliquidEvmTestnet,
+  inkSepolia,
+  lineaSepolia,
+  monadTestnet,
+  optimismSepolia,
+  plumeSepolia,
+  polygonAmoy,
+  seiTestnet,
+  sepolia,
+  unichainSepolia,
+  worldchainSepolia,
+  xdcTestnet,
+} from "viem/chains";
 import { AppShell } from "@/components/AppShell";
 import { ReceiptCard } from "@/components/ReceiptCard";
 import { ProfileChip } from "@/components/ProfileChip";
 import { TOKENS, ERC20_TRANSFER_ABI, type TokenKey } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { arcTestnet } from "@/config/wagmi";
+import {
+  CHAIN_METADATA,
+  CHAIN_USDC_ADDRESSES,
+  type CrosschainChain,
+} from "@/config/crosschain";
 import { decimalToUnits, formatAmount, formatContactLabel, getDirectoryEntries, getIdentityLabel, getIdentityProfile, getLocalTransfers, getPaymentRequests, resolveRecipientInput, saveLocalTransfer, upsertContactByAddress } from "@/lib/utils";
 import type { DirectoryEntry } from "@/lib/utils";
 import { fetchRegistryProfile, type RegistryProfile } from "@/lib/registry-client";
@@ -19,19 +42,48 @@ import { pushRemoteActivity } from "@/lib/activity-sync";
 
 type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
+const SEND_CHAINS = Object.keys(CHAIN_METADATA) as CrosschainChain[];
+const CHAIN_BY_KEY: Record<CrosschainChain, Chain> = {
+  Arc_Testnet: arcTestnet,
+  Ethereum_Sepolia: sepolia,
+  Base_Sepolia: baseSepolia,
+  Arbitrum_Sepolia: arbitrumSepolia,
+  Avalanche_Fuji: avalancheFuji,
+  Optimism_Sepolia: optimismSepolia,
+  Polygon_Amoy_Testnet: polygonAmoy,
+  Linea_Sepolia: lineaSepolia,
+  Unichain_Sepolia: unichainSepolia,
+  World_Chain_Sepolia: worldchainSepolia,
+  Ink_Testnet: inkSepolia,
+  Monad_Testnet: monadTestnet,
+  HyperEVM_Testnet: hyperliquidEvmTestnet,
+  Plume_Testnet: plumeSepolia,
+  Sei_Testnet: seiTestnet,
+  XDC_Apothem: xdcTestnet,
+  Codex_Testnet: codexTestnet,
+};
+
 export default function SendPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId } = useRadiusAuth();
+  const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId, switchChain: switchAuthChain } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
+  const [token, setToken] = useState<TokenKey>("USDC");
+  const [selectedChain, setSelectedChain] = useState<CrosschainChain>("Arc_Testnet");
   const wagmiChainId = useChainId();
   const activeChainId = wagmiConnected ? wagmiChainId : authChainId;
-  const publicClient = usePublicClient({ chainId: arcTestnet.id });
+  const selectedChainMeta = CHAIN_METADATA[selectedChain];
+  const selectedViemChain = CHAIN_BY_KEY[selectedChain];
+  const selectedChainId = selectedChainMeta.chainId;
+  const selectedChainLabel = selectedChainMeta.label;
+  const selectedExplorerUrl = selectedChainMeta.explorerUrl;
+  const selectedTokenAddress = token === "USDC" ? CHAIN_USDC_ADDRESSES[selectedChain] : TOKENS.EURC.address;
+  const supportsSelectedToken = selectedChain === "Arc_Testnet" || token === "USDC";
+  const publicClient = usePublicClient({ chainId: selectedChainId });
   const { data: walletClient } = useWalletClient();
   const { switchChainAsync } = useSwitchChain();
 
   const mounted = useMounted();
-  const [token, setToken] = useState<TokenKey>("USDC");
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
   const [scheduleId, setScheduleId] = useState<string | null>(null);
@@ -42,6 +94,8 @@ export default function SendPage() {
     const params = new URLSearchParams(window.location.search);
     const t = params.get("token") as TokenKey | null;
     if (t && t in TOKENS) setToken(t);
+    const chainParam = params.get("chain") as CrosschainChain | null;
+    if (chainParam && chainParam in CHAIN_METADATA) setSelectedChain(chainParam);
     const to = params.get("to");
     if (to) setRecipient(to);
     const amt = params.get("amount");
@@ -68,22 +122,23 @@ export default function SendPage() {
   const senderLabel = mounted ? getIdentityLabel(getIdentityProfile()) : "Connected wallet";
 
   const { data: balances } = useReadContracts({
-    contracts: address ? (Object.keys(TOKENS) as TokenKey[]).map((key) => ({
-      address: TOKENS[key].address,
-      abi: ERC20_TRANSFER_ABI,
-      functionName: "balanceOf",
-      args: [address],
-      chainId: arcTestnet.id,
-    })) : [],
-    query: { enabled: !!address },
+    contracts: address && supportsSelectedToken ? [
+      {
+        address: selectedTokenAddress,
+        abi: ERC20_TRANSFER_ABI,
+        functionName: "balanceOf",
+        args: [address],
+        chainId: selectedChainId,
+      },
+    ] : [],
+    query: { enabled: !!address && supportsSelectedToken },
   });
 
-  const balanceByToken = Object.fromEntries((Object.keys(TOKENS) as TokenKey[]).map((key, i) => [key, balances?.[i]?.result as bigint | undefined])) as Record<TokenKey, bigint | undefined>;
-  const isOnArc = activeChainId === arcTestnet.id;
+  const selectedBalance = balances?.[0]?.result as bigint | undefined;
+  const isOnSelectedChain = activeChainId === selectedChainId;
   const requestedRaw = amount && Number(amount) > 0 ? decimalToUnits(amount, TOKENS[token].decimals) : BigInt(0);
-  const selectedBalance = balanceByToken[token];
   const hasEnoughBalance = typeof selectedBalance === "bigint" ? selectedBalance >= requestedRaw : false;
-  const canSend = isConnected && isOnArc && !!amount && Number(amount) > 0 && hasEnoughBalance && status !== "sending" && status !== "confirming";
+  const canSend = isConnected && isOnSelectedChain && supportsSelectedToken && !!amount && Number(amount) > 0 && hasEnoughBalance && status !== "sending" && status !== "confirming";
 
   const directoryEntries = useMemo(() => {
     if (!mounted) return [] as DirectoryEntry[];
@@ -102,6 +157,12 @@ export default function SendPage() {
   const readyToSend = canSend && validRecipient;
 
   useEffect(() => {
+    if (selectedChain !== "Arc_Testnet" && token !== "USDC") {
+      queueMicrotask(() => setToken("USDC"));
+    }
+  }, [selectedChain, token]);
+
+  useEffect(() => {
     const trimmed = recipient.trim();
     const handle = trimmed && !trimmed.startsWith("0x") ? trimmed : "";
     if (!handle || resolvedRecipient.address) {
@@ -118,17 +179,30 @@ export default function SendPage() {
   }, [recipient, resolvedRecipient.address]);
 
   async function getActiveWalletClient() {
-    if (walletClient) return walletClient;
+    if (walletClient && walletClient.chain?.id === selectedChainId) return walletClient;
     if (!authProvider || !address) return null;
-    return createWalletClient({ account: address, chain: arcTestnet, transport: custom(authProvider) });
+    return createWalletClient({ account: address, chain: selectedViemChain, transport: custom(authProvider) });
+  }
+
+  async function switchToSelectedChain() {
+    if (wagmiConnected) {
+      await switchChainAsync({ chainId: selectedChainId });
+      return;
+    }
+    await switchAuthChain(selectedChainId);
   }
 
   function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!publicClient || !address || !validRecipient || !resolvedRecipientAddress) return;
-    if (!isOnArc) {
+    if (!isOnSelectedChain) {
       setStatus("error");
-      setError("Switch to Arc Testnet before sending. Bridge is now a separate tab.");
+      setError(`Switch to ${selectedChainLabel} before sending.`);
+      return;
+    }
+    if (!supportsSelectedToken) {
+      setStatus("error");
+      setError(`${token} sending is only supported on Arc Testnet. Choose USDC for other chains.`);
       return;
     }
     if (!hasEnoughBalance) {
@@ -168,15 +242,17 @@ export default function SendPage() {
       const tokenInfo = TOKENS[token];
       const parsedAmount = parseUnits(amount, tokenInfo.decimals);
       const hash = await activeWalletClient.writeContract({
-        address: tokenInfo.address,
+        address: selectedTokenAddress,
         abi: ERC20_TRANSFER_ABI,
         functionName: "transfer",
         args: [resolvedRecipientAddress as `0x${string}`, parsedAmount],
+        chain: selectedViemChain,
+        account: address,
       });
       setTxHash(hash);
       setStatus("confirming");
       await publicClient.waitForTransactionReceipt({ hash });
-      saveLocalTransfer({ from: address, to: resolvedRecipientAddress, value: parsedAmount.toString(), token, txHash: hash, direction: "sent", routeLabel: memo.trim() || "Arc → Arc" });
+      saveLocalTransfer({ from: address, to: resolvedRecipientAddress, value: parsedAmount.toString(), token, txHash: hash, direction: "sent", routeLabel: memo.trim() || `${selectedChainLabel} → ${selectedChainLabel}` });
       void pushRemoteActivity(address, { requests: getPaymentRequests(), transfers: getLocalTransfers() });
       if (scheduleId) {
         try { advanceSchedule(scheduleId, Date.now()); } catch { /* noop */ }
@@ -220,7 +296,7 @@ export default function SendPage() {
           <div className="success-fade-in space-y-5">
             <div className="glass-panel-strong rounded-[32px] p-6">
               <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Payment sent</p>
-              <h2 className="text-3xl font-semibold tracking-tight text-glow">Sent on Arc.</h2>
+              <h2 className="text-3xl font-semibold tracking-tight text-glow">Sent on {selectedChainLabel}.</h2>
               <p className="mt-3 text-sm leading-6 text-zinc-400">{amount} {token} sent to {recipientLabel}.</p>
               {memo.trim() && (
                 <p className="mt-2 text-sm text-zinc-500">Memo: {memo.trim()}</p>
@@ -235,10 +311,10 @@ export default function SendPage() {
               )}
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <button onClick={resetForm} className="ghost-btn text-sm">Send another</button>
-                {txHash && <a href={`${arcTestnet.blockExplorers.default.url}/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="primary-btn text-center text-sm">View tx</a>}
+                {txHash && <a href={`${selectedExplorerUrl}/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="primary-btn text-center text-sm">View tx</a>}
               </div>
             </div>
-<ReceiptCard title="Radius" amount={amount} token={token} status="Settled" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={recipientLabel} memo={memo.trim() || undefined} shareText={validRecipient ? `Sent ${amount} ${token} on Arc to ${recipientLabel}${memo.trim() ? ` — "${memo.trim()}"` : ""}` : undefined} txHash={txHash} explorerUrl={txHash ? `${arcTestnet.blockExplorers.default.url}/tx/${txHash}` : undefined} />
+<ReceiptCard title="Radius" amount={amount} token={token} status="Settled" fromLabel={address ? senderLabel : "Connected wallet"} toLabel={recipientLabel} memo={memo.trim() || undefined} shareText={validRecipient ? `Sent ${amount} ${token} on ${selectedChainLabel} to ${recipientLabel}${memo.trim() ? ` — "${memo.trim()}"` : ""}` : undefined} txHash={txHash} explorerUrl={txHash ? `${selectedExplorerUrl}/tx/${txHash}` : undefined} />
           </div>
         ) : (
           <form onSubmit={handleSend} className="send-flow space-y-5">
@@ -249,21 +325,32 @@ export default function SendPage() {
                 </div>
                 <div>
                   <p className="mb-1 text-[11px] uppercase tracking-[0.3em] text-[var(--brand)]">Send</p>
-                  <h2 className="text-2xl font-black tracking-tight text-glow">Send on Arc</h2>
-                  <p className="mt-2 max-w-xs text-sm leading-6 text-zinc-400">Send stablecoins to a wallet, saved contact, or global Radius username in seconds.</p>
+                  <h2 className="text-2xl font-black tracking-tight text-glow">Send USDC anywhere</h2>
+              <p className="mt-2 max-w-xs text-sm leading-6 text-zinc-400">Send USDC from Arc or other supported testnets to a wallet, saved contact, or global Radius username.</p>
                 </div>
               </div>
             </div>
 
             <div className="flow-card compact glass-panel rounded-[28px] p-5 text-sm">
-              <div className="flex items-center justify-between">
+              <div className="mb-3 flex items-center justify-between">
                 <span className="text-zinc-500">Network</span>
-                <span className={`inline-flex items-center gap-2 font-medium ${isOnArc ? "text-emerald-500" : "text-amber-500"}`}>
-                  <span className={`status-dot ${isOnArc ? "ok" : "warn"}`} aria-hidden="true" />
-                  {isOnArc ? "Arc Testnet" : "Switch to Arc Testnet"}
+                <span className={`inline-flex items-center gap-2 font-medium ${isOnSelectedChain ? "text-emerald-500" : "text-amber-500"}`}>
+                  <span className={`status-dot ${isOnSelectedChain ? "ok" : "warn"}`} aria-hidden="true" />
+                  {isOnSelectedChain ? selectedChainLabel : `Switch to ${selectedChainLabel}`}
                 </span>
               </div>
-              {!isOnArc && <button type="button" onClick={() => switchChainAsync({ chainId: arcTestnet.id }).catch(() => setError("Failed to switch network"))} className="ghost-btn mt-3 w-full text-xs">Switch to Arc</button>}
+              <select
+                value={selectedChain}
+                onChange={(e) => setSelectedChain(e.target.value as CrosschainChain)}
+                className="radius-input mb-3 text-sm"
+                aria-label="Source network"
+              >
+                {SEND_CHAINS.map((chain) => (
+                  <option key={chain} value={chain}>{CHAIN_METADATA[chain].label}</option>
+                ))}
+              </select>
+              {!isOnSelectedChain && <button type="button" onClick={() => switchToSelectedChain().catch(() => setError(`Failed to switch to ${selectedChainLabel}`))} className="ghost-btn w-full text-xs">Switch to {selectedChainLabel}</button>}
+              {selectedChain !== "Arc_Testnet" && <p className="mt-3 text-xs text-zinc-500">Non-Arc networks support USDC sends only. Use Bridge for cross-chain delivery.</p>}
             </div>
 
             <div className="flow-card glass-panel rounded-[28px] p-5">
@@ -286,13 +373,16 @@ export default function SendPage() {
                   {token}
                 </button>
               </div>
-              {balanceByToken[token] !== undefined && (
+              {selectedBalance !== undefined && (
                 <div className="mt-3 flex items-center justify-between gap-3 text-xs text-zinc-500">
-                  <span>Available: {formatAmount(balanceByToken[token]!, TOKENS[token].decimals)} {token}</span>
-                  <button type="button" onClick={() => setAmount(formatAmount(balanceByToken[token]!, TOKENS[token].decimals).replace(/,/g, ""))} className="font-semibold text-[var(--brand)]">Max</button>
+                  <span>Available: {formatAmount(selectedBalance, TOKENS[token].decimals)} {token}</span>
+                  <button type="button" onClick={() => setAmount(formatAmount(selectedBalance, TOKENS[token].decimals).replace(/,/g, ""))} className="font-semibold text-[var(--brand)]">Max</button>
                 </div>
               )}
-              {!hasEnoughBalance && amount && Number(amount) > 0 && (
+              {!supportsSelectedToken && (
+                <p className="mt-3 rounded-2xl bg-amber-500/10 p-3 text-xs font-medium text-amber-600">{token} is only available on Arc Testnet. Select USDC for {selectedChainLabel}.</p>
+              )}
+              {!hasEnoughBalance && supportsSelectedToken && amount && Number(amount) > 0 && (
                 <p className="mt-3 rounded-2xl bg-red-500/10 p-3 text-xs font-medium text-red-500">Insufficient {token} balance.</p>
               )}
             </div>
@@ -308,7 +398,7 @@ export default function SendPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between gap-4"><span className="text-zinc-500">Recipient</span><span className="min-w-0 text-right font-medium break-words">{recipientLabel}</span></div>
                   <div className="flex justify-between gap-4"><span className="text-zinc-500">Amount</span><span className="font-medium">{amount} {token}</span></div>
-                  <div className="flex justify-between gap-4"><span className="text-zinc-500">Network</span><span className="font-medium text-emerald-500">Arc Testnet</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-zinc-500">Network</span><span className="font-medium text-emerald-500">{selectedChainLabel}</span></div>
                   <div className="flex justify-between gap-4"><span className="text-zinc-500">Network fee</span><span className="font-medium">Wallet estimate</span></div>
                   {memo.trim() && (
                     <div className="flex justify-between gap-4"><span className="text-zinc-500">Memo</span><span className="min-w-0 text-right font-medium break-words">{memo.trim()}</span></div>
@@ -330,7 +420,7 @@ export default function SendPage() {
               <h3 className="mt-2 text-2xl font-bold">Send {amount} {token}?</h3>
               <div className="mt-5 space-y-3 rounded-2xl bg-white/55 p-4 text-sm">
                 <div className="flex justify-between gap-4"><span className="text-[#8b8795]">To</span><span className="min-w-0 text-right font-semibold break-words">{recipientLabel}</span></div>
-                <div className="flex justify-between gap-4"><span className="text-[#8b8795]">Network</span><span className="font-semibold">Arc Testnet</span></div>
+                <div className="flex justify-between gap-4"><span className="text-[#8b8795]">Network</span><span className="font-semibold">{selectedChainLabel}</span></div>
                 <div className="flex justify-between gap-4"><span className="text-[#8b8795]">Fee</span><span className="font-semibold">Shown in wallet</span></div>
                 {memo.trim() && (
                   <div className="flex justify-between gap-4"><span className="text-[#8b8795]">Memo</span><span className="min-w-0 text-right font-semibold break-words">{memo.trim()}</span></div>
@@ -352,18 +442,21 @@ export default function SendPage() {
                 <button type="button" onClick={() => setShowTokenPicker(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
               </div>
               <div className="space-y-3">
-                {(Object.keys(TOKENS) as TokenKey[]).map((key) => (
-                  <button key={key} type="button" onClick={() => { setToken(key); setShowTokenPicker(false); }} className={`frosted-choice w-full ${token === key ? "active" : ""}`}>
+                {(Object.keys(TOKENS) as TokenKey[]).map((key) => {
+                  const disabled = selectedChain !== "Arc_Testnet" && key !== "USDC";
+                  return (
+                  <button key={key} type="button" disabled={disabled} onClick={() => { if (disabled) return; setToken(key); setShowTokenPicker(false); }} className={`frosted-choice w-full ${token === key ? "active" : ""} ${disabled ? "opacity-45" : ""}`}>
                     <div className="flex items-center gap-3">
                       <TokenLogo symbol={key} size={34} />
                       <div>
                         <p className="font-bold">{key}</p>
-                        <p className="text-xs opacity-70">{TOKENS[key].name}</p>
+                        <p className="text-xs opacity-70">{disabled ? `Only on Arc Testnet` : TOKENS[key].name}</p>
                       </div>
-                      {balanceByToken[key] !== undefined && <div className="ml-auto text-xs opacity-70">Balance: {formatAmount(balanceByToken[key]!, TOKENS[key].decimals)}</div>}
+                      {key === token && selectedBalance !== undefined && <div className="ml-auto text-xs opacity-70">Balance: {formatAmount(selectedBalance, TOKENS[key].decimals)}</div>}
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
