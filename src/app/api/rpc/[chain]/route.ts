@@ -48,6 +48,30 @@ export async function POST(request: NextRequest, context: { params: Promise<RpcP
         lastError = `${endpoint} returned ${upstream.status}`;
         continue;
       }
+      // Some public RPCs return 200 with a JSON-RPC error body for rate limits
+      // (e.g. {"error":{"code":-32005,"message":"limit exceeded"}}). Detect
+      // transient errors and try the next endpoint instead of returning them.
+      try {
+        const parsed = JSON.parse(text);
+        const checkOne = (c: { error?: { code?: number; message?: string } }) => {
+          const err = c?.error;
+          if (!err) return false;
+          const code = typeof err.code === "number" ? err.code : 0;
+          const msg = (err.message || "").toLowerCase();
+          // -32005 = rate limit / limit exceeded (common across providers)
+          // -32603 = internal error (often transient on public RPCs)
+          if (code === -32005) return true;
+          if (msg.includes("rate limit") || msg.includes("limit exceeded") || msg.includes("too many requests")) return true;
+          return false;
+        };
+        const transient = Array.isArray(parsed) ? parsed.some(checkOne) : checkOne(parsed);
+        if (transient) {
+          lastError = `${endpoint} rate-limited`;
+          continue;
+        }
+      } catch {
+        // Non-JSON body — fall through and return as-is.
+      }
       return new NextResponse(text, {
         status: 200,
         headers: {

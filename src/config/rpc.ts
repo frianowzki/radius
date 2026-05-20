@@ -5,10 +5,26 @@ export const RPC_ENDPOINTS_BY_SLUG = {
     "https://sepolia.drpc.org",
     "https://ethereum-sepolia.publicnode.com",
   ],
-  "base-sepolia": ["https://sepolia.base.org"],
-  "arbitrum-sepolia": ["https://sepolia-rollup.arbitrum.io/rpc"],
-  "avalanche-fuji": ["https://api.avax-test.network/ext/bc/C/rpc"],
-  "optimism-sepolia": ["https://sepolia.optimism.io"],
+  "base-sepolia": [
+    "https://sepolia.base.org",
+    "https://base-sepolia-rpc.publicnode.com",
+    "https://84532.rpc.thirdweb.com",
+  ],
+  "arbitrum-sepolia": [
+    "https://sepolia-rollup.arbitrum.io/rpc",
+    "https://arbitrum-sepolia.drpc.org",
+    "https://arbitrum-sepolia-rpc.publicnode.com",
+    "https://421614.rpc.thirdweb.com",
+  ],
+  "avalanche-fuji": [
+    "https://api.avax-test.network/ext/bc/C/rpc",
+    "https://avalanche-fuji-c-chain-rpc.publicnode.com",
+  ],
+  "optimism-sepolia": [
+    "https://sepolia.optimism.io",
+    "https://optimism-sepolia.drpc.org",
+    "https://optimism-sepolia-rpc.publicnode.com",
+  ],
   "polygon-amoy": [
     "https://rpc-amoy.polygon.technology",
     "https://polygon-amoy-bor-rpc.publicnode.com",
