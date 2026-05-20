@@ -16,9 +16,11 @@ import {
   useLogout,
   usePrivy,
   useSignMessage,
+  useSignTransaction,
   useWallets,
   type ConnectedWallet,
   type LoginModalOptions,
+  type UnsignedTransactionRequest,
   type User,
 } from "@privy-io/react-auth";
 import type { EIP1193Provider } from "viem";
@@ -79,6 +81,7 @@ type RadiusAuthContextValue = {
   logout: () => Promise<void>;
   switchChain: (chainId: number) => Promise<void>;
   signMessage: (message: string) => Promise<string>;
+  signTransaction: (request: UnsignedTransactionRequest) => Promise<`0x${string}`>;
 };
 
 const RadiusAuthContext = createContext<RadiusAuthContextValue | null>(null);
@@ -118,6 +121,7 @@ function RadiusPrivyBridgeProvider({ children }: { children: ReactNode }) {
   const { wallets } = useWallets();
   const { logout: privyLogout } = useLogout();
   const { signMessage: privySignMessage } = useSignMessage();
+  const { signTransaction: privySignTx } = useSignTransaction();
   const [provider, setProvider] = useState<EIP1193Provider | null>(null);
   const [address, setAddress] = useState<`0x${string}` | undefined>();
   const [chainId, setChainId] = useState<number | undefined>();
@@ -188,6 +192,15 @@ function RadiusPrivyBridgeProvider({ children }: { children: ReactNode }) {
     [address, privySignMessage]
   );
 
+  const signTransaction = useCallback(
+    async (request: UnsignedTransactionRequest) => {
+      if (!address) throw new Error("Wallet unavailable");
+      const { signature } = await privySignTx(request, { address });
+      return signature as `0x${string}`;
+    },
+    [address, privySignTx]
+  );
+
   const switchChain = useCallback(
     async (targetChainId: number) => {
       if (!wallet) throw new Error("Privy wallet unavailable");
@@ -211,8 +224,9 @@ function RadiusPrivyBridgeProvider({ children }: { children: ReactNode }) {
       logout,
       switchChain,
       signMessage,
+      signTransaction,
     }),
-    [address, authenticated, chainId, login, logout, provider, ready, switchChain, signMessage, user]
+    [address, authenticated, chainId, login, logout, provider, ready, switchChain, signMessage, signTransaction, user]
   );
 
   return <RadiusAuthContext.Provider value={value}>{children}</RadiusAuthContext.Provider>;
@@ -235,6 +249,9 @@ export function RadiusAuthProvider({ children }: { children: ReactNode }) {
             throw new Error("Privy is not configured");
           },
           signMessage: async () => {
+            throw new Error("Privy is not configured");
+          },
+          signTransaction: async () => {
             throw new Error("Privy is not configured");
           },
         }}

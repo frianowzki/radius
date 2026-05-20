@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAccount, usePublicClient, useWalletClient, useReadContracts, useChainId, useSwitchChain } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { createWalletClient, custom, parseUnits, formatUnits, isAddress, type Chain } from "viem";
+import { createWalletClient, custom, encodeFunctionData, parseUnits, formatUnits, isAddress, numberToHex, type Chain } from "viem";
 import {
   arbitrumSepolia,
   avalancheFuji,
@@ -66,7 +66,7 @@ const CHAIN_BY_KEY: Record<CrosschainChain, Chain> = {
 
 export default function SendPage() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId, switchChain: switchAuthChain } = useRadiusAuth();
+  const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId, switchChain: switchAuthChain, signTransaction: privySignTransaction } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const [token, setToken] = useState<TokenKey>("USDC");
@@ -286,16 +286,13 @@ export default function SendPage() {
       });
       const gasLimit = gasEstimate + gasEstimate / BigInt(5);
       const feeEstimate = await publicClient.estimateFeesPerGas().catch(() => null);
-      const feeOverrides = feeEstimate?.maxFeePerGas && feeEstimate?.maxPriorityFeePerGas
-        ? { maxFeePerGas: feeEstimate.maxFeePerGas, maxPriorityFeePerGas: feeEstimate.maxPriorityFeePerGas }
-        : feeEstimate?.gasPrice
-          ? { gasPrice: feeEstimate.gasPrice }
-          : {};
-      const gasPriceCeiling = ("maxFeePerGas" in feeOverrides
-        ? feeOverrides.maxFeePerGas
-        : "gasPrice" in feeOverrides
-          ? feeOverrides.gasPrice
-          : BigInt(0)) ?? BigInt(0);
+      const feeOverrides: { maxFeePerGas?: bigint; maxPriorityFeePerGas?: bigint; gasPrice?: bigint } =
+        feeEstimate?.maxFeePerGas && feeEstimate?.maxPriorityFeePerGas
+          ? { maxFeePerGas: feeEstimate.maxFeePerGas, maxPriorityFeePerGas: feeEstimate.maxPriorityFeePerGas }
+          : feeEstimate?.gasPrice
+            ? { gasPrice: feeEstimate.gasPrice }
+            : {};
+      const gasPriceCeiling = (feeOverrides.maxFeePerGas ?? feeOverrides.gasPrice) ?? BigInt(0);
       if (selectedChain !== "Arc_Testnet" && gasPriceCeiling > BigInt(0)) {
         const nativeBalance = await publicClient.getBalance({ address });
         const requiredNativeGas = gasLimit * gasPriceCeiling;
@@ -304,16 +301,41 @@ export default function SendPage() {
           throw new Error(`Insufficient ${nativeSymbol} for ${selectedChainLabel} gas. Need about ${formatUnits(requiredNativeGas, selectedViemChain.nativeCurrency.decimals)} ${nativeSymbol}; wallet has ${formatUnits(nativeBalance, selectedViemChain.nativeCurrency.decimals)} ${nativeSymbol}.`);
         }
       }
-      const hash = await activeWalletClient.writeContract({
-        address: selectedTokenAddress,
-        abi: ERC20_TRANSFER_ABI,
-        functionName: "transfer",
-        args: transferArgs,
-        chain: selectedViemChain,
-        account: address,
-        gas: gasLimit,
-        ...feeOverrides,
-      });
+      const transferData = encodeFunctionData({ abi: ERC20_TRANSFER_ABI, functionName: "transfer", args: transferArgs });
+      const feeFields: Record<string, `0x${string}`> = {};
+      if (feeOverrides.maxFeePerGas !== undefined) {
+        feeFields.maxFeePerGas = numberToHex(feeOverrides.maxFeePerGas);
+        feeFields.maxPriorityFeePerGas = numberToHex(feeOverrides.maxPriorityFeePerGas ?? BigInt(0));
+      } else if (feeOverrides.gasPrice !== undefined) {
+        feeFields.gasPrice = numberToHex(feeOverrides.gasPrice);
+      }
+      let hash: `0x${string}`;
+      if (!walletClient) {
+        // Privy embedded wallet path: sign locally, broadcast via our publicClient
+        // (avoids Privy's RPC, which doesn't support testnet broadcasts cleanly).
+        const nonce = await publicClient.getTransactionCount({ address, blockTag: "pending" });
+        const signed = await privySignTransaction({
+          to: selectedTokenAddress,
+          data: transferData,
+          value: numberToHex(BigInt(0)),
+          chainId: selectedChainId,
+          gasLimit: numberToHex(gasLimit),
+          nonce: numberToHex(BigInt(nonce)),
+          ...feeFields,
+        });
+        hash = await publicClient.sendRawTransaction({ serializedTransaction: signed });
+      } else {
+        hash = await activeWalletClient.writeContract({
+          address: selectedTokenAddress,
+          abi: ERC20_TRANSFER_ABI,
+          functionName: "transfer",
+          args: transferArgs,
+          chain: selectedViemChain,
+          account: address,
+          gas: gasLimit,
+          ...(feeOverrides as Record<string, bigint>),
+        });
+      }
       setTxHash(hash);
       setStatus("confirming");
       await publicClient.waitForTransactionReceipt({ hash });
