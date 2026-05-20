@@ -206,6 +206,19 @@ function RadiusPrivyBridgeProvider({ children }: { children: ReactNode }) {
       if (!wallet) throw new Error("Privy wallet unavailable");
       await wallet.switchChain(targetChainId);
       const nextProvider = (await wallet.getEthereumProvider()) as unknown as EIP1193Provider;
+      // Poll until the embedded provider actually reports the target chain.
+      // Privy's switchChain resolves before the EIP-1193 provider updates,
+      // which leads to "wallet still on chain X" errors on the first send.
+      const deadline = Date.now() + 4000;
+      while (Date.now() < deadline) {
+        try {
+          const hex = (await nextProvider.request({ method: "eth_chainId" })) as string;
+          if (parseInt(hex, 16) === targetChainId) break;
+        } catch {
+          /* ignore and retry */
+        }
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      }
       setProvider(nextProvider);
       setChainId(targetChainId);
     },
