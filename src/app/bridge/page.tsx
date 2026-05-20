@@ -11,8 +11,9 @@ import {
   useSwitchChain,
 } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
-import { createWalletClient, custom, parseUnits, isAddress } from "viem";
+import { createPublicClient, createWalletClient, custom, fallback, http, parseUnits, isAddress, type PublicClient } from "viem";
 import type { Chain, EIP1193Provider } from "viem";
+import { getRpcUrlsForChainId } from "@/config/rpc";
 import {
   arbitrumSepolia,
   avalancheFuji,
@@ -51,7 +52,7 @@ import {
   getBridgeErrorMessage,
   summarizeBridgeEstimate,
   formatEtaSeconds,
-  createAccountSafeProvider,
+  createSignAndForwardProvider,
   type BridgeSpeed,
 } from "@/lib/appkit";
 import {
@@ -80,7 +81,7 @@ type SendStatus = "idle" | "sending" | "confirming" | "success" | "error";
 
 export default function BridgePage() {
   const { address: wagmiAddress, isConnected: wagmiConnected, connector } = useAccount();
-  const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId, switchChain: switchAuthChain } = useRadiusAuth();
+  const { authenticated, address: authAddress, provider: authProvider, chainId: authChainId, switchChain: switchAuthChain, signTransaction: privySignTransaction } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const wagmiChainId = useChainId();
@@ -297,12 +298,27 @@ export default function BridgePage() {
   async function getActiveWalletClient() {
     if (walletClient) return walletClient;
     if (!authProvider || !address) return null;
+    // Wrap Privy provider so writeContract gets the same sign+forward treatment.
+    const wrapped = createSignAndForwardProvider(
+      authProvider as EIP1193Provider,
+      address as `0x${string}`,
+      privySignTransaction,
+      buildPublicClientForChain
+    );
     return createWalletClient({
       account: address,
       chain: sourceViemChain,
-      transport: custom(authProvider),
+      transport: custom(wrapped),
     });
   }
+
+  const buildPublicClientForChain = (id: number): PublicClient | null => {
+    const chain = Object.values(chainByRoute).find((c) => c?.id === id) as Chain | undefined;
+    if (!chain) return null;
+    const rpcUrls = getRpcUrlsForChainId(id);
+    const transport = rpcUrls?.length ? fallback(rpcUrls.map((url) => http(url))) : http();
+    return createPublicClient({ chain, transport }) as unknown as PublicClient;
+  };
 
   async function getActiveProvider() {
     if (wagmiConnected && connector?.getProvider) {
@@ -313,7 +329,17 @@ export default function BridgePage() {
         // fall through to other sources
       }
     }
-    if (authProvider) return createAccountSafeProvider(authProvider as EIP1193Provider, address as `0x${string}`);
+    if (authProvider) {
+      // Privy embedded wallet: intercept eth_sendTransaction so we sign locally
+      // and broadcast via our own RPC proxy instead of Privy's RPC, which fails
+      // on testnets. createSignAndForwardProvider also handles eth_accounts.
+      return createSignAndForwardProvider(
+        authProvider as EIP1193Provider,
+        address as `0x${string}`,
+        privySignTransaction,
+        buildPublicClientForChain
+      );
+    }
 
     const injectedProvider = (globalThis as typeof globalThis & {
       ethereum?: EIP1193Provider;

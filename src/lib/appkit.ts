@@ -32,6 +32,87 @@ export function createAccountSafeProvider(provider: EIP1193Provider, account?: `
   } as EIP1193Provider;
 }
 
+/**
+ * Wraps an EIP-1193 provider so that `eth_sendTransaction` is intercepted:
+ * the tx is signed via the supplied `signTransaction` callback (Privy embedded
+ * wallet), and the resulting raw tx is broadcast through our own publicClient
+ * (via /api/rpc/<chain>) instead of Privy's RPC, which doesn't broadcast on
+ * testnets cleanly. All other RPC methods pass through unchanged.
+ */
+export function createSignAndForwardProvider(
+  provider: EIP1193Provider,
+  account: `0x${string}`,
+  signTransaction: (req: {
+    to?: `0x${string}`;
+    data?: `0x${string}`;
+    value?: `0x${string}`;
+    chainId: number;
+    gasLimit?: `0x${string}`;
+    nonce?: `0x${string}`;
+    maxFeePerGas?: `0x${string}`;
+    maxPriorityFeePerGas?: `0x${string}`;
+    gasPrice?: `0x${string}`;
+  }) => Promise<`0x${string}`>,
+  getRawClient: (chainId: number) => PublicClient | null
+): EIP1193Provider {
+  const inner = createAccountSafeProvider(provider, account);
+  return {
+    ...inner,
+    request: async (args) => {
+      if (args.method === "eth_sendTransaction") {
+        const params = (args.params as Array<Record<string, string>>) || [];
+        const tx = params[0] || {};
+        const chainIdHex = (await provider.request({ method: "eth_chainId" } as Parameters<EIP1193Provider["request"]>[0])) as string;
+        const chainId = parseInt(chainIdHex, 16);
+        const pub = getRawClient(chainId);
+        if (!pub) throw new Error(`No public client configured for chain ${chainId}`);
+        // Fill nonce / gas if missing.
+        const nonce = tx.nonce
+          ? BigInt(tx.nonce)
+          : BigInt(await pub.getTransactionCount({ address: account, blockTag: "pending" }));
+        let gasLimit: bigint;
+        if (tx.gas) {
+          gasLimit = BigInt(tx.gas);
+        } else {
+          const est = await pub.estimateGas({
+            account,
+            to: tx.to as `0x${string}` | undefined,
+            data: tx.data as `0x${string}` | undefined,
+            value: tx.value ? BigInt(tx.value) : undefined,
+          });
+          gasLimit = est + est / BigInt(5);
+        }
+        const fees = (await pub.estimateFeesPerGas().catch(() => null)) as
+          | { maxFeePerGas?: bigint; maxPriorityFeePerGas?: bigint; gasPrice?: bigint }
+          | null;
+        const feeFields: Record<string, `0x${string}`> = {};
+        if (tx.maxFeePerGas) {
+          feeFields.maxFeePerGas = tx.maxFeePerGas as `0x${string}`;
+          feeFields.maxPriorityFeePerGas = (tx.maxPriorityFeePerGas as `0x${string}`) ?? `0x0`;
+        } else if (tx.gasPrice) {
+          feeFields.gasPrice = tx.gasPrice as `0x${string}`;
+        } else if (fees?.maxFeePerGas && fees?.maxPriorityFeePerGas) {
+          feeFields.maxFeePerGas = `0x${fees.maxFeePerGas.toString(16)}`;
+          feeFields.maxPriorityFeePerGas = `0x${fees.maxPriorityFeePerGas.toString(16)}`;
+        } else if (fees?.gasPrice) {
+          feeFields.gasPrice = `0x${fees.gasPrice.toString(16)}`;
+        }
+        const signed = await signTransaction({
+          to: tx.to as `0x${string}` | undefined,
+          data: (tx.data as `0x${string}` | undefined) ?? "0x",
+          value: (tx.value as `0x${string}` | undefined) ?? "0x0",
+          chainId,
+          gasLimit: `0x${gasLimit.toString(16)}`,
+          nonce: `0x${nonce.toString(16)}`,
+          ...feeFields,
+        });
+        return pub.sendRawTransaction({ serializedTransaction: signed });
+      }
+      return inner.request(args as Parameters<EIP1193Provider["request"]>[0]);
+    },
+  } as EIP1193Provider;
+}
+
 export async function createBrowserAppKitAdapter(provider: EIP1193Provider, account?: `0x${string}`) {
   const { createViemAdapterFromProvider } = await import("@circle-fin/adapter-viem-v2");
   return createViemAdapterFromProvider({
