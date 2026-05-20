@@ -41,6 +41,23 @@ import {
   xdcTestnet,
 } from "viem/chains";
 import { arcTestnet } from "@/config/wagmi";
+import { getBrowserRpcUrl } from "@/config/rpc";
+
+// Override Privy's default RPC proxy (sepolia.rpc.privy.systems) with our
+// /api/rpc/<slug> proxy so background nonce/balance pings don't hit Privy's
+// rate-limited public endpoint.
+function withOurRpc<C extends { id: number; rpcUrls: { default: { http: readonly string[] } } }>(chain: C): C {
+  const url = getBrowserRpcUrl(chain.id);
+  if (!url) return chain;
+  return {
+    ...chain,
+    rpcUrls: {
+      ...chain.rpcUrls,
+      default: { http: [url] },
+      public: { http: [url] },
+    },
+  } as C;
+}
 
 export type SocialLoginMethod = "email" | "google" | "github" | "twitter" | "apple";
 
@@ -260,8 +277,8 @@ export function RadiusAuthProvider({ children }: { children: ReactNode }) {
           seiTestnet,
           xdcTestnet,
           codexTestnet,
-        ],
-        defaultChain: arcTestnet,
+        ].map(withOurRpc),
+        defaultChain: withOurRpc(arcTestnet),
         embeddedWallets: {
           ethereum: { createOnLogin: "users-without-wallets" },
         },
