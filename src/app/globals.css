@@ -5183,3 +5183,57 @@ html[data-theme="dark"] .landing-link-arrow {
   color: currentColor !important;
   opacity: .44;
 }
+
+/* Landing final contrast/toggle override */
+html:not([data-theme="dark"]) .landing-links a,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a,
+html:not([data-theme="dark"]) .landing-link-label,
+html:not([data-theme="dark"]) .landing-link-arrow {
+  color: #0f172a !important;
+}
+
+html:not([data-theme="dark"]) .landing-links svg,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links svg {
+  color: #0f172a !important;
+  stroke: #0f172a !important;
+}
+
+html:not([data-theme="dark"]) .landing-links a[aria-label="GitHub"] svg,
+html:not([data-theme="dark"]) .landing-links a[aria-label="Twitter"] svg,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a[aria-label="GitHub"] svg,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a[aria-label="Twitter"] svg {
+  fill: #0f172a !important;
+  stroke: none !important;
+}
+
+.landing-card .landing-theme-toggle .theme-toggle,
+html:not([data-theme="dark"]) .landing-card .landing-theme-toggle .theme-toggle,
+html[data-theme="dark"] .landing-card .landing-theme-toggle .theme-toggle,
+.landing-theme-toggle .theme-toggle,
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle {
+  background: transparent !important;
+  background-color: transparent !important;
+  border-color: rgba(255, 255, 255, .34) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.landing-card .landing-theme-toggle .theme-toggle:hover,
+html:not([data-theme="dark"]) .landing-card .landing-theme-toggle .theme-toggle:hover,
+html[data-theme="dark"] .landing-card .landing-theme-toggle .theme-toggle:hover,
+.landing-theme-toggle .theme-toggle:hover,
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle:hover,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  border-color: rgba(255, 255, 255, .52) !important;
+}
+
+.landing-theme-toggle .theme-toggle *,
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle *,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle * {
+  color: #fff !important;
+  fill: none !important;
+  stroke: #fff !important;
+}
