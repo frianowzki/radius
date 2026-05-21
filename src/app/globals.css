@@ -5237,3 +5237,82 @@ html[data-theme="dark"] .landing-theme-toggle .theme-toggle * {
   fill: none !important;
   stroke: #fff !important;
 }
+
+/* Landing theme-matched toggle and footer final override */
+html:not([data-theme="dark"]) .landing-links,
+html:not([data-theme="dark"]) .landing-links a,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a,
+html:not([data-theme="dark"]) .landing-link-label,
+html:not([data-theme="dark"]) .landing-link-arrow {
+  color: #000 !important;
+}
+
+html:not([data-theme="dark"]) .landing-links svg,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links svg {
+  color: #000 !important;
+  stroke: #000 !important;
+}
+
+html:not([data-theme="dark"]) .landing-links a[aria-label="GitHub"] svg,
+html:not([data-theme="dark"]) .landing-links a[aria-label="Twitter"] svg,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a[aria-label="GitHub"] svg,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a[aria-label="Twitter"] svg {
+  fill: #000 !important;
+  stroke: none !important;
+}
+
+html:not([data-theme="dark"]) .landing-link-arrow,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-link-arrow {
+  color: #000 !important;
+  opacity: 1 !important;
+}
+
+html:not([data-theme="dark"]) .landing-card .landing-theme-toggle .theme-toggle,
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle {
+  background: rgba(255, 255, 255, .82) !important;
+  background-color: rgba(255, 255, 255, .82) !important;
+  border-color: rgba(255, 255, 255, .88) !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 10px 28px rgba(15, 23, 42, .10) !important;
+  backdrop-filter: blur(18px) saturate(1.18) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.18) !important;
+}
+
+html:not([data-theme="dark"]) .landing-card .landing-theme-toggle .theme-toggle:hover,
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle:hover {
+  background: rgba(255, 255, 255, .94) !important;
+  background-color: rgba(255, 255, 255, .94) !important;
+  border-color: #fff !important;
+}
+
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle *,
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle svg,
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle-dot {
+  color: #0f172a !important;
+  stroke: #0f172a !important;
+}
+
+html[data-theme="dark"] .landing-card .landing-theme-toggle .theme-toggle,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle {
+  background: rgba(15, 23, 42, .68) !important;
+  background-color: rgba(15, 23, 42, .68) !important;
+  border-color: rgba(148, 163, 184, .22) !important;
+  color: #f8fafc !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 30px rgba(0,0,0,.22) !important;
+  backdrop-filter: blur(18px) saturate(1.18) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.18) !important;
+}
+
+html[data-theme="dark"] .landing-card .landing-theme-toggle .theme-toggle:hover,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle:hover {
+  background: rgba(30, 41, 59, .78) !important;
+  background-color: rgba(30, 41, 59, .78) !important;
+  border-color: rgba(226, 232, 240, .26) !important;
+}
+
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle *,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle svg,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle-dot {
+  color: #f8fafc !important;
+  stroke: #f8fafc !important;
+}
