@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { formatUnits } from "viem";
 import { usePathname } from "next/navigation";
-import { useReadContracts } from "wagmi";
+import { useAccount, useReadContracts } from "wagmi";
 import { DynamicBackground } from "@/components/DynamicBackground";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
+import { LandingScreen } from "@/components/LandingScreen";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
+import { fetchRegistryProfile, registryProfileToIdentity } from "@/lib/registry-client";
+import { saveIdentityProfile } from "@/lib/utils";
+import { useRadiusAuth } from "@/lib/web3auth";
 import { TOKENS } from "@/config/tokens";
 import { arcTestnet } from "@/config/wagmi";
 import { RADIUSD_POOL_ABI, RADIUSD_POOL_ADDRESS } from "@/config/radiusdex";
@@ -127,7 +132,7 @@ function DesktopLiquidityCard() {
       { address: RADIUSD_POOL_ADDRESS, abi: RADIUSD_POOL_ABI, functionName: "balances", args: [BigInt(0)], chainId: arcTestnet.id },
       { address: RADIUSD_POOL_ADDRESS, abi: RADIUSD_POOL_ABI, functionName: "balances", args: [BigInt(1)], chainId: arcTestnet.id },
     ],
-    query: { refetchInterval: 10_000 },
+    query: { refetchInterval: 60_000, staleTime: 45_000 },
   });
   const usdc = (data?.[0]?.result as bigint | undefined) ?? BigInt(0);
   const eurc = (data?.[1]?.result as bigint | undefined) ?? BigInt(0);
@@ -145,9 +150,21 @@ function DesktopLiquidityCard() {
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, requireAuth = true }: { children: React.ReactNode; requireAuth?: boolean }) {
   const pathname = usePathname();
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const { initialized, authenticated, address: authAddress } = useRadiusAuth();
+  const address = wagmiAddress ?? authAddress;
+  const isConnected = wagmiConnected || authenticated;
   const [notifierReady, setNotifierReady] = useState(false);
+  const [registrationState, setRegistrationState] = useState<"checking" | "registered" | "missing">("checking");
+
+  const readRegistrationCache = useCallback((key: string) => {
+    try { return sessionStorage.getItem(key) === "1"; } catch { return false; }
+  }, []);
+  const writeRegistrationCache = useCallback((key: string) => {
+    try { sessionStorage.setItem(key, "1"); } catch { /* storage may be blocked */ }
+  }, []);
 
   useEffect(() => {
     const run = () => setNotifierReady(true);
@@ -157,6 +174,67 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       if (idle) window.cancelIdleCallback?.(idle);
     };
   }, []);
+
+  useEffect(() => {
+    if (!requireAuth) return;
+    if (!isConnected || !address) {
+      setRegistrationState("missing");
+      return;
+    }
+    const cacheKey = `radius-registered-${address.toLowerCase()}`;
+    if (readRegistrationCache(cacheKey)) {
+      setRegistrationState("registered");
+      return;
+    }
+    let cancelled = false;
+    setRegistrationState("checking");
+    fetchRegistryProfile({ address })
+      .then((profile) => {
+        if (cancelled) return;
+        if (profile?.handle) {
+          saveIdentityProfile(registryProfileToIdentity(profile));
+          writeRegistrationCache(cacheKey);
+          setRegistrationState("registered");
+        } else {
+          setRegistrationState("missing");
+        }
+      })
+      .catch(() => { if (!cancelled) setRegistrationState("missing"); });
+    return () => { cancelled = true; };
+  }, [requireAuth, isConnected, address, readRegistrationCache, writeRegistrationCache]);
+
+  const frame = (content: React.ReactNode, showNav = true) => (
+    <div className={`phone-shell${showNav ? "" : " public-shell"}`}>
+      <DynamicBackground />
+      {showNav && notifierReady && <PaymentRequestNotifier />}
+      {content}
+    </div>
+  );
+
+  if (requireAuth && !initialized) {
+    return frame(
+      <main><div className="screen-pad flex min-h-screen flex-col items-center justify-center text-center"><div className="orb mb-6 h-20 w-20 rounded-full" /><p className="text-sm font-semibold text-[#8b8795]">Restoring your Radius session…</p></div></main>,
+      false
+    );
+  }
+
+  if (requireAuth && !isConnected) {
+    return frame(<main><LandingScreen /></main>, false);
+  }
+
+  if (requireAuth && registrationState !== "registered") {
+    return frame(
+      <main>
+        <LandingScreen registrationRequired />
+        {address && <OnboardingWizard forceOpen requireProfile onRegistered={() => setRegistrationState("registered")} />}
+      </main>,
+      false
+    );
+  }
+
+  if (!requireAuth) {
+    return frame(<main>{children}</main>, false);
+  }
 
   return (
     <div className="phone-shell">

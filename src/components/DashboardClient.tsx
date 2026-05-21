@@ -5,11 +5,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { useAccount, useDisconnect } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { AppShell } from "@/components/AppShell";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
-import { SocialLoginButton } from "@/components/SocialLoginButton";
+import { LandingScreen } from "@/components/LandingScreen";
 import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { AvatarImage } from "@/components/AvatarImage";
@@ -45,38 +44,6 @@ import { useIncomingPaymentNotifications, requestNotificationPermission } from "
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, getPaymentRequests, saveLocalTransfers, savePaymentRequests, formatContactLabel, markMatchingPaymentRequestPaid, saveLocalTransfer } from "@/lib/utils";
 import { dueSchedules, type ScheduledPaymentRecord } from "@/lib/scheduled-payments";
 import { fetchRemoteActivity, mergePaymentRequests, mergeTransfers, pushRemoteActivity } from "@/lib/activity-sync";
-
-
-function WalletIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M4.2 8.1h13.9a2.2 2.2 0 0 1 2.2 2.2v7.1a2.2 2.2 0 0 1-2.2 2.2H5.9a2.2 2.2 0 0 1-2.2-2.2V6.8a2.2 2.2 0 0 1 2.2-2.2h10.2" />
-      <path d="M4 8.2 17.1 8" />
-      <path d="M16.3 13.9h4" />
-      <path d="M16.3 13.9a.25.25 0 1 0 0 .5.25.25 0 0 0 0-.5" />
-    </svg>
-  );
-}
-
-function WalletLoginButton() {
-  return (
-    <ConnectButton.Custom>
-      {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
-        const connected = mounted && account && chain;
-        return (
-          <button
-            type="button"
-            onClick={connected ? (chain.unsupported ? openChainModal : openAccountModal) : openConnectModal}
-            className="radius-auth-button secondary justify-center"
-          >
-            <span className="login-action-icon" aria-hidden="true"><WalletIcon /></span>
-            <span>{connected ? (chain.unsupported ? "Switch Network" : account.displayName) : "Connect Wallet"}</span>
-          </button>
-        );
-      }}
-    </ConnectButton.Custom>
-  );
-}
 
 type DashboardAsset = {
   id: string;
@@ -189,30 +156,7 @@ function EyeIcon({ hidden }: { hidden: boolean }) {
 }
 
 function LoginScreen() {
-  return (
-    <AppShell>
-      <div className="login-reference-shell">
-        <section className="login-hero" aria-label="Radius welcome">
-          <div className="login-planet-wrap" aria-hidden="true">
-            <span className="login-orbit login-orbit-a" />
-            <span className="login-orbit login-orbit-b" />
-            <span className="login-orbit-dot dot-a" />
-            <span className="login-orbit-dot dot-b" />
-            <span className="login-orbit-dot dot-c" />
-            <span className="login-planet" />
-          </div>
-
-          <h1 className="login-title">Radius</h1>
-          <p className="login-subtitle">P2P stablecoin payments on Arc Testnet</p>
-        </section>
-
-        <div className="login-actions">
-          <SocialLoginButton icon="users" method="modal" label="Social Wallets Login" className="login-action login-action-secondary login-social-action disabled:cursor-not-allowed disabled:opacity-50" />
-          <div className="login-wallet-action"><WalletLoginButton /></div>
-        </div>
-      </div>
-    </AppShell>
-  );
+  return <AppShell requireAuth={false}><LandingScreen /></AppShell>;
 }
 
 export function DashboardClient() {
@@ -333,15 +277,8 @@ export function DashboardClient() {
       if (!cancelled) setAssetScanStatus("error");
     });
 
-    const timer = window.setInterval(() => {
-      scanAssets().catch(() => {
-        if (!cancelled) setAssetScanStatus("error");
-      });
-    }, 20_000);
-
     return () => {
       cancelled = true;
-      window.clearInterval(timer);
     };
   }, [address]);
 

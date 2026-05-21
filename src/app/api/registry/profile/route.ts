@@ -148,8 +148,8 @@ export async function POST(req: Request) {
   const bio = cleanText(body.bio, 180) || undefined;
 
   if (!isAddress(address)) return jsonNoStore({ error: "Invalid wallet address" }, { status: 400 });
-  if (isWriteRateLimited(address)) return jsonNoStore({ error: "Too many requests. Please wait." }, { status: 429 });
   if (!(await verifyRegistryProof(address, "profile", body.proof))) return jsonNoStore({ error: "wallet signature required" }, { status: 401 });
+  if (isWriteRateLimited(address)) return jsonNoStore({ error: "Too many requests. Please wait." }, { status: 429 });
   if (!displayName) return jsonNoStore({ error: "Display name is required" }, { status: 400 });
   if (handle && !HANDLE_RE.test(handle)) {
     return jsonNoStore({ error: "Username must be 2-30 chars: letters, numbers, _, ., -" }, { status: 400 });

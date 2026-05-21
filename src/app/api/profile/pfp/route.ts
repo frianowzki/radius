@@ -7,6 +7,20 @@ export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const uploadRateLimit = new Map<string, number>();
+const UPLOAD_COOLDOWN_MS = 10_000;
+
+function isUploadRateLimited(address: string): boolean {
+  const now = Date.now();
+  const key = address.toLowerCase();
+  const last = uploadRateLimit.get(key) ?? 0;
+  if (now - last < UPLOAD_COOLDOWN_MS) return true;
+  if (uploadRateLimit.size > 5000) {
+    uploadRateLimit.forEach((ts, k) => { if (now - ts > 60_000) uploadRateLimit.delete(k); });
+  }
+  uploadRateLimit.set(key, now);
+  return false;
+}
 
 function safePathPart(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]/g, "-").slice(0, 120);
@@ -63,6 +77,9 @@ export async function POST(req: Request) {
     }
     if (!(await verifyRegistryProof(address, "profile", proof))) {
       return NextResponse.json({ error: "Wallet signature required" }, { status: 401 });
+    }
+    if (isUploadRateLimited(address)) {
+      return NextResponse.json({ error: "Too many uploads. Please wait." }, { status: 429 });
     }
 
     if (file.size > MAX_FILE_SIZE) {

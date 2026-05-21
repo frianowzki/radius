@@ -5,13 +5,13 @@ import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
-import { fetchRegistryProfile, saveRegistryProfile } from "@/lib/registry-client";
+import { fetchRegistryProfile, registryProfileToIdentity, saveRegistryProfile } from "@/lib/registry-client";
 
 const FLAG = "radius-onboarding-done";
 
 type Step = "welcome" | "profile" | "fund" | "done";
 
-export function OnboardingWizard() {
+export function OnboardingWizard({ forceOpen = false, requireProfile = false, onRegistered }: { forceOpen?: boolean; requireProfile?: boolean; onRegistered?: () => void } = {}) {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
   const { authenticated, address: authAddress, provider: authProvider, signMessage, user } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
@@ -36,24 +36,28 @@ export function OnboardingWizard() {
       .then((remote) => {
         if (cancelled) return;
         if (remote?.handle) {
+          saveIdentityProfile(registryProfileToIdentity(remote));
           localStorage.setItem(FLAG, "1");
+          setOpen(false);
+          onRegistered?.();
           return;
         }
-        if (localStorage.getItem(FLAG) === "1" && !p.handle) return;
+        if (!forceOpen && localStorage.getItem(FLAG) === "1" && !p.handle) return;
         setStep("profile");
         setOpen(true);
       })
       .catch(() => {
         if (cancelled) return;
-        if (localStorage.getItem(FLAG) === "1" && !p.handle) return;
+        if (!forceOpen && localStorage.getItem(FLAG) === "1" && !p.handle) return;
         setStep("profile");
         setOpen(true);
       });
     return () => { cancelled = true; };
-  }, [isConnected, address, user?.name]);
+  }, [isConnected, address, user?.name, forceOpen, onRegistered]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   function close(markDone = true) {
+    if (requireProfile) return;
     if (markDone) localStorage.setItem(FLAG, "1");
     setOpen(false);
   }
@@ -67,12 +71,18 @@ export function OnboardingWizard() {
     setSaving(true);
     setStatus("Claiming username globally...");
     const next = { displayName: displayName.trim(), handle: normalizedHandle, authMode: "wallet" as const };
-    try { saveIdentityProfile(next); } catch { /* noop */ }
     try {
-      await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle }, { provider: authProvider, signMessage, prompt: true });
+      const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle }, { provider: authProvider, signMessage, prompt: true });
+      saveIdentityProfile(registryProfileToIdentity(remote));
       localStorage.setItem(FLAG, "1");
+      try { sessionStorage.setItem(`radius-registered-${address.toLowerCase()}`, "1"); } catch { /* storage may be blocked */ }
       setStatus("");
-      setStep("fund");
+      onRegistered?.();
+      if (requireProfile) {
+        setOpen(false);
+      } else {
+        setStep("fund");
+      }
     } catch (err) {
       setStatus(err instanceof Error ? err.message : "Could not claim username. Try another one.");
     } finally {
@@ -113,8 +123,8 @@ export function OnboardingWizard() {
             </div>
             {status && <p className="mt-3 rounded-2xl bg-[var(--brand)]/10 p-3 text-xs text-[var(--foreground)]">{status}</p>}
             <div className="mt-5 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => setStep("fund")} className="ghost-btn py-3 text-xs">Skip</button>
-              <button type="button" onClick={saveProfile} disabled={saving || !displayName.trim() || !handle.trim()} className="primary-btn py-3 text-xs disabled:opacity-40">{saving ? "Saving..." : "Claim & continue"}</button>
+              {!requireProfile && <button type="button" onClick={() => setStep("fund")} className="ghost-btn py-3 text-xs">Skip</button>}
+              <button type="button" onClick={saveProfile} disabled={saving || !displayName.trim() || !handle.trim()} className={`primary-btn py-3 text-xs disabled:opacity-40 ${requireProfile ? "col-span-2" : ""}`}>{saving ? "Saving..." : "Claim & continue"}</button>
             </div>
           </>
         )}

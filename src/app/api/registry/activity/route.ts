@@ -220,8 +220,8 @@ export async function POST(req: Request) {
   }
   const owner = clean(body.owner, 64);
   if (!isAddress(owner)) return jsonNoStore({ error: "invalid owner address" }, { status: 400 });
-  if (isWriteRateLimited(owner)) return jsonNoStore({ error: "Too many requests. Please wait." }, { status: 429 });
   if (!(await verifyRegistryProof(owner, "activity", body.proof))) return jsonNoStore({ error: "wallet signature required" }, { status: 401 });
+  if (isWriteRateLimited(owner)) return jsonNoStore({ error: "Too many requests. Please wait." }, { status: 429 });
   const current = await readTable(owner);
   const requests = [...current.requests, ...(Array.isArray(body.requests) ? body.requests : []).map(sanitizeRequest).filter((r): r is PaymentRequestPayload => !!r)];
   const transfers = [...current.transfers, ...(Array.isArray(body.transfers) ? body.transfers : []).map(sanitizeTransfer).filter((t): t is TransferPayload => !!t)];

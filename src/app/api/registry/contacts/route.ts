@@ -108,8 +108,8 @@ export async function POST(req: Request) {
   }
   const owner = clean(body.owner, 64);
   if (!isAddress(owner)) return jsonNoStore({ error: "invalid owner address" }, { status: 400 });
-  if (isWriteRateLimited(owner)) return jsonNoStore({ error: "Too many requests. Please wait." }, { status: 429 });
   if (!(await verifyRegistryProof(owner, "contacts", body.proof))) return jsonNoStore({ error: "wallet signature required" }, { status: 401 });
+  if (isWriteRateLimited(owner)) return jsonNoStore({ error: "Too many requests. Please wait." }, { status: 429 });
   const incoming = Array.isArray(body.contacts) ? body.contacts : [];
   if (incoming.length > 500) return jsonNoStore({ error: "too many contacts (max 500)" }, { status: 400 });
   const contacts = incoming.map(sanitize).filter((c): c is ContactPayload => !!c);
