@@ -5698,3 +5698,70 @@ html[data-theme="dark"] .phone-shell.public-shell > main::after {
     animation: none !important;
   }
 }
+
+/* Dark mode colorful Radius landing background refinement */
+html[data-theme="dark"] .phone-shell.public-shell > main::before {
+  background:
+    radial-gradient(46vmax 36vmax at 12% 18%, rgba(37, 99, 235, .46), transparent 62%),
+    radial-gradient(42vmax 34vmax at 86% 16%, rgba(124, 58, 237, .42), transparent 64%),
+    radial-gradient(44vmax 36vmax at 74% 84%, rgba(14, 165, 233, .34), transparent 63%),
+    radial-gradient(34vmax 30vmax at 22% 78%, rgba(217, 70, 239, .24), transparent 64%),
+    radial-gradient(30vmax 28vmax at 54% 48%, rgba(45, 212, 191, .16), transparent 66%) !important;
+  filter: blur(36px) saturate(1.35) !important;
+  opacity: .94 !important;
+}
+
+html[data-theme="dark"] .phone-shell.public-shell > main::after {
+  background:
+    linear-gradient(115deg, transparent 0 34%, rgba(96, 165, 250, .16) 44%, rgba(168, 85, 247, .12) 50%, transparent 60% 100%),
+    conic-gradient(from 180deg at 48% 50%, rgba(37, 99, 235, .26), rgba(124, 58, 237, .24), rgba(14, 165, 233, .20), rgba(45, 212, 191, .14), rgba(37, 99, 235, .26)) !important;
+  filter: blur(24px) saturate(1.28) !important;
+  opacity: .58 !important;
+  mix-blend-mode: screen !important;
+}
+
+html[data-theme="dark"] .landing-bg-motion {
+  background:
+    radial-gradient(900px 600px at 50% -8%, rgba(30, 41, 59, .66), transparent 66%),
+    radial-gradient(760px 520px at 12% 28%, rgba(37, 99, 235, .20), transparent 68%),
+    radial-gradient(720px 520px at 90% 20%, rgba(124, 58, 237, .18), transparent 70%),
+    linear-gradient(135deg, #050816 0%, #0b1120 44%, #111827 100%) !important;
+}
+
+html[data-theme="dark"] .landing-bg-motion::after {
+  background:
+    conic-gradient(from 120deg at 24% 64%, transparent 0deg, rgba(59,130,246,.32) 58deg, rgba(168,85,247,.24) 108deg, transparent 164deg),
+    conic-gradient(from 248deg at 76% 42%, transparent 0deg, rgba(14,165,233,.26) 54deg, rgba(45,212,191,.16) 92deg, rgba(99,102,241,.24) 124deg, transparent 176deg) !important;
+  opacity: .92 !important;
+}
+
+html[data-theme="dark"] .landing-bg-blob-a {
+  background: radial-gradient(circle at 34% 34%, rgba(96,165,250,.78), rgba(37,99,235,.34) 46%, transparent 70%) !important;
+}
+
+html[data-theme="dark"] .landing-bg-blob-b {
+  background: radial-gradient(circle at 38% 42%, rgba(168,85,247,.66), rgba(79,70,229,.32) 46%, transparent 72%) !important;
+}
+
+html[data-theme="dark"] .landing-bg-blob-c {
+  background: radial-gradient(circle at 42% 44%, rgba(45,212,191,.42), rgba(14,165,233,.26) 46%, transparent 72%) !important;
+}
+
+html[data-theme="dark"] .landing-bg-blob {
+  opacity: .46 !important;
+  filter: blur(24px) saturate(1.42) !important;
+  mix-blend-mode: screen !important;
+}
+
+html[data-theme="dark"] .landing-bg-ribbon-a {
+  background: linear-gradient(90deg, transparent, rgba(59,130,246,.26), rgba(168,85,247,.20), transparent) !important;
+}
+
+html[data-theme="dark"] .landing-bg-ribbon-b {
+  background: linear-gradient(90deg, transparent, rgba(14,165,233,.22), rgba(45,212,191,.14), rgba(99,102,241,.20), transparent) !important;
+}
+
+html[data-theme="dark"] .landing-bg-ribbon {
+  opacity: .30 !important;
+  mix-blend-mode: screen !important;
+}
