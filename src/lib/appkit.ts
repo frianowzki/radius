@@ -108,6 +108,34 @@ export function createSignAndForwardProvider(
         });
         return pub.sendRawTransaction({ serializedTransaction: signed });
       }
+
+      const walletOnlyMethods = new Set([
+        "eth_accounts",
+        "eth_requestAccounts",
+        "eth_chainId",
+        "eth_sign",
+        "personal_sign",
+        "eth_signTypedData",
+        "eth_signTypedData_v3",
+        "eth_signTypedData_v4",
+      ]);
+
+      if (args.method.startsWith("wallet_") || walletOnlyMethods.has(args.method)) {
+        return inner.request(args as Parameters<EIP1193Provider["request"]>[0]);
+      }
+
+      if (args.method.startsWith("eth_")) {
+        const chainIdHex = (await provider.request({ method: "eth_chainId" } as Parameters<EIP1193Provider["request"]>[0])) as string;
+        const chainId = parseInt(chainIdHex, 16);
+        const pub = getRawClient(chainId);
+        if (pub) {
+          return (pub as unknown as { request: (request: { method: string; params?: unknown }) => Promise<unknown> }).request({
+            method: args.method,
+            params: args.params,
+          });
+        }
+      }
+
       return inner.request(args as Parameters<EIP1193Provider["request"]>[0]);
     },
   } as EIP1193Provider;
