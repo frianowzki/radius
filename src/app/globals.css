@@ -5089,3 +5089,97 @@ html:not([data-theme="dark"]) .phone-shell.public-shell .landing-link-arrow,
 html:not([data-theme="dark"]) .landing-link-arrow {
   color: rgba(15,23,42,.55) !important;
 }
+
+
+/* Landing polish: no footer bubbles, clearer frosted card, neutral theme toggle */
+.landing-card {
+  background: rgba(255, 255, 255, .18) !important;
+  border: 1px solid rgba(255, 255, 255, .32) !important;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, .12), inset 0 1px 0 rgba(255, 255, 255, .26) !important;
+  backdrop-filter: blur(24px) saturate(1.28) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.28) !important;
+}
+
+html[data-theme="dark"] .landing-card {
+  background: rgba(15, 23, 42, .26) !important;
+  border-color: rgba(255, 255, 255, .16) !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255, 255, 255, .10) !important;
+}
+
+.landing-card .landing-theme-toggle .theme-toggle,
+html[data-theme="dark"] .landing-card .landing-theme-toggle .theme-toggle,
+.landing-theme-toggle .theme-toggle,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle {
+  background: rgba(255, 255, 255, .14) !important;
+  border-color: rgba(255, 255, 255, .32) !important;
+  color: #fff !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22) !important;
+  backdrop-filter: blur(16px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
+}
+
+.landing-card .landing-theme-toggle .theme-toggle:hover,
+html[data-theme="dark"] .landing-card .landing-theme-toggle .theme-toggle:hover,
+.landing-theme-toggle .theme-toggle:hover,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle:hover {
+  background: rgba(255, 255, 255, .22) !important;
+  border-color: rgba(255, 255, 255, .44) !important;
+}
+
+.landing-theme-toggle .theme-toggle svg,
+.landing-theme-toggle .theme-toggle-dot,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle svg,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle-dot {
+  color: #fff !important;
+  stroke: #fff !important;
+}
+
+.landing-links a,
+html[data-theme="dark"] .landing-links a,
+html:not([data-theme="dark"]) .landing-links a,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: rgba(255, 255, 255, .86) !important;
+  border-radius: 0 !important;
+}
+
+.landing-links a:hover,
+html[data-theme="dark"] .landing-links a:hover,
+html:not([data-theme="dark"]) .landing-links a:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+  transform: translateY(-1px);
+  color: #fff !important;
+}
+
+.landing-links svg,
+html[data-theme="dark"] .landing-links svg,
+html:not([data-theme="dark"]) .landing-links svg,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+.landing-links a[aria-label="GitHub"] svg,
+.landing-links a[aria-label="Twitter"] svg,
+html[data-theme="dark"] .landing-links a[aria-label="GitHub"] svg,
+html[data-theme="dark"] .landing-links a[aria-label="Twitter"] svg,
+html:not([data-theme="dark"]) .landing-links a[aria-label="GitHub"] svg,
+html:not([data-theme="dark"]) .landing-links a[aria-label="Twitter"] svg,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a[aria-label="GitHub"] svg,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a[aria-label="Twitter"] svg {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+.landing-link-arrow,
+html:not([data-theme="dark"]) .landing-link-arrow,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-link-arrow,
+html[data-theme="dark"] .landing-link-arrow {
+  color: currentColor !important;
+  opacity: .44;
+}

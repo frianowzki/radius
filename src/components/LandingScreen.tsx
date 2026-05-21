@@ -67,11 +67,6 @@ export function LandingScreen({ registrationRequired = false }: { registrationRe
           <p className="landing-kicker">Radius on Arc Testnet</p>
           <h1>Stablecoin payments without the noise.</h1>
           <p className="landing-subtitle">Send, request, swap, bridge, and manage USDC/EURC from one wallet-first app.</p>
-          <div className="landing-points" aria-label="Radius features">
-            <span>USDC-native gas</span>
-            <span>Global username</span>
-            <span>Fast P2P payments</span>
-          </div>
         </div>
         <div className="login-planet-wrap landing-planet-wrap" aria-hidden="true">
           <span className="login-orbit login-orbit-a" />
