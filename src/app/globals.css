@@ -5316,3 +5316,98 @@ html[data-theme="dark"] .landing-theme-toggle .theme-toggle-dot {
   color: #f8fafc !important;
   stroke: #f8fafc !important;
 }
+
+/* User correction: landing toggle shell + pure black footer */
+/* Keep the toggle icon itself simple; theme the circular shell around it. */
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle,
+html:not([data-theme="dark"]) .landing-card .landing-theme-toggle .theme-toggle {
+  background: rgba(255, 255, 255, .34) !important;
+  background-color: rgba(255, 255, 255, .34) !important;
+  border-color: rgba(255, 255, 255, .72) !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.62), 0 10px 24px rgba(15,23,42,.08) !important;
+}
+
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle:hover,
+html:not([data-theme="dark"]) .landing-card .landing-theme-toggle .theme-toggle:hover {
+  background: rgba(255, 255, 255, .52) !important;
+  background-color: rgba(255, 255, 255, .52) !important;
+  border-color: rgba(255, 255, 255, .92) !important;
+}
+
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle-dot {
+  background: rgba(255, 255, 255, .94) !important;
+  background-color: rgba(255, 255, 255, .94) !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.96), 0 6px 18px rgba(15,23,42,.10) !important;
+}
+
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle svg,
+html:not([data-theme="dark"]) .landing-theme-toggle .theme-toggle svg * {
+  color: #0f172a !important;
+  stroke: #0f172a !important;
+}
+
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle,
+html[data-theme="dark"] .landing-card .landing-theme-toggle .theme-toggle {
+  background: rgba(15, 23, 42, .42) !important;
+  background-color: rgba(15, 23, 42, .42) !important;
+  border-color: rgba(148, 163, 184, .20) !important;
+  color: #f8fafc !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 28px rgba(0,0,0,.20) !important;
+}
+
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle:hover,
+html[data-theme="dark"] .landing-card .landing-theme-toggle .theme-toggle:hover {
+  background: rgba(30, 41, 59, .54) !important;
+  background-color: rgba(30, 41, 59, .54) !important;
+  border-color: rgba(226, 232, 240, .24) !important;
+}
+
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle-dot {
+  background: rgba(15, 23, 42, .88) !important;
+  background-color: rgba(15, 23, 42, .88) !important;
+  color: #f8fafc !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 8px 22px rgba(0,0,0,.24) !important;
+}
+
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle svg,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle svg * {
+  color: #f8fafc !important;
+  stroke: #f8fafc !important;
+}
+
+/* Force footer labels to pure black in light mode — not muted gray. */
+html:not([data-theme="dark"]) .landing-links,
+html:not([data-theme="dark"]) .landing-links a,
+html:not([data-theme="dark"]) .landing-links a:visited,
+html:not([data-theme="dark"]) .landing-links a:hover,
+html:not([data-theme="dark"]) .landing-links a:focus-visible,
+html:not([data-theme="dark"]) .landing-links a .landing-link-label,
+html:not([data-theme="dark"]) .landing-links a .landing-link-arrow,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a .landing-link-label,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links a .landing-link-arrow {
+  color: #000 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+html:not([data-theme="dark"]) .landing-links svg,
+html:not([data-theme="dark"]) .phone-shell.public-shell .landing-links svg {
+  color: #000 !important;
+  stroke: #000 !important;
+  opacity: 1 !important;
+}
+
+html:not([data-theme="dark"]) .landing-links a[aria-label="Email"] svg path,
+html:not([data-theme="dark"]) .landing-links a[aria-label="Docs"] svg path,
+html:not([data-theme="dark"]) .landing-links a[aria-label="Community"] svg path {
+  stroke: #000 !important;
+}
+
+html:not([data-theme="dark"]) .landing-links a[aria-label="GitHub"] svg path,
+html:not([data-theme="dark"]) .landing-links a[aria-label="Twitter"] svg path {
+  fill: #000 !important;
+  stroke: none !important;
+}
