@@ -5411,3 +5411,290 @@ html:not([data-theme="dark"]) .landing-links a[aria-label="Twitter"] svg path {
   fill: #000 !important;
   stroke: none !important;
 }
+
+/* Animated landing background inspired by the provided video — background layer only */
+.landing-shell {
+  overflow: hidden;
+}
+
+.landing-bg-motion {
+  position: fixed;
+  inset: -12vh -10vw;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 520px at 50% -8%, rgba(255,255,255,.92), transparent 62%),
+    linear-gradient(135deg, rgba(249,250,255,.92) 0%, rgba(229,224,255,.84) 48%, rgba(216,232,255,.82) 100%);
+}
+
+.landing-shell > :not(.landing-bg-motion) {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-bg-motion::before,
+.landing-bg-motion::after,
+.landing-bg-blob,
+.landing-bg-ribbon {
+  content: "";
+  position: absolute;
+  will-change: transform;
+  transform: translate3d(0,0,0);
+}
+
+.landing-bg-motion::before {
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.32) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.28) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse at 50% 52%, rgba(0,0,0,.68), transparent 72%);
+  opacity: .28;
+  animation: landingGridDrift 24s linear infinite;
+}
+
+.landing-bg-motion::after {
+  inset: -18%;
+  background:
+    conic-gradient(from 115deg at 24% 64%, transparent 0deg, rgba(99,102,241,.30) 52deg, rgba(236,72,153,.18) 98deg, transparent 150deg),
+    conic-gradient(from 240deg at 76% 42%, transparent 0deg, rgba(56,189,248,.30) 54deg, rgba(129,140,248,.22) 110deg, transparent 165deg);
+  filter: blur(30px) saturate(1.12);
+  opacity: .78;
+  animation: landingAuroraSweep 16s ease-in-out infinite alternate;
+}
+
+.landing-bg-blob {
+  width: clamp(280px, 42vw, 620px);
+  aspect-ratio: 1;
+  border-radius: 42% 58% 64% 36% / 42% 46% 54% 58%;
+  filter: blur(18px) saturate(1.18);
+  opacity: .58;
+  mix-blend-mode: multiply;
+}
+
+.landing-bg-blob-a {
+  left: -8%;
+  top: 24%;
+  background: radial-gradient(circle at 38% 36%, rgba(255,255,255,.72), transparent 28%), linear-gradient(135deg, rgba(244,114,182,.48), rgba(129,140,248,.44) 54%, rgba(59,130,246,.20));
+  animation: landingBlobA 13s ease-in-out infinite alternate;
+}
+
+.landing-bg-blob-b {
+  right: -11%;
+  bottom: 2%;
+  background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.64), transparent 30%), linear-gradient(145deg, rgba(56,189,248,.42), rgba(99,102,241,.38) 50%, rgba(168,85,247,.24));
+  animation: landingBlobB 15s ease-in-out infinite alternate;
+}
+
+.landing-bg-blob-c {
+  width: clamp(220px, 28vw, 420px);
+  left: 44%;
+  top: 10%;
+  background: linear-gradient(135deg, rgba(255,255,255,.48), rgba(191,219,254,.38), rgba(221,214,254,.36));
+  opacity: .50;
+  animation: landingBlobC 18s ease-in-out infinite alternate;
+}
+
+.landing-bg-ribbon {
+  width: 78vw;
+  height: 22vh;
+  border-radius: 999px;
+  filter: blur(24px) saturate(1.05);
+  opacity: .34;
+  transform-origin: center;
+  mix-blend-mode: multiply;
+}
+
+.landing-bg-ribbon-a {
+  left: -18vw;
+  bottom: 15vh;
+  background: linear-gradient(90deg, transparent, rgba(124,58,237,.34), rgba(56,189,248,.20), transparent);
+  animation: landingRibbonA 18s ease-in-out infinite alternate;
+}
+
+.landing-bg-ribbon-b {
+  right: -24vw;
+  top: 18vh;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.44), rgba(129,140,248,.26), transparent);
+  animation: landingRibbonB 21s ease-in-out infinite alternate;
+}
+
+html[data-theme="dark"] .landing-bg-motion {
+  background:
+    radial-gradient(850px 560px at 50% -6%, rgba(30,41,59,.72), transparent 66%),
+    linear-gradient(135deg, #060914 0%, #0f172a 46%, #111827 100%);
+}
+
+html[data-theme="dark"] .landing-bg-motion::before {
+  background-image:
+    linear-gradient(rgba(148,163,184,.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px);
+  opacity: .22;
+}
+
+html[data-theme="dark"] .landing-bg-motion::after {
+  background:
+    conic-gradient(from 120deg at 24% 64%, transparent 0deg, rgba(59,130,246,.22) 58deg, rgba(168,85,247,.14) 108deg, transparent 164deg),
+    conic-gradient(from 248deg at 76% 42%, transparent 0deg, rgba(14,165,233,.18) 54deg, rgba(99,102,241,.18) 118deg, transparent 172deg);
+  opacity: .88;
+}
+
+html[data-theme="dark"] .landing-bg-blob {
+  mix-blend-mode: screen;
+  opacity: .34;
+  filter: blur(22px) saturate(1.2);
+}
+
+html[data-theme="dark"] .landing-bg-ribbon {
+  mix-blend-mode: screen;
+  opacity: .20;
+}
+
+@keyframes landingGridDrift {
+  from { transform: translate3d(0,0,0); }
+  to { transform: translate3d(-72px,72px,0); }
+}
+
+@keyframes landingAuroraSweep {
+  0% { transform: translate3d(-2%, 1%, 0) rotate(-4deg) scale(1.02); }
+  50% { transform: translate3d(2%, -2%, 0) rotate(3deg) scale(1.06); }
+  100% { transform: translate3d(-1%, 2%, 0) rotate(6deg) scale(1.03); }
+}
+
+@keyframes landingBlobA {
+  0% { transform: translate3d(-2vw, 4vh, 0) rotate(0deg) scale(1); }
+  100% { transform: translate3d(16vw, -8vh, 0) rotate(26deg) scale(1.12); }
+}
+
+@keyframes landingBlobB {
+  0% { transform: translate3d(4vw, 5vh, 0) rotate(12deg) scale(1.06); }
+  100% { transform: translate3d(-18vw, -10vh, 0) rotate(-20deg) scale(.96); }
+}
+
+@keyframes landingBlobC {
+  0% { transform: translate3d(-4vw, -2vh, 0) rotate(-8deg) scale(.95); }
+  100% { transform: translate3d(10vw, 12vh, 0) rotate(18deg) scale(1.18); }
+}
+
+@keyframes landingRibbonA {
+  0% { transform: translate3d(-8vw, 2vh, 0) rotate(-18deg); }
+  100% { transform: translate3d(18vw, -8vh, 0) rotate(-8deg); }
+}
+
+@keyframes landingRibbonB {
+  0% { transform: translate3d(10vw, -2vh, 0) rotate(16deg); }
+  100% { transform: translate3d(-16vw, 9vh, 0) rotate(5deg); }
+}
+
+@media (max-width: 767px) {
+  .landing-bg-motion { inset: -14vh -22vw; }
+  .landing-bg-blob { width: 420px; filter: blur(20px) saturate(1.08); }
+  .landing-bg-ribbon { width: 120vw; height: 18vh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-bg-motion::before,
+  .landing-bg-motion::after,
+  .landing-bg-blob,
+  .landing-bg-ribbon {
+    animation: none !important;
+  }
+}
+
+/* Landing animated background only */
+.phone-shell.public-shell,
+.phone-shell.public-shell > main {
+  isolation: isolate;
+}
+
+.phone-shell.public-shell > main {
+  position: relative;
+  overflow: hidden;
+}
+
+.phone-shell.public-shell > main::before,
+.phone-shell.public-shell > main::after {
+  content: "";
+  position: fixed;
+  inset: -24vmax;
+  z-index: -1;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.phone-shell.public-shell > main::before {
+  background:
+    radial-gradient(42vmax 34vmax at 16% 22%, rgba(96, 165, 250, .34), transparent 62%),
+    radial-gradient(38vmax 32vmax at 86% 18%, rgba(167, 139, 250, .32), transparent 64%),
+    radial-gradient(44vmax 36vmax at 76% 84%, rgba(56, 189, 248, .24), transparent 62%),
+    radial-gradient(34vmax 30vmax at 18% 78%, rgba(236, 72, 153, .16), transparent 64%);
+  filter: blur(34px) saturate(1.18);
+  opacity: .94;
+  animation: landingAuroraDrift 18s ease-in-out infinite alternate;
+}
+
+.phone-shell.public-shell > main::after {
+  inset: -12vmax;
+  background:
+    linear-gradient(115deg, transparent 0 36%, rgba(255, 255, 255, .20) 46%, transparent 58% 100%),
+    conic-gradient(from 180deg at 50% 50%, rgba(59, 130, 246, .16), rgba(139, 92, 246, .13), rgba(14, 165, 233, .12), rgba(59, 130, 246, .16));
+  filter: blur(22px);
+  opacity: .48;
+  mix-blend-mode: soft-light;
+  animation: landingBackgroundSweep 24s linear infinite;
+}
+
+html[data-theme="dark"] .phone-shell.public-shell > main::before {
+  background:
+    radial-gradient(44vmax 36vmax at 14% 22%, rgba(37, 99, 235, .30), transparent 62%),
+    radial-gradient(40vmax 34vmax at 86% 20%, rgba(99, 102, 241, .26), transparent 64%),
+    radial-gradient(42vmax 34vmax at 72% 86%, rgba(14, 165, 233, .18), transparent 62%),
+    radial-gradient(34vmax 30vmax at 20% 80%, rgba(124, 58, 237, .20), transparent 64%);
+  opacity: .82;
+  filter: blur(38px) saturate(1.12);
+}
+
+html[data-theme="dark"] .phone-shell.public-shell > main::after {
+  background:
+    linear-gradient(115deg, transparent 0 38%, rgba(148, 163, 184, .10) 47%, transparent 58% 100%),
+    conic-gradient(from 180deg at 50% 50%, rgba(37, 99, 235, .14), rgba(79, 70, 229, .14), rgba(14, 165, 233, .10), rgba(37, 99, 235, .14));
+  opacity: .38;
+  mix-blend-mode: screen;
+}
+
+.landing-shell {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes landingAuroraDrift {
+  0% {
+    transform: translate3d(-2%, -1%, 0) scale(1) rotate(0deg);
+  }
+  45% {
+    transform: translate3d(3%, 2%, 0) scale(1.06) rotate(8deg);
+  }
+  100% {
+    transform: translate3d(-1%, 4%, 0) scale(1.12) rotate(-7deg);
+  }
+}
+
+@keyframes landingBackgroundSweep {
+  0% {
+    transform: translate3d(-3%, -2%, 0) rotate(0deg) scale(1.02);
+  }
+  50% {
+    transform: translate3d(3%, 2%, 0) rotate(180deg) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-3%, -2%, 0) rotate(360deg) scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-shell.public-shell > main::before,
+  .phone-shell.public-shell > main::after {
+    animation: none !important;
+  }
+}

@@ -62,6 +62,13 @@ function WalletLoginButton() {
 export function LandingScreen({ registrationRequired = false }: { registrationRequired?: boolean }) {
   return (
     <div className="landing-shell">
+      <div className="landing-bg-motion" aria-hidden="true">
+        <span className="landing-bg-blob landing-bg-blob-a" />
+        <span className="landing-bg-blob landing-bg-blob-b" />
+        <span className="landing-bg-blob landing-bg-blob-c" />
+        <span className="landing-bg-ribbon landing-bg-ribbon-a" />
+        <span className="landing-bg-ribbon landing-bg-ribbon-b" />
+      </div>
       <section className="landing-hero" aria-label="Radius welcome">
         <div className="landing-copy">
           <p className="landing-kicker">Radius on Arc Testnet</p>
