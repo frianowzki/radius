@@ -39,7 +39,14 @@ export async function POST(request: NextRequest, context: { params: Promise<RpcP
     try {
       const upstream = await fetch(endpoint, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "accept": "application/json",
+          // Several public testnet RPCs, including Arbitrum Sepolia providers,
+          // reject Node/undici's default fetch user-agent with 403. Browser
+          // wallet flows hit this proxy first, so set an explicit app UA.
+          "user-agent": "Radius/1.0 (+https://radius-gules.vercel.app)",
+        },
         body: JSON.stringify(body),
         cache: "no-store",
       });
