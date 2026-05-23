@@ -5924,30 +5924,20 @@ html[data-theme="dark"] .dashboard-reference-header .theme-toggle {
   box-shadow: 0 12px 30px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.06) !important;
 }
 
-/* Desktop frosted-glass cards + smooth landing theme transitions */
+/* Scoped home-dashboard frosted cards + landing theme transition polish */
 @media (min-width: 1024px) and (orientation: landscape) {
-  .desktop-sidebar,
-  .desktop-dashboard-topbar,
-  .desktop-panel,
-  .dashboard-balance-card,
-  .dashboard-list-card,
-  .desktop-shortcut-tile,
-  .desktop-feature-banner,
-  .desktop-sidebar-tvl,
-  .desktop-profile-chip,
-  .desktop-search,
-  .desktop-search-popover,
-  .desktop-account-popover,
-  .notification-dropdown,
-  .dashboard-alert {
-    background: linear-gradient(180deg, rgba(255,255,255,.58), rgba(255,255,255,.34)) !important;
-    border-color: rgba(255,255,255,.52) !important;
+  .dashboard-reference-screen > .dashboard-balance-card,
+  .dashboard-reference-screen .dashboard-assets-section .asset-card,
+  .dashboard-reference-screen .desktop-shortcuts-panel,
+  .dashboard-reference-screen .desktop-activities-panel,
+  .dashboard-reference-screen .desktop-contacts-panel {
+    border-color: rgba(255,255,255,.50) !important;
     backdrop-filter: blur(28px) saturate(1.45) !important;
     -webkit-backdrop-filter: blur(28px) saturate(1.45) !important;
     box-shadow:
       0 18px 46px rgba(30,58,138,.10),
       inset 0 1px 0 rgba(255,255,255,.72),
-      inset 0 0 0 1px rgba(255,255,255,.18) !important;
+      inset 0 0 0 1px rgba(255,255,255,.16) !important;
     transition:
       background-color .45s ease,
       background .45s ease,
@@ -5958,41 +5948,25 @@ html[data-theme="dark"] .dashboard-reference-header .theme-toggle {
       -webkit-backdrop-filter .45s ease;
   }
 
-  .dashboard-balance-card {
+  .dashboard-reference-screen > .dashboard-balance-card {
     background:
-      radial-gradient(520px 220px at 10% 0%, rgba(96,165,250,.42), transparent 62%),
-      linear-gradient(135deg, rgba(37,99,235,.74) 0%, rgba(79,70,229,.66) 52%, rgba(14,165,233,.50) 100%) !important;
+      radial-gradient(520px 220px at 10% 0%, rgba(96,165,250,.40), transparent 62%),
+      linear-gradient(135deg, rgba(37,99,235,.70) 0%, rgba(79,70,229,.62) 52%, rgba(14,165,233,.46) 100%) !important;
     border: 1px solid rgba(255,255,255,.38) !important;
   }
 
-  .desktop-shortcut-tile,
-  .dashboard-list-card,
-  .desktop-panel,
-  .desktop-feature-banner {
-    background: linear-gradient(180deg, rgba(255,255,255,.52), rgba(255,255,255,.30)) !important;
+  .dashboard-reference-screen .dashboard-assets-section .asset-card,
+  .dashboard-reference-screen .desktop-shortcuts-panel,
+  .dashboard-reference-screen .desktop-activities-panel,
+  .dashboard-reference-screen .desktop-contacts-panel {
+    background: linear-gradient(180deg, rgba(255,255,255,.54), rgba(255,255,255,.30)) !important;
   }
 
-  .desktop-sidebar {
-    background: linear-gradient(180deg, rgba(255,255,255,.50), rgba(255,255,255,.28)) !important;
-  }
-}
-
-@media (min-width: 1024px) and (orientation: landscape) {
-  html[data-theme="dark"] .desktop-sidebar,
-  html[data-theme="dark"] .desktop-dashboard-topbar,
-  html[data-theme="dark"] .desktop-panel,
-  html[data-theme="dark"] .dashboard-balance-card,
-  html[data-theme="dark"] .dashboard-list-card,
-  html[data-theme="dark"] .desktop-shortcut-tile,
-  html[data-theme="dark"] .desktop-feature-banner,
-  html[data-theme="dark"] .desktop-sidebar-tvl,
-  html[data-theme="dark"] .desktop-profile-chip,
-  html[data-theme="dark"] .desktop-search,
-  html[data-theme="dark"] .desktop-search-popover,
-  html[data-theme="dark"] .desktop-account-popover,
-  html[data-theme="dark"] .notification-dropdown,
-  html[data-theme="dark"] .dashboard-alert {
-    background: linear-gradient(180deg, rgba(15,23,42,.54), rgba(15,23,42,.32)) !important;
+  html[data-theme="dark"] .dashboard-reference-screen > .dashboard-balance-card,
+  html[data-theme="dark"] .dashboard-reference-screen .dashboard-assets-section .asset-card,
+  html[data-theme="dark"] .dashboard-reference-screen .desktop-shortcuts-panel,
+  html[data-theme="dark"] .dashboard-reference-screen .desktop-activities-panel,
+  html[data-theme="dark"] .dashboard-reference-screen .desktop-contacts-panel {
     border-color: rgba(148,163,184,.16) !important;
     box-shadow:
       0 22px 60px rgba(0,0,0,.26),
@@ -6000,41 +5974,113 @@ html[data-theme="dark"] .dashboard-reference-header .theme-toggle {
       inset 0 0 0 1px rgba(255,255,255,.04) !important;
   }
 
-  html[data-theme="dark"] .dashboard-balance-card {
+  html[data-theme="dark"] .dashboard-reference-screen > .dashboard-balance-card {
     background:
       radial-gradient(520px 220px at 10% 0%, rgba(96,165,250,.24), transparent 62%),
       linear-gradient(135deg, rgba(30,41,59,.56) 0%, rgba(30,27,75,.50) 48%, rgba(15,23,42,.48) 100%) !important;
-    border-color: rgba(148,163,184,.18) !important;
+  }
+
+  html[data-theme="dark"] .dashboard-reference-screen .dashboard-assets-section .asset-card,
+  html[data-theme="dark"] .dashboard-reference-screen .desktop-shortcuts-panel,
+  html[data-theme="dark"] .dashboard-reference-screen .desktop-activities-panel,
+  html[data-theme="dark"] .dashboard-reference-screen .desktop-contacts-panel {
+    background: linear-gradient(180deg, rgba(15,23,42,.54), rgba(15,23,42,.32)) !important;
   }
 }
 
+/* Same toggle treatment as landing page, reused by dashboard toggles */
+.theme-toggle.icon-only,
+.dashboard-reference-header .theme-toggle,
+.desktop-topbar-actions .theme-toggle,
+.landing-theme-toggle .theme-toggle {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border-radius: 999px;
+  padding: 0;
+  justify-content: center;
+  background: rgba(255,255,255,.72) !important;
+  border: 1px solid rgba(255,255,255,.82) !important;
+  color: #174bd8 !important;
+  box-shadow: 0 12px 28px rgba(30,41,99,.10), inset 0 1px 0 rgba(255,255,255,.86) !important;
+  backdrop-filter: blur(24px) saturate(1.35);
+  -webkit-backdrop-filter: blur(24px) saturate(1.35);
+}
+
+.theme-toggle.icon-only .theme-toggle-dot,
+.dashboard-reference-header .theme-toggle-dot,
+.desktop-topbar-actions .theme-toggle-dot,
+.landing-theme-toggle .theme-toggle-dot {
+  width: 22px;
+  height: 22px;
+  color: #174bd8;
+}
+
+html[data-theme="dark"] .theme-toggle.icon-only,
+html[data-theme="dark"] .dashboard-reference-header .theme-toggle,
+html[data-theme="dark"] .desktop-topbar-actions .theme-toggle,
+html[data-theme="dark"] .landing-theme-toggle .theme-toggle {
+  background: rgba(15,23,42,.58) !important;
+  border-color: rgba(148,163,184,.14) !important;
+  color: #93c5fd !important;
+  box-shadow: 0 12px 30px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+/* Landing light/dark switch: transition surfaces while the canvas background lerps behind it. */
+.phone-shell.public-shell,
+.phone-shell.public-shell > main,
 .landing-shell,
-.landing-shell *,
-.landing-bg-motion,
-.landing-bg-blob,
-.landing-bg-ribbon,
+.landing-hero,
+.landing-copy,
+.landing-copy h1,
+.landing-subtitle,
+.landing-kicker,
 .landing-card,
-.landing-card::before,
-.landing-card::after,
+.landing-card h2,
+.landing-card p,
+.landing-card-kicker,
 .landing-links a,
+.landing-links a > span,
 .landing-theme-toggle .theme-toggle,
 .landing-theme-toggle .theme-toggle-dot,
 .login-planet,
 .login-orbit,
 .login-orbit-dot,
 .radius-auth-button,
-.login-action {
+.login-action,
+.login-action-icon {
   transition:
-    background-color .55s ease,
-    background .55s ease,
-    border-color .55s ease,
-    box-shadow .55s ease,
-    color .45s ease,
-    opacity .55s ease,
-    filter .55s ease,
+    background-color .6s ease,
+    background .6s ease,
+    border-color .6s ease,
+    box-shadow .6s ease,
+    color .48s ease,
+    opacity .6s ease,
+    filter .6s ease,
     transform .18s ease,
-    fill .45s ease,
-    stroke .45s ease !important;
+    fill .48s ease,
+    stroke .48s ease !important;
+}
+
+.landing-bg-motion {
+  background: rgba(250,251,252,.22) !important;
+  transition: background-color .7s ease, background .7s ease, opacity .7s ease, filter .7s ease !important;
+}
+
+html[data-theme="dark"] .landing-bg-motion {
+  background: rgba(3,7,18,.18) !important;
+}
+
+.landing-bg-motion::before,
+.landing-bg-motion::after,
+.landing-bg-blob,
+.landing-bg-ribbon {
+  transition:
+    opacity .7s ease,
+    filter .7s ease,
+    background-color .7s ease,
+    background .7s ease,
+    mix-blend-mode .7s ease !important;
 }
 
 .landing-card,
@@ -6042,8 +6088,4 @@ html[data-theme="dark"] .dashboard-reference-header .theme-toggle {
 .landing-theme-toggle .theme-toggle {
   backdrop-filter: blur(24px) saturate(1.35);
   -webkit-backdrop-filter: blur(24px) saturate(1.35);
-}
-
-html[data-theme="dark"] .landing-bg-motion {
-  transition: opacity .65s ease, filter .65s ease !important;
 }
