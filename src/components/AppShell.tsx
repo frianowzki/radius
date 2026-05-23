@@ -143,8 +143,8 @@ function DesktopLiquidityCard() {
       <p>Liquidity Locked <span>live</span></p>
       <strong>${Number.isFinite(total) ? total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}</strong>
       <div className="desktop-liquidity-lines">
-        <span><b>USDC</b>{formatLiquidity(usdc, TOKENS.USDC.decimals)}</span>
-        <span><b>EURC</b>{formatLiquidity(eurc, TOKENS.EURC.decimals)}</span>
+        <span><b>USDC</b><span className="desktop-liquidity-value">{formatLiquidity(usdc, TOKENS.USDC.decimals)}</span></span>
+        <span><b>EURC</b><span className="desktop-liquidity-value">{formatLiquidity(eurc, TOKENS.EURC.decimals)}</span></span>
       </div>
     </div>
   );
