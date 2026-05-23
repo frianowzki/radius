@@ -1645,7 +1645,7 @@ html[data-theme="dark"] .contacts-empty-orb {
   height: 26px;
   place-items: center;
   transform: translateY(-50%);
-  color: #5b35e8;
+  color: currentColor;
 }
 .login-action-icon svg {
   width: 25px;
@@ -6088,4 +6088,20 @@ html[data-theme="dark"] .landing-bg-motion {
 .landing-theme-toggle .theme-toggle {
   backdrop-filter: blur(24px) saturate(1.35);
   -webkit-backdrop-filter: blur(24px) saturate(1.35);
+}
+/* Landing login icons follow button text color */
+.landing-actions .login-action-secondary,
+.landing-actions .login-wallet-action .radius-auth-button {
+  color: #050505 !important;
+}
+
+.landing-actions .login-action-icon,
+.landing-actions .login-action-icon svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+html[data-theme="dark"] .landing-actions .login-action-secondary,
+html[data-theme="dark"] .landing-actions .login-wallet-action .radius-auth-button {
+  color: #ffffff !important;
 }
