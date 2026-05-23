@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 function applyTheme(theme: "light" | "dark") {
   document.documentElement.dataset.theme = theme;
+  document.documentElement.classList.toggle("dark", theme === "dark");
   document.documentElement.style.colorScheme = theme;
   localStorage.setItem("radius-theme", theme);
 }

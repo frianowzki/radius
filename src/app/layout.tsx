@@ -5,6 +5,7 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ClientRuntime } from "@/components/ClientRuntime";
+import FluidBackground from "@/components/FluidBackground";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -72,14 +73,17 @@ export default function RootLayout({
         {/* Anti-FOUC: apply saved theme before first paint */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){document.documentElement.setAttribute('data-theme','light');document.documentElement.style.colorScheme='light'})()`,
+            __html: `(function(){try{var saved=localStorage.getItem('radius-theme');var preferred=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';var theme=saved==='dark'||saved==='light'?saved:preferred;document.documentElement.setAttribute('data-theme',theme);document.documentElement.classList.toggle('dark',theme==='dark');document.documentElement.style.colorScheme=theme}catch(e){document.documentElement.setAttribute('data-theme','light');document.documentElement.classList.remove('dark');document.documentElement.style.colorScheme='light'}})()`,
           }}
         />
       </head>
-      <body className="min-h-full">
-        <ErrorBoundary>
-          <Providers>{children}</Providers>
-        </ErrorBoundary>
+      <body className="relative min-h-full overflow-x-hidden">
+        <FluidBackground />
+        <div className="relative z-10 min-h-full">
+          <ErrorBoundary>
+            <Providers>{children}</Providers>
+          </ErrorBoundary>
+        </div>
         <ClientRuntime />
       </body>
     </html>
