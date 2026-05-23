@@ -77,13 +77,11 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="relative min-h-full overflow-x-hidden">
+      <body className="min-h-full">
         <FluidBackground />
-        <div className="relative z-10 min-h-full">
-          <ErrorBoundary>
-            <Providers>{children}</Providers>
-          </ErrorBoundary>
-        </div>
+        <ErrorBoundary>
+          <Providers>{children}</Providers>
+        </ErrorBoundary>
         <ClientRuntime />
       </body>
     </html>

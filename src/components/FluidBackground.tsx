@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
-// Light and dark mode premium palette arrays matching Radius layout.
 const THEMES = {
   light: {
     bg: "#fafbfc",
@@ -16,21 +15,18 @@ const THEMES = {
 
 type Rgb = { r: number; g: number; b: number };
 
-interface BlobNode {
+type BlobNode = {
   x: number;
   y: number;
   vx: number;
   vy: number;
   radius: number;
-  baseRadius: number;
-  colorHex: string;
   currentColor: Rgb;
   targetColor: Rgb;
-}
+};
 
 function hexToRgb(hex: string): Rgb {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-
   return result
     ? {
         r: parseInt(result[1], 16),
@@ -41,73 +37,48 @@ function hexToRgb(hex: string): Rgb {
 }
 
 export default function FluidBackground() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvasEl = document.getElementById("fluid-canvas") as HTMLCanvasElement | null;
+    const context = canvasEl?.getContext("2d");
+    if (!canvasEl || !context) return;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animationId = 0;
+    const canvas = canvasEl;
+    const ctx = context;
     let blobs: BlobNode[] = [];
-
-    // Determine current theme state based on root HTML class markup (standard Tailwind dark mode).
-    const getActiveTheme = () => {
-      const isDark = document.documentElement.classList.contains("dark");
-      return isDark ? THEMES.dark : THEMES.light;
-    };
-
-    let activeTheme = getActiveTheme();
+    let animationId = 0;
+    let activeTheme = document.documentElement.classList.contains("dark") ? THEMES.dark : THEMES.light;
     const currentBgColor = hexToRgb(activeTheme.bg);
 
-    const resize = () => {
-      const width = Math.max(1, Math.floor(window.innerWidth / 2));
-      const height = Math.max(1, Math.floor(window.innerHeight / 2));
+    function resize() {
+      canvas.width = window.innerWidth / 2;
+      canvas.height = window.innerHeight / 2;
+    }
 
-      canvas.width = width;
-      canvas.height = height;
-    };
-
-    const initBlobs = () => {
+    function initBlobs() {
       blobs = [];
-      const totalBlobs = 6;
 
-      for (let i = 0; i < totalBlobs; i += 1) {
-        const targetHex = activeTheme.colors[i % activeTheme.colors.length];
-        const rgb = hexToRgb(targetHex);
+      for (let i = 0; i < 6; i += 1) {
+        const rgb = hexToRgb(activeTheme.colors[i % activeTheme.colors.length]);
         const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 0.3 + 0.15;
-        const baseRadius = Math.random() * 150 + 150;
 
         blobs.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          radius: baseRadius,
-          baseRadius,
-          colorHex: targetHex,
+          vx: Math.cos(angle) * 0.2,
+          vy: Math.sin(angle) * 0.2,
+          radius: Math.random() * 150 + 150,
           currentColor: { ...rgb },
           targetColor: { ...rgb },
         });
       }
-    };
+    }
 
-    resize();
-    initBlobs();
-    window.addEventListener("resize", resize);
-
-    // Watch for class updates from theme toggles on documentElement.
     const observer = new MutationObserver(() => {
-      const nextTheme = getActiveTheme();
-      activeTheme = nextTheme;
+      const isDark = document.documentElement.classList.contains("dark");
+      activeTheme = isDark ? THEMES.dark : THEMES.light;
 
-      blobs.forEach((blob, idx) => {
-        const nextColorHex = nextTheme.colors[idx % nextTheme.colors.length];
-        blob.colorHex = nextColorHex;
-        blob.targetColor = hexToRgb(nextColorHex);
+      blobs.forEach((blob, i) => {
+        blob.targetColor = hexToRgb(activeTheme.colors[i % activeTheme.colors.length]);
       });
     });
 
@@ -116,7 +87,11 @@ export default function FluidBackground() {
       attributeFilter: ["class"],
     });
 
-    const render = () => {
+    window.addEventListener("resize", resize);
+    resize();
+    initBlobs();
+
+    function draw() {
       const targetBg = hexToRgb(activeTheme.bg);
       currentBgColor.r += (targetBg.r - currentBgColor.r) * 0.04;
       currentBgColor.g += (targetBg.g - currentBgColor.g) * 0.04;
@@ -129,23 +104,18 @@ export default function FluidBackground() {
         blob.x += blob.vx;
         blob.y += blob.vy;
 
-        const border = -blob.radius;
-        if (blob.x < border || blob.x > canvas.width - border) blob.vx *= -1;
-        if (blob.y < border || blob.y > canvas.height - border) blob.vy *= -1;
+        const limit = -blob.radius;
+        if (blob.x < limit || blob.x > canvas.width - limit) blob.vx *= -1;
+        if (blob.y < limit || blob.y > canvas.height - limit) blob.vy *= -1;
 
         blob.currentColor.r += (blob.targetColor.r - blob.currentColor.r) * 0.04;
         blob.currentColor.g += (blob.targetColor.g - blob.currentColor.g) * 0.04;
         blob.currentColor.b += (blob.targetColor.b - blob.currentColor.b) * 0.04;
 
-        const r = Math.round(blob.currentColor.r);
-        const g = Math.round(blob.currentColor.g);
-        const b = Math.round(blob.currentColor.b);
-        const colorStr = `rgba(${r}, ${g}, ${b}, 0.72)`;
-        const transparentStr = `rgba(${r}, ${g}, ${b}, 0)`;
-
+        const colorStr = `rgba(${Math.round(blob.currentColor.r)}, ${Math.round(blob.currentColor.g)}, ${Math.round(blob.currentColor.b)}, 0.72)`;
         const grad = ctx.createRadialGradient(blob.x, blob.y, 0, blob.x, blob.y, blob.radius);
         grad.addColorStop(0, colorStr);
-        grad.addColorStop(1, transparentStr);
+        grad.addColorStop(1, "rgba(255,255,255,0)");
 
         ctx.beginPath();
         ctx.arc(blob.x, blob.y, blob.radius, 0, Math.PI * 2);
@@ -153,24 +123,41 @@ export default function FluidBackground() {
         ctx.fill();
       });
 
-      animationId = requestAnimationFrame(render);
-    };
+      animationId = requestAnimationFrame(draw);
+    }
 
-    render();
+    draw();
 
     return () => {
-      window.removeEventListener("resize", resize);
       observer.disconnect();
+      window.removeEventListener("resize", resize);
       cancelAnimationFrame(animationId);
     };
   }, []);
 
   return (
-    <div aria-hidden className="fixed inset-0 z-0 h-full w-full overflow-hidden pointer-events-none">
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 h-full w-full scale-[1.15] blur-[110px] saturate-[140%]"
-      />
-    </div>
+    <>
+      <div className="fluid-bg-container" aria-hidden="true">
+        <canvas id="fluid-canvas" />
+      </div>
+      <style>{`
+        .fluid-bg-container {
+          position: fixed;
+          inset: 0;
+          z-index: -10;
+          overflow: hidden;
+          width: 100vw;
+          height: 100vh;
+          pointer-events: none;
+        }
+
+        #fluid-canvas {
+          width: 100%;
+          height: 100%;
+          filter: blur(120px) saturate(145%);
+          transform: scale(1.15);
+        }
+      `}</style>
+    </>
   );
 }
