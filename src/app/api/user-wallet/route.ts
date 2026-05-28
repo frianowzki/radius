@@ -32,9 +32,7 @@ export async function GET() {
   return json({
     chain: CIRCLE_USER_WALLET_CHAIN,
     accountType: CIRCLE_USER_WALLET_ACCOUNT_TYPE,
-    appId: process.env.CIRCLE_APP_ID || process.env.NEXT_PUBLIC_CIRCLE_APP_ID || "",
     appIdConfigured: Boolean(process.env.CIRCLE_APP_ID || process.env.NEXT_PUBLIC_CIRCLE_APP_ID),
-    apiConfigured: Boolean(process.env.CIRCLE_API_KEY),
   });
 }
 

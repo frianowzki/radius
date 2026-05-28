@@ -51,7 +51,10 @@ function emptyTable(): RegistryTable {
 }
 
 function cleanText(value: unknown, max = 120) {
-  return typeof value === "string" ? value.trim().slice(0, max) : "";
+  if (typeof value !== "string") return "";
+  // Strip HTML tags to prevent stored XSS if value is ever rendered unsafely
+  const stripped = value.replace(/<[^>]*>/g, "");
+  return stripped.trim().slice(0, max);
 }
 
 async function readTable(): Promise<RegistryTable> {

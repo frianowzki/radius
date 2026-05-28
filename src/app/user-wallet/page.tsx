@@ -60,11 +60,10 @@ export default function UserWalletPage() {
     let cancelled = false;
     async function initSdk() {
       try {
-        const configResponse = await fetch("/api/user-wallet", { cache: "no-store" });
-        const config = (await configResponse.json()) as { appId?: string };
-        const nextAppId = config.appId || "";
+        // Read from client-side env var (already bundled in NEXT_PUBLIC_* client JS)
+        const nextAppId = process.env.NEXT_PUBLIC_CIRCLE_APP_ID?.trim() || "";
         if (!nextAppId) {
-          setStatus("Missing Circle User-Controlled Wallet App ID. Add CIRCLE_APP_ID or NEXT_PUBLIC_CIRCLE_APP_ID in Vercel/local env first.");
+          setStatus("Missing Circle User-Controlled Wallet App ID. Add NEXT_PUBLIC_CIRCLE_APP_ID in Vercel/local env first.");
           return;
         }
         setAppId(nextAppId);

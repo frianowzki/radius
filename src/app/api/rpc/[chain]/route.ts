@@ -4,6 +4,42 @@ import { RPC_ENDPOINTS_BY_SLUG, type RpcSlug } from "@/config/rpc";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// --- Rate limiting (per-IP, in-memory) ---
+const ipHits = new Map<string, number[]>();
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS_PER_WINDOW = 120; // 120 req/min per IP (generous for wallet usage)
+
+function getIp(req: Request): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const hits = ipHits.get(ip);
+  if (!hits) {
+    ipHits.set(ip, [now]);
+    return false;
+  }
+  // Prune old entries
+  while (hits.length && now - hits[0] > WINDOW_MS) hits.shift();
+  if (hits.length >= MAX_REQUESTS_PER_WINDOW) return true;
+  hits.push(now);
+  return false;
+}
+
+// --- Origin allowlist ---
+const ALLOWED_ORIGINS = new Set([
+  "https://radius-gules.vercel.app",
+  "http://localhost:3000",
+]);
+
+function isAllowedOrigin(req: Request): boolean {
+  const origin = req.headers.get("origin");
+  // Same-origin requests (no Origin header) and allowed origins pass
+  if (!origin) return true;
+  return ALLOWED_ORIGINS.has(origin);
+}
+
 type RpcParams = { chain: string };
 
 type RpcBody = {
@@ -18,6 +54,23 @@ function badRequest(message: string) {
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<RpcParams> | RpcParams }) {
+  // Rate limit
+  const ip = getIp(request);
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { jsonrpc: "2.0", id: null, error: { code: -32000, message: "Rate limited" } },
+      { status: 429 },
+    );
+  }
+
+  // Origin check
+  if (!isAllowedOrigin(request)) {
+    return NextResponse.json(
+      { jsonrpc: "2.0", id: null, error: { code: -32000, message: "Forbidden" } },
+      { status: 403 },
+    );
+  }
+
   const params = await context.params;
   const endpoints = RPC_ENDPOINTS_BY_SLUG[params.chain as RpcSlug];
   if (!endpoints) return badRequest("Unsupported RPC chain");

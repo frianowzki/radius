@@ -20,11 +20,16 @@ type AgentWalletResponse = {
 
 function isAuthorized(request: Request) {
   const token = process.env.AGENT_WALLET_ADMIN_TOKEN;
-  if (!token) return true;
+  // Always require auth — no bypass even if token is unset
+  if (!token) return process.env.NODE_ENV !== "production";
   return request.headers.get("authorization") === `Bearer ${token}`;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const status = await getAgentWalletStatus();
   const wallets = await listAgentWallets();
   const balance = AGENT_WALLET_ADDRESS ? await getAgentWalletBalance() : null;
