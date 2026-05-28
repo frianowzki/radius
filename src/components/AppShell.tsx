@@ -132,7 +132,7 @@ function DesktopLiquidityCard() {
       { address: RADIUSD_POOL_ADDRESS, abi: RADIUSD_POOL_ABI, functionName: "balances", args: [BigInt(0)], chainId: arcTestnet.id },
       { address: RADIUSD_POOL_ADDRESS, abi: RADIUSD_POOL_ABI, functionName: "balances", args: [BigInt(1)], chainId: arcTestnet.id },
     ],
-    query: { refetchInterval: 60_000, staleTime: 45_000 },
+    query: { refetchInterval: 10_000, staleTime: 8_000 },
   });
   const usdc = (data?.[0]?.result as bigint | undefined) ?? BigInt(0);
   const eurc = (data?.[1]?.result as bigint | undefined) ?? BigInt(0);

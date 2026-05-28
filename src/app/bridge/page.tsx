@@ -105,6 +105,7 @@ export default function BridgePage() {
   const [saveAvatar, setSaveAvatar] = useState("");
   const [registryRecipient, setRegistryRecipient] = useState<RegistryProfile | null>(null);
   const [showDestinationPicker, setShowDestinationPicker] = useState(false);
+  const [showSourcePicker, setShowSourcePicker] = useState(false);
   const [showBridgeHistory, setShowBridgeHistory] = useState(false);
   const bridgeRoutes = CROSSCHAIN_ROUTES.filter((route) => route.mode === "bridge");
   const [selectedRoute, setSelectedRoute] = useState<CrosschainRoute["id"]>(
@@ -138,6 +139,7 @@ export default function BridgePage() {
   const sourceUsdcAddress = CHAIN_USDC_ADDRESSES[selectedRouteConfig.fromChain];
   const routeExplorerUrl = sourceChainMeta.explorerUrl;
   const sourceRoutes = bridgeRoutes.filter((route) => route.fromChain === selectedRouteConfig.fromChain);
+  const availableSourceChains = Array.from(new Set(bridgeRoutes.map((route) => route.fromChain)));
   const bridgeHistory = mounted
     ? getLocalTransfers(address)
         .filter((transfer) => transfer.routeLabel?.includes("→") && transfer.token === "USDC")
@@ -843,10 +845,10 @@ export default function BridgePage() {
                     </div>
                   </div>
                   <span className="bridge-role-pill">Source</span>
-                  <div className="mt-3 flex items-center justify-between border-t border-[#1b162b]/5 pt-3 text-xs">
-                    <span className="text-[#8b8795]">Network</span>
-                    <span className="font-semibold text-[#17151f]">{expectedSourceChainLabel}</span>
-                  </div>
+                  <button type="button" onClick={() => setShowSourcePicker(true)} className="mt-3 flex w-full items-center justify-between rounded-2xl border border-[#1b162b]/8 bg-white/70 px-4 py-3 text-sm font-semibold text-[#3d3750]">
+                    Choose source
+                    <span>›</span>
+                  </button>
                 </div>
 
                 <button type="button" onClick={switchBridgeDirection} className="bridge-switch-btn" aria-label="Switch bridge direction">
@@ -891,6 +893,31 @@ export default function BridgePage() {
 
               <div className="bridge-premium-card p-4">
                 <label className="mb-2 block text-xs font-semibold text-[#8b8795]">Recipient</label>
+                <div className="mb-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (address && recipient !== address) {
+                        setRecipient(address);
+                        resetBridgeFeedback();
+                      }
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold transition ${
+                      address && recipient === address
+                        ? "bg-[var(--brand)] text-white"
+                        : "bg-white/40 text-[#64748b] hover:bg-white/60"
+                    }`}
+                  >
+                    <span className={`grid h-3.5 w-3.5 place-items-center rounded-full border ${
+                      address && recipient === address ? "border-white bg-white" : "border-[#64748b]"
+                    }`}>
+                      {address && recipient === address && (
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                      )}
+                    </span>
+                    Send to myself
+                  </button>
+                </div>
                 <input
                   type="text"
                   placeholder="0x... or @username"
@@ -1070,6 +1097,33 @@ export default function BridgePage() {
                     })}
                   </div>
                   <button type="button" onClick={() => setShowDestinationPicker(false)} className="primary-btn mt-4 w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white">Select destination</button>
+                </div>
+              </div>
+            )}
+
+            {showSourcePicker && (
+              <div role="dialog" aria-modal="true" className="modal-backdrop fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/70 p-4 backdrop-blur-md" onClick={() => setShowSourcePicker(false)}>
+                <div className="bridge-sheet bridge-destination-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-[#17151f]">Choose source</h3>
+                    <button type="button" onClick={() => setShowSourcePicker(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                  </div>
+                  <div className="space-y-2">
+                    {availableSourceChains.map((chain) => {
+                      const meta = CHAIN_METADATA[chain];
+                      const isSelected = selectedRouteConfig.fromChain === chain;
+                      // Find a route from this chain to Arc or any destination
+                      const route = bridgeRoutes.find((r) => r.fromChain === chain) ?? bridgeRoutes[0];
+                      return (
+                        <button key={chain} type="button" onClick={() => { if (route) { setSelectedRoute(route.id); resetBridgeFeedback(); } setShowSourcePicker(false); }} className={`bridge-destination-row ${isSelected ? "is-active" : ""}`}>
+                          <span className="bridge-chain-avatar"><ChainLogo chainKey={chain} size={42} /></span>
+                          <span className="min-w-0 flex-1 text-left"><b>{meta.label}</b><small>USDC · Bridge</small></span>
+                          <span className={`bridge-radio ${isSelected ? "is-selected" : ""}`}>{isSelected ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : ""}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button type="button" onClick={() => setShowSourcePicker(false)} className="primary-btn mt-4 w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white">Select source</button>
                 </div>
               </div>
             )}
