@@ -4647,8 +4647,10 @@ html[data-theme="dark"] .dashboard-section-title button {
 @media (min-width: 1024px) {
   .landing-shell {
     width: min(1180px, calc(100vw - 48px));
-    min-height: calc(100vh - 48px);
+    height: calc(100vh - 48px);
+    height: calc(100dvh - 48px);
     grid-template-columns: minmax(0, 1fr) 380px;
+    overflow: hidden;
     align-items: center;
     gap: 44px;
     padding: 56px;
@@ -4688,16 +4690,22 @@ body::before { animation: none !important; filter: blur(44px) saturate(1.05); op
   .phone-shell.public-shell {
     display: block;
     width: 100%;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
   }
   .phone-shell.public-shell > main {
     display: grid;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
     place-items: center;
+    overflow: hidden;
   }
   .phone-shell.public-shell .landing-shell {
     width: min(1180px, calc(100vw - 64px));
-    min-height: min(760px, calc(100vh - 64px));
+    height: calc(100vh - 64px);
+    height: calc(100dvh - 64px);
+    overflow: hidden;
     border-radius: 0;
     background: transparent;
     border: 0;
@@ -4718,10 +4726,12 @@ body::before { animation: none !important; filter: blur(44px) saturate(1.05); op
 @media (min-width: 1024px) and (max-width: 1279px) and (orientation: landscape) {
   .phone-shell.public-shell .landing-shell {
     width: min(980px, calc(100vw - 40px));
-    min-height: calc(100vh - 40px);
+    height: calc(100vh - 40px);
+    height: calc(100dvh - 40px);
     gap: 28px;
     padding: 38px;
     grid-template-columns: minmax(0, 1fr) 330px;
+    overflow: hidden;
   }
   .phone-shell.public-shell .landing-hero {
     grid-template-columns: minmax(0, 1fr) 220px;
@@ -6026,7 +6036,7 @@ html[data-theme="dark"] .landing-theme-toggle .theme-toggle {
   box-shadow: 0 12px 30px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.06) !important;
 }
 
-/* Landing light/dark switch: transition surfaces while the canvas background lerps behind it. */
+/* Landing light/dark switch: lightweight — only animate color/opacity, skip expensive bg gradients. */
 .phone-shell.public-shell,
 .phone-shell.public-shell > main,
 .landing-shell,
@@ -6050,21 +6060,16 @@ html[data-theme="dark"] .landing-theme-toggle .theme-toggle {
 .login-action,
 .login-action-icon {
   transition:
-    background-color .6s ease,
-    background .6s ease,
-    border-color .6s ease,
-    box-shadow .6s ease,
-    color .48s ease,
-    opacity .6s ease,
-    filter .6s ease,
-    transform .18s ease,
-    fill .48s ease,
-    stroke .48s ease !important;
+    background-color .45s ease,
+    border-color .45s ease,
+    color .35s ease,
+    opacity .45s ease,
+    transform .18s ease !important;
 }
 
 .landing-bg-motion {
   background: rgba(250,251,252,.22) !important;
-  transition: background-color .7s ease, background .7s ease, opacity .7s ease, filter .7s ease !important;
+  transition: opacity .6s ease !important;
 }
 
 html[data-theme="dark"] .landing-bg-motion {
@@ -6075,12 +6080,7 @@ html[data-theme="dark"] .landing-bg-motion {
 .landing-bg-motion::after,
 .landing-bg-blob,
 .landing-bg-ribbon {
-  transition:
-    opacity .7s ease,
-    filter .7s ease,
-    background-color .7s ease,
-    background .7s ease,
-    mix-blend-mode .7s ease !important;
+  transition: opacity .5s ease !important;
 }
 
 .landing-card,
