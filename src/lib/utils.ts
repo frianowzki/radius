@@ -149,31 +149,9 @@ export function addContact(
   return contact;
 }
 
-const DELETED_CONTACTS_KEY = "radius-deleted-contacts";
-
-function getDeletedAddresses(): Set<string> {
-  try {
-    const raw = localStorage.getItem(DELETED_CONTACTS_KEY);
-    if (!raw) return new Set();
-    return new Set(JSON.parse(raw) as string[]);
-  } catch { return new Set(); }
-}
-
-function addDeletedAddress(address: string) {
-  const set = getDeletedAddresses();
-  set.add(address.toLowerCase());
-  localStorage.setItem(DELETED_CONTACTS_KEY, JSON.stringify(Array.from(set)));
-}
-
-export function clearDeletedAddresses() {
-  localStorage.removeItem(DELETED_CONTACTS_KEY);
-}
-
 export function removeContact(id: string) {
-  const contacts = getContacts();
-  const contact = contacts.find((c) => c.id === id);
-  if (contact) addDeletedAddress(contact.address);
-  saveContacts(contacts.filter((c) => c.id !== id));
+  const contacts = getContacts().filter((c) => c.id !== id);
+  saveContacts(contacts);
 }
 
 export function updateContact(

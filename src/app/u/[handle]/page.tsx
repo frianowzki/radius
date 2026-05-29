@@ -8,6 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import { AvatarImage } from "@/components/AvatarImage";
 import { TokenLogo } from "@/components/TokenLogo";
 import { fetchRegistryProfile, type RegistryProfile } from "@/lib/registry-client";
+import { formatAddress } from "@/lib/utils";
 
 export default function PublicProfilePage() {
   const params = useParams<{ handle?: string | string[] }>();
@@ -15,6 +16,7 @@ export default function PublicProfilePage() {
   const [profile, setProfile] = useState<RegistryProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const rawHandle = Array.isArray(params?.handle) ? params.handle[0] : params?.handle;
@@ -39,6 +41,13 @@ export default function PublicProfilePage() {
     return `${typeof window !== "undefined" ? window.location.origin : ""}/send?to=${encodeURIComponent(target)}`;
   }, [profile]);
 
+  async function copyAddress() {
+    if (!profile?.address) return;
+    await navigator.clipboard.writeText(profile.address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
   return (
     <AppShell>
       <div className="screen-pad">
@@ -52,6 +61,7 @@ export default function PublicProfilePage() {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </Link>
+          <h1 className="text-sm font-bold">@{handle}</h1>
           <span className="w-9" />
         </header>
 
@@ -95,6 +105,16 @@ export default function PublicProfilePage() {
               {profile.bio && (
                 <p className="mt-3 text-sm leading-relaxed text-[#8b8795]">{profile.bio}</p>
               )}
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/50 px-4 py-2 text-xs text-[#8b8795]">
+                <span className="font-mono">{formatAddress(profile.address)}</span>
+                <button
+                  type="button"
+                  onClick={copyAddress}
+                  className="text-[var(--brand)] hover:underline"
+                >
+                  {copied ? "Copied" : "Copy"}
+                </button>
+              </div>
             </div>
 
             {/* Pay QR */}
@@ -117,6 +137,25 @@ export default function PublicProfilePage() {
                 </Link>
               </div>
             )}
+
+            {/* Share */}
+            <div className="text-center">
+              <p className="text-[11px] text-[#9a94a3]">
+                Share this profile:{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = `${window.location.origin}/u/${profile.handle || profile.address}`;
+                    navigator.clipboard.writeText(url);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  }}
+                  className="text-[var(--brand)] hover:underline"
+                >
+                  radius-gules.vercel.app/u/{profile.handle || formatAddress(profile.address)}
+                </button>
+              </p>
+            </div>
           </div>
         )}
       </div>
