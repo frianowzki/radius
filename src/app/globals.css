@@ -1761,6 +1761,45 @@ html[data-theme="dark"] .login-action-primary {
   display: grid;
   gap: 14px;
 }
+
+/* Desktop profile: 2-col layout, fit viewport */
+@media (min-width: 1024px) and (orientation: landscape) {
+  .profile-reference-screen {
+    padding: 0;
+    grid-template-columns: 380px minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    gap: 24px;
+    align-content: start;
+    height: 100%;
+    overflow: hidden;
+  }
+  /* Left column: hero + public profile link */
+  .profile-reference-screen > .profile-hero-card {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    border-radius: 24px;
+  }
+  /* Right column: form + qr */
+  .profile-reference-screen > .profile-form-card,
+  .profile-reference-screen > .profile-qr-card {
+    align-self: start;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    border-radius: 24px;
+  }
+  .profile-reference-screen > .profile-public-btn {
+    display: none; /* redundant with the sidebar link */
+  }
+  .profile-reference-screen > p:last-child {
+    grid-column: 1 / -1;
+  }
+  .profile-form-card { padding: 24px; gap: 16px; }
+  .profile-form-card .radius-input { min-height: 44px; }
+  .profile-form-card textarea.radius-input { min-height: 60px; }
+}
 .profile-hero-card,
 .profile-form-card {
   position: relative;
