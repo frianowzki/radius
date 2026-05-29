@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function applyTheme(theme: "light" | "dark") {
   document.documentElement.dataset.theme = theme;
@@ -9,8 +9,42 @@ function applyTheme(theme: "light" | "dark") {
   localStorage.setItem("radius-theme", theme);
 }
 
+/** Returns the main bg color for a given theme (matches the page). */
+function themeBgColor(theme: "light" | "dark"): string {
+  return theme === "dark" ? "#0b1120" : "#f8fafc";
+}
+
+/**
+ * GPU-composited cross-fade: overlay fades in on the CURRENT bg color,
+ * theme switches underneath, overlay fades out revealing the new bg.
+ * Only one opacity change on a single composited layer — no layout thrash.
+ */
+function sweepTransition(current: "light" | "dark", next: "light" | "dark") {
+  let el = document.querySelector<HTMLDivElement>(".theme-sweep");
+  if (!el) {
+    el = document.createElement("div");
+    el.className = "theme-sweep";
+    document.body.appendChild(el);
+  }
+
+  // Lock overlay to current theme's bg (so it looks like a solid freeze-frame)
+  el.style.backgroundColor = themeBgColor(current);
+  el.style.opacity = "1";
+
+  // Theme switches underneath while overlay covers everything
+  requestAnimationFrame(() => {
+    applyTheme(next);
+    // Small delay so paint settles, then fade out on new bg
+    requestAnimationFrame(() => {
+      el.style.backgroundColor = themeBgColor(next);
+      el.style.opacity = "0";
+    });
+  });
+}
+
 export function ThemeToggle({ iconOnly = true }: { iconOnly?: boolean }) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const animating = useRef(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("radius-theme");
@@ -21,9 +55,14 @@ export function ThemeToggle({ iconOnly = true }: { iconOnly?: boolean }) {
   }, []);
 
   function toggleTheme() {
+    if (animating.current) return;
+    animating.current = true;
+
     setTheme((current) => {
       const next = current === "dark" ? "light" : "dark";
-      applyTheme(next);
+      sweepTransition(current, next);
+      // Release after transition completes
+      setTimeout(() => { animating.current = false; }, 600);
       return next;
     });
   }

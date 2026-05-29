@@ -6036,7 +6036,7 @@ html[data-theme="dark"] .landing-theme-toggle .theme-toggle {
   box-shadow: 0 12px 30px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.06) !important;
 }
 
-/* Landing light/dark switch: lightweight — only animate color/opacity, skip expensive bg gradients. */
+/* Landing theme switch: single composited overlay sweep — zero per-element transitions. */
 .phone-shell.public-shell,
 .phone-shell.public-shell > main,
 .landing-shell,
@@ -6059,12 +6059,20 @@ html[data-theme="dark"] .landing-theme-toggle .theme-toggle {
 .radius-auth-button,
 .login-action,
 .login-action-icon {
-  transition:
-    background-color .45s ease,
-    border-color .45s ease,
-    color .35s ease,
-    opacity .45s ease,
-    transform .18s ease !important;
+  transition: none !important;
+}
+
+/* Full-viewport composited layer that cross-fades during theme switch.
+   Only opacity changes — cheapest possible GPU path. */
+.theme-sweep {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity .3s ease-out;
+  transform: translateZ(0);
 }
 
 .landing-bg-motion {
