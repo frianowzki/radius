@@ -198,13 +198,6 @@ export default function BridgePage() {
   }, [showDestinationPicker]);
 
   useEffect(() => {
-    if (!showBridgeHistory) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previous; };
-  }, [showBridgeHistory]);
-
-  useEffect(() => {
     if (!address || recipient) return;
     queueMicrotask(() => setRecipient(address));
   }, [address, recipient]);
@@ -800,14 +793,10 @@ export default function BridgePage() {
                   <h2 className="text-2xl font-black tracking-tight text-[#17151f]">Bridge</h2>
                   <p className="mt-1 text-xs text-[#8b8795]">Only USDC bridge is available</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowBridgeHistory(true)}
-                  className="bridge-icon-btn"
-                  aria-label="Open bridge history"
-                >
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                </button>
+                <div className="bridge-tabs">
+                  <button type="button" className={`bridge-tab ${!showBridgeHistory ? "is-active" : ""}`} onClick={() => setShowBridgeHistory(false)}>Bridge</button>
+                  <button type="button" className={`bridge-tab ${showBridgeHistory ? "is-active" : ""}`} onClick={() => setShowBridgeHistory(true)}>Activities{bridgeHistory.length > 0 && <span className="bridge-tab-badge">{bridgeHistory.length > 9 ? "9+" : bridgeHistory.length}</span>}</button>
+                </div>
               </div>
 
               <div className="bridge-premium-card p-3">
@@ -890,7 +879,27 @@ export default function BridgePage() {
               </div>
 
               <div className="bridge-premium-card p-4">
-                <label className="mb-2 block text-xs font-semibold text-[#8b8795]">Recipient</label>
+                <div className="flex items-center justify-between">
+                  <label className="mb-2 block text-xs font-semibold text-[#8b8795]">Recipient</label>
+                  {address && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (recipient.toLowerCase() === address.toLowerCase()) {
+                          setRecipient("");
+                        } else {
+                          setRecipient(address);
+                        }
+                        resetBridgeFeedback();
+                      }}
+                      className={`bridge-self-toggle ${recipient.toLowerCase() === address.toLowerCase() ? "is-self" : ""}`}
+                      aria-label="Send to self"
+                    >
+                      <span className="bridge-self-dot" />
+                      <span className="text-[10px] font-semibold">Self</span>
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   placeholder="0x... or @username"
@@ -954,15 +963,7 @@ export default function BridgePage() {
                     )}
                   </div>
                 )}
-                {address && recipient.toLowerCase() !== address.toLowerCase() && (
-                  <button
-                    type="button"
-                    onClick={() => { setRecipient(address); resetBridgeFeedback(); }}
-                    className="mt-2 w-full rounded-xl bg-[var(--brand)]/10 px-3 py-2 text-xs font-semibold text-[var(--brand)]"
-                  >
-                    Bridge to self ({formatAddress(address)})
-                  </button>
-                )}
+
                 {recipient && !validRecipient && <p className="mt-2 text-xs text-red-500">Enter a valid address or saved @username.</p>}
                 {isBridgeRoute && token !== "USDC" && <p className="mt-2 text-xs text-amber-600">Crosschain route currently supports USDC only.</p>}
               </div>
@@ -1049,6 +1050,28 @@ export default function BridgePage() {
               {status === "error" && error && <p className="text-center text-sm text-red-500">{error}</p>}
             </form>
 
+            {showBridgeHistory && (
+              <div className="bridge-activities">
+                <h3 className="mb-3 text-lg font-bold text-[#17151f]">Bridge Activity</h3>
+                <p className="mb-4 text-xs text-[#8b8795]">Ongoing, successful, and failed bridge transactions.</p>
+                <div className="space-y-2">
+                  {(status === "sending" || status === "confirming" || status === "error") && (
+                    <div className="bridge-history-row">
+                      <span className={`bridge-status-dot ${status === "error" ? "is-failed" : "is-ongoing"}`} />
+                      <div><b>{status === "error" ? "Failed bridge" : "Ongoing bridge"}</b><small>{selectedRouteConfig.label} · {bridgeProgress || error || "Waiting for update"}</small></div>
+                    </div>
+                  )}
+                  {bridgeHistory.map((transfer) => (
+                    <a key={transfer.id} href={`${CHAIN_METADATA[selectedRouteConfig.fromChain].explorerUrl}/tx/${transfer.txHash}`} target="_blank" rel="noopener noreferrer" className="bridge-history-row">
+                      <span className="bridge-status-dot is-success" />
+                      <div><b>{formatAmount(BigInt(transfer.value), TOKENS.USDC.decimals)} USDC</b><small>{transfer.routeLabel || "Bridge"} · {formatAddress(transfer.txHash)}</small></div>
+                    </a>
+                  ))}
+                  {status === "idle" && bridgeHistory.length === 0 && <div className="rounded-2xl bg-white/60 p-4 text-sm text-[#8b8795]">No bridge activity yet.</div>}
+                </div>
+              </div>
+            )}
+
             {showDestinationPicker && (
               <div role="dialog" aria-modal="true" className="modal-backdrop fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/70 p-4 backdrop-blur-md" onClick={() => setShowDestinationPicker(false)}>
                 <div className="bridge-sheet bridge-destination-sheet w-full max-w-sm rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
@@ -1074,31 +1097,7 @@ export default function BridgePage() {
               </div>
             )}
 
-            {showBridgeHistory && (
-              <div role="dialog" aria-modal="true" className="fixed inset-0 z-[90] grid place-items-end overflow-hidden overscroll-none bg-slate-950/55 p-4 backdrop-blur-md" onClick={() => setShowBridgeHistory(false)}>
-                <div className="bridge-sheet scrollbar-hide w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-[30px] p-5" onClick={(e) => e.stopPropagation()}>
-                  <div className="mb-4 flex items-center justify-between">
-                    <div><h3 className="text-lg font-bold text-[#17151f]">Bridge history</h3><p className="text-xs text-[#8b8795]">Ongoing, successful, and failed bridge info</p></div>
-                    <button type="button" onClick={() => setShowBridgeHistory(false)} className="modal-close-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                  </div>
-                  <div className="space-y-2">
-                    {(status === "sending" || status === "confirming" || status === "error") && (
-                      <div className="bridge-history-row">
-                        <span className={`bridge-status-dot ${status === "error" ? "is-failed" : "is-ongoing"}`} />
-                        <div><b>{status === "error" ? "Failed bridge" : "Ongoing bridge"}</b><small>{selectedRouteConfig.label} · {bridgeProgress || error || "Waiting for update"}</small></div>
-                      </div>
-                    )}
-                    {bridgeHistory.map((transfer) => (
-                      <a key={transfer.id} href={`${CHAIN_METADATA[selectedRouteConfig.fromChain].explorerUrl}/tx/${transfer.txHash}`} target="_blank" rel="noopener noreferrer" className="bridge-history-row">
-                        <span className="bridge-status-dot is-success" />
-                        <div><b>{formatAmount(BigInt(transfer.value), TOKENS.USDC.decimals)} USDC</b><small>{transfer.routeLabel || "Bridge"} · {formatAddress(transfer.txHash)}</small></div>
-                      </a>
-                    ))}
-                    {status === "idle" && bridgeHistory.length === 0 && <div className="rounded-2xl bg-white/60 p-4 text-sm text-[#8b8795]">No bridge activity yet.</div>}
-                  </div>
-                </div>
-              </div>
-            )}
+
           </div>
         )}
       </div>
