@@ -1770,6 +1770,7 @@ html[data-theme="dark"] .login-action-primary {
     grid-template-rows: 1fr;
     gap: 24px;
     align-content: start;
+    align-items: stretch;
     height: 100%;
     overflow: hidden;
   }
@@ -1783,10 +1784,16 @@ html[data-theme="dark"] .login-action-primary {
     border-radius: 24px;
   }
   /* Right column: form + qr */
+  .profile-reference-screen > .profile-right-col {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
   .profile-reference-screen > .profile-content-card,
   .profile-reference-screen > .profile-qr-card {
-    align-self: start;
-    max-height: calc(100vh - 80px);
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     border-radius: 24px;
   }
@@ -1898,19 +1905,16 @@ html[data-theme="dark"] .login-action-primary {
   position: relative;
   overflow: hidden;
   border-radius: 24px;
-  border: 1px solid rgba(255,255,255,.78);
-  background: rgba(255,255,255,.78);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.86), 0 18px 42px rgba(55,46,88,.12);
-  backdrop-filter: blur(20px) saturate(1.15);
+  border: 1px solid rgba(255,255,255,.22);
   min-height: 312px;
   padding: 30px 24px 20px;
   text-align: center;
   color: #fff;
   background:
-    radial-gradient(circle at 77% 80%, rgba(34,211,238,.88), transparent 20%),
-    radial-gradient(circle at 18% 0%, rgba(192,132,252,.90), transparent 34%),
-    linear-gradient(145deg, #b589ff 0%, #7358ef 36%, #1746c8 64%, #48d5f4 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.46), inset 0 -18px 40px rgba(30,27,75,.16), 0 22px 48px rgba(59,130,246,.22);
+    radial-gradient(circle at 75% 80%, rgba(34,211,238,.55), transparent 28%),
+    radial-gradient(circle at 20% 10%, rgba(192,132,252,.60), transparent 38%),
+    linear-gradient(145deg, #8b6ce7 0%, #6355d9 30%, #3b5bdb 60%, #4dc9f6 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.30), inset 0 -12px 30px rgba(30,27,75,.10), 0 16px 40px rgba(59,130,246,.15);
 }
 .profile-stars::before,
 .profile-stars::after {
@@ -2137,12 +2141,12 @@ html[data-theme="dark"] .profile-reference-screen {
   background: linear-gradient(180deg, #070b18 0%, #060914 100%);
 }
 html[data-theme="dark"] .profile-hero-card {
-  border-color: rgba(255,255,255,.10);
+  border-color: rgba(255,255,255,.08);
   background:
-    radial-gradient(circle at 80% 82%, rgba(34,211,238,.42), transparent 22%),
-    radial-gradient(circle at 18% 0%, rgba(124,58,237,.58), transparent 35%),
-    linear-gradient(145deg, #26125d 0%, #121d5f 44%, #071a3f 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), inset 0 -18px 40px rgba(0,0,0,.22), 0 24px 54px rgba(0,0,0,.42);
+    radial-gradient(circle at 78% 80%, rgba(34,211,238,.22), transparent 30%),
+    radial-gradient(circle at 22% 12%, rgba(124,58,237,.28), transparent 40%),
+    linear-gradient(145deg, #1e1548 0%, #161d4a 36%, #0d1f3d 64%, #0f2a3f 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 -12px 30px rgba(0,0,0,.15), 0 16px 40px rgba(0,0,0,.25);
 }
 html[data-theme="dark"] .profile-content-card {
   background: rgba(12,18,34,.78);
