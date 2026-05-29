@@ -12,25 +12,12 @@ import { formatAddress, getIdentityProfile, saveIdentityProfile } from "@/lib/ut
 import { fetchRegistryProfile, registryProfileToIdentity, saveRegistryProfile } from "@/lib/registry-client";
 import { useMounted } from "@/lib/useMounted";
 
-function PersonIcon() {
+function EyeIcon({ hidden }: { hidden: boolean }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-
-function QrIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="2" width="8" height="8" rx="1" />
-      <rect x="14" y="2" width="8" height="8" rx="1" />
-      <rect x="2" y="14" width="8" height="8" rx="1" />
-      <path d="M14 14h3v3h-3z" />
-      <path d="M20 14v3h-3" />
-      <path d="M14 20h3v-3" />
-      <path d="M20 20h-3v-3" />
+    <svg viewBox="0 0 48 48" aria-hidden="true" className="h-5 w-5 fill-current">
+      <path d="M24 11C12.5 11 5 24 5 24s7.5 13 19 13 19-13 19-13-7.5-13-19-13Zm0 20.5a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" />
+      <circle cx="24" cy="24" r="4.2" fill="white" opacity=".92" />
+      {hidden && <path d="M8 42 42 8" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />}
     </svg>
   );
 }
@@ -45,7 +32,6 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("");
   const [handle, setHandle] = useState("");
   const [bio, setBio] = useState("");
-  const [profileTab, setProfileTab] = useState<"settings" | "qr">("settings");
   /* eslint-disable react-hooks/set-state-in-effect -- hydrate from localStorage on mount to avoid SSR mismatch */
   useEffect(() => {
     const p = getIdentityProfile();
@@ -68,6 +54,7 @@ export default function ProfilePage() {
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [registryStatus, setRegistryStatus] = useState("");
   const [registeredHandle, setRegisteredHandle] = useState<string | undefined>();
+  const [hidePayQr, setHidePayQr] = useState(true);
 
   const mounted = useMounted();
   const payTarget = (profile.handle && `@${profile.handle.replace(/^@+/, "")}`) || address || "";
@@ -167,6 +154,8 @@ export default function ProfilePage() {
     window.location.replace("/");
   }
 
+
+
   return (
     <AppShell>
       <div className="profile-reference-screen">
@@ -192,18 +181,7 @@ export default function ProfilePage() {
           <h1>{profile.displayName || "Radius user"}</h1>
           <p className="profile-handle">{profile.handle ? `@${profile.handle}` : "Claim a username below"}</p>
           <p className="profile-bio">{profile.bio || "Hello World"}</p>
-          <div className="profile-address-pill">
-            <span>{address ? formatAddress(address) : "No wallet connected"}</span>
-            {address && (
-              <button type="button" onClick={copyAddress} className="profile-address-copy" aria-label="Copy address">
-                {copiedAddress ? (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                ) : (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                )}
-              </button>
-            )}
-          </div>
+          <div className="profile-address-pill">{address ? formatAddress(address) : "No wallet connected"}</div>
           {address && (
             <div className="profile-hero-actions">
               <button type="button" onClick={copyAddress}>
@@ -221,81 +199,73 @@ export default function ProfilePage() {
           )}
         </section>
 
-        <div className="profile-right-col">
-          <div className="profile-tabs">
-            <button type="button" className={`profile-tab ${profileTab === "settings" ? "is-active" : ""}`} onClick={() => setProfileTab("settings")}>
-              <PersonIcon /> Profile Settings
-            </button>
-            <button type="button" className={`profile-tab ${profileTab === "qr" ? "is-active" : ""}`} onClick={() => setProfileTab("qr")}>
-              <QrIcon /> Pay QR
-            </button>
-            {address && profile.handle && (
-              <Link href={`/u/${profile.handle}`} className="profile-public-link">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                Show public profile
-              </Link>
-            )}
-          </div>
 
-          <div className="profile-content-card">
-            {profileTab === "settings" && (
-              <form onSubmit={handleSave} className="profile-form-inner">
-                {registeredHandle && (
-                  <div className="profile-username-card">
-                    <p className="profile-username-label">Permanent username <span className="profile-username-check">✓</span></p>
-                    <p className="profile-username-value">@{registeredHandle}</p>
-                    <p className="profile-username-note">This username is globally searchable and cannot be changed or removed.</p>
-                  </div>
+        {address && profile.handle && (
+          <Link href={`/u/${profile.handle}`} className="profile-public-btn soft-card flex items-center justify-center gap-2 rounded-[20px] p-4 text-center text-sm font-bold text-[var(--brand)]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Show public profile
+          </Link>
+        )}
+
+        {address && (
+          <section className="profile-qr-card">
+            <div className="profile-qr-header relative flex items-center justify-center text-center">
+              <div className="flex flex-col items-center">
+                <h2 className="text-center">My pay QR</h2>
+                <span className="text-center">{profile.handle ? `@${profile.handle}` : "address-based"}</span>
+              </div>
+              <button type="button" onClick={() => setHidePayQr((v) => !v)} aria-label={hidePayQr ? "Show My Pay QR" : "Hide My Pay QR"} className="profile-qr-toggle absolute right-0 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-[var(--brand)]/10 text-[var(--brand)]">
+                <EyeIcon hidden={hidePayQr} />
+              </button>
+            </div>
+            {!hidePayQr && (
+              <div className="profile-qr-frame">
+                {payLink ? (
+                  <QRCodeSVG value={payLink} size={224} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
+                ) : (
+                  <div className="profile-qr-placeholder" />
                 )}
-                <div>
-                  <p className="profile-field-label">Profile picture</p>
-                  <ProfilePfpUpload initialUrl={profile.avatar} onUploaded={handleAvatarUploaded} />
-                </div>
-                <div>
-                  <label className="profile-field-label">Display name</label>
-                  <input className="radius-input text-sm" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" />
-                </div>
-                <div>
-                  <label className="profile-field-label">Permanent username</label>
-                  <input className="radius-input text-sm disabled:opacity-70" value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@yourname" disabled={!!registeredHandle} />
-                  {registeredHandle ? (
-                    <p className="mt-2 text-xs text-[#8b8795]">@{registeredHandle} is locked to this wallet and searchable from Contacts.</p>
-                  ) : normalizedHandle ? (
-                    <p className="mt-2 text-xs text-[#8b8795]">@{normalizedHandle} will be checked and permanently claimed on save.</p>
-                  ) : (
-                    <p className="mt-2 text-xs text-[#8b8795]">Pick carefully. Usernames are global and permanent after saving.</p>
-                  )}
-                </div>
-                <div>
-                  <label className="profile-field-label">Bio</label>
-                  <textarea className="radius-input text-sm" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Short profile bio" />
-                </div>
-                {registryStatus && <p className="text-xs text-[#8b8795]">{registryStatus}</p>}
-                <button type="submit" disabled={!displayName.trim() || !address || (!registeredHandle && !normalizedHandle)} className="primary-btn w-full text-sm disabled:opacity-40">{saved ? "Saved globally" : registeredHandle ? "Save global profile" : "Claim username + save profile"}</button>
-              </form>
-            )}
-
-            {profileTab === "qr" && address && (
-              <div className="profile-form-inner">
-                <div className="profile-qr-header relative flex items-center justify-center text-center">
-                  <div className="flex flex-col items-center">
-                    <h2 className="text-center">My pay QR</h2>
-                    <span className="text-center">{profile.handle ? `@${profile.handle}` : "address-based"}</span>
-                  </div>
-                </div>
-                <div className="profile-qr-frame">
-                  {payLink ? (
-                    <QRCodeSVG value={payLink} size={224} level="M" bgColor="#ffffff" fgColor="#050505" includeMargin />
-                  ) : (
-                    <div className="profile-qr-placeholder" />
-                  )}
-                </div>
               </div>
             )}
-          </div>
+          </section>
+        )}
 
-          <p className="text-center text-[11px] leading-5 text-[#9a94a3] mt-3">{isConnected ? "Profile is connected to your current wallet/social wallet." : "Connect first to use this profile in payments."}</p>
-        </div>
+        <form onSubmit={handleSave} className="profile-form-card">
+          {registeredHandle && (
+            <div className="rounded-[20px] border border-[var(--brand)]/20 bg-[var(--brand)]/8 p-4 text-sm text-[var(--foreground)]">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand)]">Permanent username</p>
+              <p className="mt-1 font-mono text-lg font-black">@{registeredHandle}</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">This username is globally searchable and cannot be changed or removed.</p>
+            </div>
+          )}
+          <div>
+            <p className="mb-2 text-xs font-bold text-[#8b8795]">Profile picture</p>
+            <ProfilePfpUpload initialUrl={profile.avatar} onUploaded={handleAvatarUploaded} />
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-bold text-[#8b8795]">Display name</label>
+            <input className="radius-input text-sm" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" />
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-bold text-[#8b8795]">Permanent username</label>
+            <input className="radius-input text-sm disabled:opacity-70" value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@yourname" disabled={!!registeredHandle} />
+            {registeredHandle ? (
+              <p className="mt-2 text-xs text-[var(--muted)]">@{registeredHandle} is locked to this wallet and searchable from Contacts.</p>
+            ) : normalizedHandle ? (
+              <p className="mt-2 text-xs text-[#8b8795]">@{normalizedHandle} will be checked and permanently claimed on save.</p>
+            ) : (
+              <p className="mt-2 text-xs text-[#8b8795]">Pick carefully. Usernames are global and permanent after saving.</p>
+            )}
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-bold text-[#8b8795]">Bio</label>
+            <textarea className="radius-input min-h-24 text-sm" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Short profile bio" />
+          </div>
+          {registryStatus && <p className="text-xs text-[#8b8795]">{registryStatus}</p>}
+          <button type="submit" disabled={!displayName.trim() || !address || (!registeredHandle && !normalizedHandle)} className="primary-btn w-full text-sm disabled:opacity-40">{saved ? "Saved globally" : registeredHandle ? "Save global profile" : "Claim username + save profile"}</button>
+        </form>
+
+        <p className="text-center text-[11px] leading-5 text-[#9a94a3]">{isConnected ? "Profile is connected to your current wallet/social wallet." : "Connect first to use this profile in payments."}</p>
       </div>
     </AppShell>
   );
