@@ -73,6 +73,7 @@ type RadiusUser = {
 type RadiusAuthContextValue = {
   initialized: boolean;
   authenticated: boolean;
+  walletReady: boolean;
   address?: `0x${string}`;
   chainId?: number;
   provider: EIP1193Provider | null;
@@ -128,12 +129,17 @@ function RadiusPrivyBridgeProvider({ children }: { children: ReactNode }) {
   const wallet = useMemo(() => pickWallet(wallets), [wallets]);
 
   const refreshWallet = useCallback(async () => {
-    if (!ready || !authenticated || !wallet) {
+    if (!ready || !authenticated) {
       setProvider(null);
       setAddress(undefined);
       setChainId(undefined);
       return;
     }
+
+    // When Privy has authenticated but the embedded wallet hasn't appeared yet
+    // (common on first social login), skip clearing state — the useEffect will
+    // re-run once `wallet` becomes non-null via the reactive wallets list.
+    if (!wallet) return;
 
     try {
       const nextProvider = (await wallet.getEthereumProvider()) as unknown as EIP1193Provider;
@@ -147,6 +153,17 @@ function RadiusPrivyBridgeProvider({ children }: { children: ReactNode }) {
       setChainId(undefined);
     }
   }, [authenticated, ready, wallet]);
+
+  // Safety: if authenticated but wallet never appears within 8 s, clear state.
+  useEffect(() => {
+    if (!ready || !authenticated || wallet) return;
+    const timeout = setTimeout(() => {
+      setProvider(null);
+      setAddress(undefined);
+      setChainId(undefined);
+    }, 8000);
+    return () => clearTimeout(timeout);
+  }, [ready, authenticated, wallet]);
 
   /* eslint-disable react-hooks/set-state-in-effect -- hydrate Privy wallet/provider state from SDK callbacks */
   useEffect(() => {
@@ -229,6 +246,7 @@ function RadiusPrivyBridgeProvider({ children }: { children: ReactNode }) {
     () => ({
       initialized: ready,
       authenticated: authenticated && Boolean(address),
+      walletReady: ready && authenticated && Boolean(address),
       address,
       chainId,
       provider,
@@ -252,6 +270,7 @@ export function RadiusAuthProvider({ children }: { children: ReactNode }) {
         value={{
           initialized: true,
           authenticated: false,
+          walletReady: false,
           provider: null,
           user: null,
           login: async () => {
