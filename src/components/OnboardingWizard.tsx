@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useSignMessage } from "wagmi";
 import { useRadiusAuth } from "@/lib/web3auth";
 import { getIdentityProfile, saveIdentityProfile } from "@/lib/utils";
 import { fetchRegistryProfile, registryProfileToIdentity, saveRegistryProfile } from "@/lib/registry-client";
@@ -13,10 +13,11 @@ type Step = "welcome" | "profile" | "fund" | "done";
 
 export function OnboardingWizard({ forceOpen = false, requireProfile = false, onRegistered }: { forceOpen?: boolean; requireProfile?: boolean; onRegistered?: () => void } = {}) {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
-  const { authenticated, walletReady, address: authAddress, provider: authProvider, signMessage, user } = useRadiusAuth();
+  const { authenticated, walletReady, address: authAddress, provider: authProvider, signMessage: privySignMessage, user } = useRadiusAuth();
   const address = wagmiAddress ?? authAddress;
   const isConnected = wagmiConnected || authenticated;
   const signingReady = wagmiConnected || walletReady;
+  const { signMessageAsync: wagmiSignMessage } = useSignMessage();
 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("welcome");
@@ -73,8 +74,12 @@ export function OnboardingWizard({ forceOpen = false, requireProfile = false, on
     setSaving(true);
     setStatus("Claiming username globally...");
     const next = { displayName: displayName.trim(), handle: normalizedHandle, authMode: "wallet" as const };
+    // Use wagmi signing for browser wallets, Privy signing for social logins
+    const activeSignMessage = wagmiConnected
+      ? (msg: string) => wagmiSignMessage({ message: msg })
+      : privySignMessage;
     try {
-      const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle }, { provider: authProvider, signMessage, prompt: true });
+      const remote = await saveRegistryProfile({ address, displayName: next.displayName, handle: next.handle }, { provider: authProvider, signMessage: activeSignMessage, prompt: true });
       saveIdentityProfile(registryProfileToIdentity(remote));
       localStorage.setItem(FLAG, "1");
       try { sessionStorage.setItem(`radius-registered-${address.toLowerCase()}`, "1"); } catch { /* storage may be blocked */ }
