@@ -13,6 +13,7 @@ import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { fetchRegistryProfile, registryProfileToIdentity } from "@/lib/registry-client";
 import { saveIdentityProfile } from "@/lib/utils";
 import { useRadiusAuth } from "@/lib/web3auth";
+import { useEurUsdRate } from "@/lib/fx-rate";
 import { TOKENS } from "@/config/tokens";
 import { arcTestnet } from "@/config/wagmi";
 import { RADIUSD_POOL_ABI, RADIUSD_POOL_ADDRESS } from "@/config/radiusdex";
@@ -127,6 +128,7 @@ function formatLiquidity(raw: bigint, decimals: number) {
 }
 
 function DesktopLiquidityCard() {
+  const { rate: eurUsdRate } = useEurUsdRate();
   const { data } = useReadContracts({
     contracts: [
       { address: RADIUSD_POOL_ADDRESS, abi: RADIUSD_POOL_ABI, functionName: "balances", args: [BigInt(0)], chainId: arcTestnet.id },
@@ -136,7 +138,7 @@ function DesktopLiquidityCard() {
   });
   const usdc = (data?.[0]?.result as bigint | undefined) ?? BigInt(0);
   const eurc = (data?.[1]?.result as bigint | undefined) ?? BigInt(0);
-  const total = Number(formatUnits(usdc, TOKENS.USDC.decimals)) + Number(formatUnits(eurc, TOKENS.EURC.decimals));
+  const total = Number(formatUnits(usdc, TOKENS.USDC.decimals)) + Number(formatUnits(eurc, TOKENS.EURC.decimals)) * eurUsdRate;
 
   return (
     <div className="desktop-sidebar-tvl" aria-label="RadiusDex liquidity locked">

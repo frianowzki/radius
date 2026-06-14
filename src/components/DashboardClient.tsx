@@ -13,6 +13,7 @@ import { TOKENS, ERC20_TRANSFER_ABI } from "@/config/tokens";
 import { TokenLogo } from "@/components/TokenLogo";
 import { AvatarImage } from "@/components/AvatarImage";
 import { QuickActionIcon } from "@/components/QuickActionIcon";
+import { useEurUsdRate } from "@/lib/fx-rate";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { searchRegistryProfiles, type RegistryProfile } from "@/lib/registry-client";
@@ -124,11 +125,12 @@ function compactDisplay(raw: bigint, decimals: number) {
   return numeric.toLocaleString(undefined, { maximumFractionDigits: numeric >= 1 ? 4 : 6 });
 }
 
-function stableValueLabel(symbol: string, balance: string) {
+function stableValueLabel(symbol: string, balance: string, eurUsdRate: number) {
   if (symbol !== "USDC" && symbol !== "EURC") return undefined;
   const numeric = Number(balance.replace(/,/g, ""));
   if (!Number.isFinite(numeric)) return undefined;
-  return `$${numeric.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  const usdValue = symbol === "EURC" ? numeric * eurUsdRate : numeric;
+  return `$${usdValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
 function shortAddress(value?: string) {
@@ -171,6 +173,7 @@ export function DashboardClient() {
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const { rate: eurUsdRate } = useEurUsdRate();
   const [identity, setIdentity] = useState<{ displayName?: string; authMode?: string; avatar?: string }>({ displayName: "Arc user", authMode: "wallet" });
   const [contacts, setContacts] = useState<{ id: string; name: string; handle?: string; address: string; avatar?: string }[]>([]);
   const [recentTransfers, setRecentTransfers] = useState<ReturnType<typeof getLocalTransfers>>([]);
@@ -234,7 +237,7 @@ export function DashboardClient() {
               symbol: asset.symbol,
               name: asset.name,
               balance: compactDisplay(balance as bigint, asset.decimals),
-              valueLabel: stableValueLabel(asset.symbol, compactDisplay(balance as bigint, asset.decimals)),
+              valueLabel: stableValueLabel(asset.symbol, compactDisplay(balance as bigint, asset.decimals), eurUsdRate),
               chainKey: asset.chainKey,
               chainLabel: CHAIN_METADATA[asset.chainKey].label,
               kind: asset.kind,
@@ -287,7 +290,8 @@ export function DashboardClient() {
   const totalValue = multichainAssets.reduce((sum, asset) => {
     if (asset.symbol !== "USDC" && asset.symbol !== "EURC") return sum;
     const numeric = Number(asset.balance.replace(/,/g, ""));
-    return sum + (Number.isFinite(numeric) ? numeric : 0);
+    if (!Number.isFinite(numeric)) return sum;
+    return sum + (asset.symbol === "EURC" ? numeric * eurUsdRate : numeric);
   }, 0);
   const totalDisplay = totalValue.toLocaleString(undefined, { maximumFractionDigits: 2 });
   const profileName = identity.displayName || "Arc user";
