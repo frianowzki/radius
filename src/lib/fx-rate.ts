@@ -3,17 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 
 /**
- * Live EUR/USD rate — since USDC is USD-pegged and EURC is EUR-pegged,
- * this rate converts between them:
+ * Live USDC↔EURC conversion rate from Circle (production key) or CoinGecko.
+ *
  *   EURC → USD:  eurcAmount × eurUsdRate
  *   USD → EURC:  usdAmount / eurUsdRate
  *
- * Fetches from frankfurter.app (free, no key, ECB data) with 60 s cache.
- * Falls back to 1.08 if the API is unreachable.
+ * Fetches from /api/fx-rate with 60 s client-side cache.
+ * Falls back to 1.08 if unreachable.
  */
 const FALLBACK_RATE = 1.08;
-const CACHE_KEY = "radius-eur-usd-rate";
+const CACHE_KEY = "radius-fx-rate";
 const CACHE_TTL_MS = 60_000;
+
+type FxResponse = { usdcEurc: number; eurcUsdc: number; source: string; ts: number };
 
 let inFlight: Promise<number> | null = null;
 let lastFetch = 0;
@@ -22,8 +24,11 @@ async function fetchRate(): Promise<number> {
   const now = Date.now();
   if (now - lastFetch < CACHE_TTL_MS) {
     try {
-      const cached = sessionStorage.getItem(CACHE_KEY);
-      if (cached) return Number(cached);
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const cached: FxResponse = JSON.parse(raw);
+        if (typeof cached.eurcUsdc === "number") return cached.eurcUsdc;
+      }
     } catch { /* noop */ }
   }
 
@@ -31,13 +36,12 @@ async function fetchRate(): Promise<number> {
 
   inFlight = (async () => {
     try {
-      const res = await fetch("https://api.frankfurter.app/latest?from=EUR&to=USD", { cache: "no-store" });
-      const data = await res.json();
-      const rate = data?.rates?.USD;
-      if (typeof rate === "number" && rate > 0.5 && rate < 2) {
-        try { sessionStorage.setItem(CACHE_KEY, String(rate)); } catch { /* noop */ }
+      const res = await fetch("/api/fx-rate", { cache: "no-store" });
+      const data: FxResponse = await res.json();
+      if (typeof data.eurcUsdc === "number" && data.eurcUsdc > 0.5 && data.eurcUsdc < 2) {
+        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch { /* noop */ }
         lastFetch = Date.now();
-        return rate;
+        return data.eurcUsdc;
       }
       return FALLBACK_RATE;
     } catch {
@@ -50,7 +54,7 @@ async function fetchRate(): Promise<number> {
   return result;
 }
 
-/** Returns { rate, loading } — rate is EUR/USD (≈1.08). */
+/** Returns { rate, loading, eurcToUsd, usdToEurc } — rate is EUR/USD. */
 export function useEurUsdRate() {
   const [rate, setRate] = useState(FALLBACK_RATE);
   const [loading, setLoading] = useState(true);
