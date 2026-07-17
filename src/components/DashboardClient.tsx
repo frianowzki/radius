@@ -43,6 +43,7 @@ import {
 import { showRadiusNotification } from "@/lib/notifications";
 import { useIncomingPaymentNotifications, requestNotificationPermission } from "@/lib/incoming-payments";
 import { formatAmount, getContacts, getIdentityProfile, getLocalTransfers, getPaymentRequests, saveLocalTransfers, savePaymentRequests, formatContactLabel, markMatchingPaymentRequestPaid, saveLocalTransfer } from "@/lib/utils";
+import { UnifiedBalanceCard } from "@/components/UnifiedBalanceCard";
 import { dueSchedules, type ScheduledPaymentRecord } from "@/lib/scheduled-payments";
 import { fetchRemoteActivity, mergePaymentRequests, mergeTransfers, pushRemoteActivity } from "@/lib/activity-sync";
 
@@ -581,6 +582,8 @@ export function DashboardClient() {
             </button>
           </div>
         </section>
+
+        <UnifiedBalanceCard />
 
         <section className="dashboard-actions-grid">
           {[
