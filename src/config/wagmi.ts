@@ -54,7 +54,7 @@ export const arcTestnet = defineChain({
   testnet: true,
 });
 
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "placeholder";
 const chains = [
   arcTestnet,
   sepolia,
